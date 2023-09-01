@@ -1,0 +1,135 @@
+image: gitlab.protontech.ch:4567/go/bridge-internal:test-go1.21
+
+variables:
+  GOPRIVATE: gitlab.protontech.ch
+  GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
+  CMAKE_BUILD_DIR: "/tmp/build"
+  CMAKE_BUILD_CONFIG: "Release"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+
+# ENV
+.env-windows:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+  before_script:
+    - export GOROOT=/c/Go1.20/
+    - export PATH=$GOROOT/bin:$PATH
+    - export GOARCH=amd64
+    - export GOPATH=~/go1.20
+    - export GO111MODULE=on
+    - export PATH="${GOPATH}/bin:${PATH}"
+    - export QT6DIR=/c/grrrQt/6.3.2/msvc2019_64
+    - export PATH=$PATH:${QT6DIR}/bin
+    - export PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin:$PATH"
+    - $(git config --global -l | grep -o 'url.*gitlab.protontech.ch.*insteadof' | xargs -L 1 git config --global --unset &> /dev/null) || echo "nothing to remove"
+    - git config --global url.https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}.insteadOf https://${CI_SERVER_HOST}
+    - git config --global safe.directory '*'
+    - git status --porcelain
+  cache:
+    key: win-vcpkg
+    paths:
+      - .cache
+    when: 'always'
+  tags:
+    - windows-bridge
+
+.env-darwin:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+  before_script:
+    - export PATH=/usr/local/bin:$PATH
+    - export PATH=/usr/local/opt/git/bin:$PATH
+    - export PATH=/usr/local/opt/make/libexec/gnubin:$PATH
+    - export PATH=/usr/local/opt/gnu-sed/libexec/gnubin:$PATH
+    - export GOROOT=~/local/opt/go@1.20
+    - export PATH="${GOROOT}/bin:$PATH"
+    - export GOPATH=~/go1.20
+    - export PATH="${GOPATH}/bin:$PATH"
+    - export QT6DIR=/opt/Qt/6.3.2/macos
+    - export PATH="${QT6DIR}/bin:$PATH"
+    - uname -a
+  cache:
+    key: darwin-vcpkg
+    paths:
+      - .cache
+    when: 'always'
+  tags:
+    - macos-m1-bridge
+
+.env-linux-build:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+  cache:
+    key: linux-vcpkg
+    paths:
+      - .cache
+    when: 'always'
+  before_script:
+    - mkdir -p .cache/bin
+    - export BRIDGE_SYNC_FORCE_MINIMUM_SPEC=1
+    - export PATH=$(pwd)/.cache/bin:$PATH
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - export PATH=$PATH:$QT6DIR/bin
+    - $(git config --global -l | grep -o 'url.*gitlab.protontech.ch.*insteadof' | xargs -L 1 git config --global --unset &> /dev/null) || echo "nothing to remove"
+    - git config --global url.https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}.insteadOf https://${CI_SERVER_HOST}
+  tags:
+    - large
+
+
+stages:
+  - test
+  - build
+
+.script-config-cmake-win:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Visual Studio 17 2022" -A x64
+
+.script-config-cmake-unix:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+
+.script-build:
+  script:
+    - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
+
+.script-test:
+  extends:
+    - .script-build
+  script:
+    - !reference [.script-build, script]
+    - ctest --build-config $CMAKE_BUILD_CONFIG --test-dir $CMAKE_BUILD_DIR -V
+
+lint:
+  stage: test
+  tags:
+    - medium
+  script:
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+    - !reference [.script-config-cmake-unix, script]
+    - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t go-lib-lint
+    - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t clang-format-check
+
+build-linux:
+  stage: build
+  extends:
+    - .env-linux-build
+  script:
+    - !reference [.script-config-cmake-unix, script]
+    - !reference [.script-test, script]
+
+#build-darwin:
+#  stage: build
+#  extends:
+#    - .env-darwin
+#  script:
+#    - !reference [.script-config-cmake-unix, script]
+#    - !reference [.script-test, script]
+
+#build-windows:
+#  stage: build
+#  extends:
+#    - .env-windows
+#  script:
+#    - !reference [.script-config-cmake-win, script]
+#    - !reference [.script-test, script]

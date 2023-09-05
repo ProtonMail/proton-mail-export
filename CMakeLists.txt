@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 enable_testing()
 
+include(config)
 include(compile_options)
 include(clang_tidy)
 include(clang_format)

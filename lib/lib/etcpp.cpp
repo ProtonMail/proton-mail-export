@@ -18,6 +18,7 @@
 #include <etcpp.hpp>
 
 #include <etcore.h>
+#include <etconfig.hpp>
 
 namespace etcpp {
 

@@ -62,6 +62,11 @@ add_custom_target(go-lib-build
 add_library(etcore SHARED IMPORTED GLOBAL)
 add_dependencies(etcore go-lib-build)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/constants.go.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/internal/constants.go
+    @ONLY
+)
+
 set_target_properties(etcore
     PROPERTIES
     IMPORTED_LOCATION ${GO_LIB}

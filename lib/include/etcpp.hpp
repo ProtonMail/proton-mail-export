@@ -52,9 +52,6 @@ class Session final {
     Session& operator=(const Session&) = delete;
     Session& operator=(Session&& rhs) noexcept;
 
-    [[nodiscard]] std::string hello() const;
-    void helloError() const;
-
     [[nodiscard]] LoginState login(const char* email, const char* password);
     [[nodiscard]] LoginState loginTOTP(const char* totp);
     [[nodiscard]] LoginState loginMailboxPassword(const char* password);
@@ -67,11 +64,5 @@ class Session final {
 
     template <class F>
     void wrapCCall(F func) const;
-
-    template <class F, class OUT>
-    void wrapCCallOut(OUT& out, F func);
-
-    template <class F, class OUT>
-    void wrapCCallOut(OUT& out, F func) const;
 };
 }    // namespace etcpp

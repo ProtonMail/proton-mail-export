@@ -151,14 +151,6 @@ func (s *Session) LoginState() SessionLoginState {
 	return s.loginState
 }
 
-func (s *Session) Hello() string {
-	return "Hello world"
-}
-
-func (s *Session) HelloError() error {
-	return fmt.Errorf("some error occurred")
-}
-
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
 }

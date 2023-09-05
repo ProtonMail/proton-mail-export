@@ -64,28 +64,6 @@ Session& Session::operator=(Session&& rhs) noexcept {
     return *this;
 }
 
-std::string Session::hello() const {
-    std::string result;
-    wrapCCallOut(result, [](etSession* ptr, std::string& out) {
-        char* cOut;
-        auto status = etSessionHello(ptr, &cOut);
-        if (status != ET_SESSION_STATUS_OK) {
-            return status;
-        }
-
-        out.assign(cOut);
-        free(cOut);
-
-        return status;
-    });
-
-    return result;
-}
-
-void Session::helloError() const {
-    wrapCCall([](etSession* ptr) { return etSessionHelloError(ptr); });
-}
-
 Session::LoginState Session::login(const char* email, const char* password) {
     LoginState ls = LoginState::LoggedOut;
     wrapCCall([&](etSession* ptr) {
@@ -161,21 +139,6 @@ void Session::wrapCCall(F func) const {
                   "invalid function/lambda signature");
     mapETStatusToException(mPtr, func(mPtr));
 }
-
-template <class F, class OUT>
-void Session::wrapCCallOut(OUT& out, F func) {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*, OUT&>,
-                  "invalid function/lambda signature");
-    mapETStatusToException(mPtr, func(mPtr, out));
-}
-
-template <class F, class OUT>
-void Session::wrapCCallOut(OUT& out, F func) const {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*, OUT&>,
-                  "invalid function/lambda signature");
-    mapETStatusToException(mPtr, func(mPtr, out));
-}
-
 Session::LoginState mapLoginState(etSessionLoginState s) {
     switch (s) {
         case ET_SESSION_LOGIN_STATE_LOGGED_OUT:
@@ -189,6 +152,8 @@ Session::LoginState mapLoginState(etSessionLoginState s) {
         case ET_SESSION_LOGIN_STATE_AWAITING_TOTP:
             return Session::LoginState::AwaitingTOTP;
     }
+
+    return Session::LoginState::LoggedOut;
 }
 
 }    // namespace etcpp

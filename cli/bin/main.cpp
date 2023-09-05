@@ -19,12 +19,5 @@
 #include "etcpp.hpp"
 
 int main() {
-    auto session = etcpp::Session();
-
-    try {
-        std::cout << session.hello() << std::endl;
-        session.helloError();
-    } catch (const etcpp::Exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-    }
+    return EXIT_SUCCESS;
 }

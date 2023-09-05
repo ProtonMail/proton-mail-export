@@ -86,22 +86,6 @@ func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 	return s.lastError
 }
 
-//export etSessionHello
-func etSessionHello(ptr *C.etSession, out **C.char) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
-		str := session.Hello()
-		*out = C.CString(str)
-		return nil
-	})
-}
-
-//export etSessionHelloError
-func etSessionHelloError(ptr *C.etSession) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
-		return session.HelloError()
-	})
-}
-
 //export etSessionGetLoginState
 func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {

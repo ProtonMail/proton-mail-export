@@ -21,6 +21,8 @@
 
 namespace etcpp {
 
+Session::LoginState mapLoginState(etSessionLoginState s);
+
 inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     switch (status) {
         case ET_SESSION_STATUS_INVALID:
@@ -37,7 +39,7 @@ inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     }
 }
 
-Session::Session() : mPtr(etSessionNew()) {}
+Session::Session(const char* serverURL) : mPtr(etSessionNew(serverURL)) {}
 
 Session::~Session() {
     if (mPtr != nullptr) {
@@ -84,6 +86,62 @@ void Session::helloError() const {
     wrapCCall([](etSession* ptr) { return etSessionHelloError(ptr); });
 }
 
+Session::LoginState Session::login(const char* email, const char* password) {
+    LoginState ls = LoginState::LoggedOut;
+    wrapCCall([&](etSession* ptr) {
+        etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
+        auto status = etSessionLogin(ptr, email, password, &els);
+        if (status == ET_SESSION_STATUS_OK) {
+            ls = mapLoginState(els);
+        }
+        return status;
+    });
+
+    return ls;
+}
+
+Session::LoginState Session::loginTOTP(const char* totp) {
+    LoginState ls = LoginState::LoggedOut;
+    wrapCCall([&](etSession* ptr) {
+        etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
+        auto status = etSessionSubmitTOTP(ptr, totp, &els);
+        if (status == ET_SESSION_STATUS_OK) {
+            ls = mapLoginState(els);
+        }
+        return status;
+    });
+
+    return ls;
+}
+
+Session::LoginState Session::loginMailboxPassword(const char* password) {
+    LoginState ls = LoginState::LoggedOut;
+    wrapCCall([&](etSession* ptr) {
+        etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
+        auto status = etSessionSubmitTOTP(ptr, password, &els);
+        if (status == ET_SESSION_STATUS_OK) {
+            ls = mapLoginState(els);
+        }
+        return status;
+    });
+
+    return ls;
+}
+
+Session::LoginState Session::getLoginState() const {
+    LoginState ls = LoginState::LoggedOut;
+    wrapCCall([&](etSession* ptr) {
+        etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
+        auto status = etSessionGetLoginState(ptr, &els);
+        if (status == ET_SESSION_STATUS_OK) {
+            ls = mapLoginState(els);
+        }
+        return status;
+    });
+
+    return ls;
+}
+
 const char* Exception::what() const noexcept {
     return mWhat.c_str();
 }
@@ -117,4 +175,20 @@ void Session::wrapCCallOut(OUT& out, F func) const {
                   "invalid function/lambda signature");
     mapETStatusToException(mPtr, func(mPtr, out));
 }
+
+Session::LoginState mapLoginState(etSessionLoginState s) {
+    switch (s) {
+        case ET_SESSION_LOGIN_STATE_LOGGED_OUT:
+            return Session::LoginState::LoggedOut;
+        case ET_SESSION_LOGIN_STATE_AWAITING_HV:
+            return Session::LoginState::AwaitingHV;
+        case ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD:
+            return Session::LoginState::AwaitingMailboxPassword;
+        case ET_SESSION_LOGIN_STATE_LOGGED_IN:
+            return Session::LoginState::LoggedIn;
+        case ET_SESSION_LOGIN_STATE_AWAITING_TOTP:
+            return Session::LoginState::AwaitingTOTP;
+    }
+}
+
 }    // namespace etcpp

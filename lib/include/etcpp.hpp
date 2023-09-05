@@ -28,8 +28,8 @@ class Exception final : public std::exception {
     std::string mWhat;
 
    public:
-    Exception(std::string_view what);
-    const char* what() const noexcept;
+    explicit Exception(std::string_view what);
+    [[nodiscard]] const char* what() const noexcept;
 };
 
 class Session final {
@@ -37,7 +37,15 @@ class Session final {
     etSession* mPtr;
 
    public:
-    Session();
+    enum class LoginState {
+        LoggedOut,
+        AwaitingTOTP,
+        AwaitingHV,
+        AwaitingMailboxPassword,
+        LoggedIn
+    };
+
+    explicit Session(const char* serverURL);
     ~Session();
     Session(const Session&) = delete;
     Session(Session&&) noexcept;
@@ -46,6 +54,12 @@ class Session final {
 
     [[nodiscard]] std::string hello() const;
     void helloError() const;
+
+    [[nodiscard]] LoginState login(const char* email, const char* password);
+    [[nodiscard]] LoginState loginTOTP(const char* totp);
+    [[nodiscard]] LoginState loginMailboxPassword(const char* password);
+
+    [[nodiscard]] LoginState getLoginState() const;
 
    private:
     template <class F>

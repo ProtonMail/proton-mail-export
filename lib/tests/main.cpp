@@ -2,15 +2,23 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <etcpp.hpp>
+#include "gpa_server.hpp"
 
-TEST_CASE("TestHello") {
-    auto session = etcpp::Session();
+TEST_CASE("SessionLogin") {
+    GPAServer server;
 
-    REQUIRE(session.hello() == "Hello world");
-}
+    const char* userEmail = "hello@bar.com";
+    const char* userPassword = "12345";
 
-TEST_CASE("TestHelloError") {
-    auto session = etcpp::Session();
+    const auto userID = server.createUser(userEmail, userPassword);
+    const auto url = server.url();
 
-    REQUIRE_THROWS(session.helloError());
+    auto session = etcpp::Session(url.c_str());
+    {
+        auto loginState = session.getLoginState();
+        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+    }
+
+    auto loginState = session.login(userEmail, userPassword);
+    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
 }

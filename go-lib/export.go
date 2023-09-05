@@ -31,6 +31,14 @@ typedef enum etSessionStatus {
 	ET_SESSION_STATUS_INVALID,
 } etSessionStatus;
 
+typedef enum etSessionLoginState {
+	ET_SESSION_LOGIN_STATE_LOGGED_OUT,
+	ET_SESSION_LOGIN_STATE_AWAITING_TOTP,
+	ET_SESSION_LOGIN_STATE_AWAITING_HV,
+	ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD,
+	ET_SESSION_LOGIN_STATE_LOGGED_IN,
+} etSessionLoginState;
+
 */
 import "C"
 import (
@@ -43,8 +51,9 @@ import (
 type SessionHandle = internal.Handle[csession]
 
 //export etSessionNew
-func etSessionNew() *C.etSession {
-	h := sessionAllocator.Alloc(newCSession())
+func etSessionNew(apiURL *C.cchar_t) *C.etSession {
+	goAPIURL := C.GoString(apiURL)
+	h := sessionAllocator.Alloc(newCSession(goAPIURL))
 	p := unsafe.Pointer(uintptr(h))
 	return (*C.etSession)(p)
 }
@@ -93,6 +102,74 @@ func etSessionHelloError(ptr *C.etSession) C.etSessionStatus {
 	})
 }
 
+//export etSessionGetLoginState
+func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+		*outStatus = mapLoginState(session.LoginState())
+		return nil
+	})
+}
+
+//export etSessionLogin
+func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+		if err := session.Login(ctx, C.GoString(email), C.GoString(password)); err != nil {
+			return err
+		}
+
+		*outStatus = mapLoginState(session.LoginState())
+		return nil
+	})
+}
+
+//export etSessionLogout
+func etSessionLogout(ptr *C.etSession) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+		return session.Logout(ctx)
+	})
+}
+
+//export etSessionSubmitTOTP
+func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+		if err := session.SubmitTOTP(ctx, C.GoString(totp)); err != nil {
+			return err
+		}
+
+		*outStatus = mapLoginState(session.LoginState())
+		return nil
+	})
+}
+
+//export etSessionSubmitMailboxPassword
+func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+		if err := session.SubmitMailboxPassword(C.GoString(password)); err != nil {
+			return err
+		}
+
+		*outStatus = mapLoginState(session.LoginState())
+		return nil
+	})
+}
+
+func mapLoginState(s internal.SessionLoginState) C.etSessionLoginState {
+	switch s {
+	case internal.SessionLoginStateLoggedOut:
+		return C.ET_SESSION_LOGIN_STATE_LOGGED_OUT
+	case internal.SessionLoginStateAwaitingTOTP:
+		return C.ET_SESSION_LOGIN_STATE_AWAITING_TOTP
+	case internal.SessionLoginStatAwaitingMailboxPassword:
+		return C.ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD
+	case internal.SessionLoginStateAwaitingHV:
+		return C.ET_SESSION_LOGIN_STATE_AWAITING_HV
+	case internal.SessionLoginStateLoggedIn:
+		return C.ET_SESSION_LOGIN_STATE_LOGGED_IN
+	default:
+		return C.ET_SESSION_LOGIN_STATE_LOGGED_OUT
+	}
+}
+
 func withSession(ptr *C.etSession, f func(ctx context.Context, session *internal.Session) error) C.etSessionStatus {
 	session, ok := resolveSession(ptr)
 	if !ok {
@@ -115,19 +192,16 @@ type csession struct {
 	lastError *C.char
 }
 
-func newCSession() *csession {
-	ctx, cancel := context.WithCancel(context.Background())
-
+func newCSession(apiURL string) *csession {
 	return &csession{
-		s:         &internal.Session{},
-		ctx:       ctx,
-		ctxCancel: cancel,
+		s:         internal.NewSession(context.Background(), apiURL),
 		lastError: nil,
 	}
 }
 
 func (c *csession) close() {
-	c.s.Close()
+	c.s.Close(c.ctx)
+	c.ctxCancel()
 	if c.lastError != nil {
 		C.free(unsafe.Pointer(c.lastError))
 		c.lastError = nil

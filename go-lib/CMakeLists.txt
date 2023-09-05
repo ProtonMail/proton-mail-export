@@ -54,7 +54,7 @@ endif()
 
 add_custom_target(go-lib-build
     DEPENDS ${go_files}
-    COMMAND "${go_bin}" build ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"  export.go
+    COMMAND "${go_bin}" build -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"  export.go export_gpa.go
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     BYPRODUCTS ${GO_LIB}
 )

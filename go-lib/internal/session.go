@@ -17,9 +17,15 @@
 
 package internal
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/ProtonMail/gluon/async"
+	"github.com/ProtonMail/go-proton-api/server"
+)
 
 type Session struct {
+	group  *async.Group
+	server server.Server
 }
 
 func (s *Session) Close() {

@@ -46,5 +46,18 @@ class Session final {
 
     [[nodiscard]] std::string hello() const;
     void helloError() const;
+
+   private:
+    template <class F>
+    void wrapCCall(F func);
+
+    template <class F>
+    void wrapCCall(F func) const;
+
+    template <class F, class OUT>
+    void wrapCCallOut(OUT& out, F func);
+
+    template <class F, class OUT>
+    void wrapCCallOut(OUT& out, F func) const;
 };
 }    // namespace etcpp

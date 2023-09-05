@@ -13,6 +13,11 @@ set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
 set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/etcore${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(GO_LIB_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore.lib")
 
+file(GLOB go_files
+    LIST_DIRECTORIES false
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.go"
+)
 
 set(ADDITIONAL_FLAGS)
 
@@ -48,6 +53,7 @@ if (UNIX AND NOT APPLE)
 endif()
 
 add_custom_target(go-lib-build
+    DEPENDS ${go_files}
     COMMAND "${go_bin}" build ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"  export.go
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     BYPRODUCTS ${GO_LIB}

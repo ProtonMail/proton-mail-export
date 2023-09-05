@@ -18,7 +18,6 @@
 #include <etcpp.hpp>
 
 #include <etcore.h>
-#include <type_traits>
 
 namespace etcpp {
 
@@ -38,25 +37,11 @@ inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     }
 }
 
-template <class F>
-inline void wrapCCall(etSession* ptr, F func) {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,
-                  "invalid function/lambda signature");
-    mapETStatusToException(ptr, func(ptr));
-}
-
-template <class F, class OUT>
-inline void wrapCCallOut(etSession* ptr, OUT& out, F func) {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*, OUT&>,
-                  "invalid function/lambda signature");
-    mapETStatusToException(ptr, func(ptr, out));
-}
-
 Session::Session() : mPtr(etSessionNew()) {}
 
 Session::~Session() {
     if (mPtr != nullptr) {
-        wrapCCall(mPtr, [](etSession* ptr) -> etSessionStatus { return etSessionDelete(ptr); });
+        wrapCCall([](etSession* ptr) -> etSessionStatus { return etSessionDelete(ptr); });
     }
 }
 
@@ -67,7 +52,7 @@ Session::Session(Session&& rhs) noexcept : mPtr(rhs.mPtr) {
 Session& Session::operator=(Session&& rhs) noexcept {
     if (this != &rhs) {
         if (mPtr != nullptr) {
-            wrapCCall(mPtr, [](etSession* ptr) -> etSessionStatus { return etSessionDelete(ptr); });
+            wrapCCall([](etSession* ptr) -> etSessionStatus { return etSessionDelete(ptr); });
         }
 
         mPtr = rhs.mPtr;
@@ -79,8 +64,7 @@ Session& Session::operator=(Session&& rhs) noexcept {
 
 std::string Session::hello() const {
     std::string result;
-
-    wrapCCallOut(mPtr, result, [](etSession* ptr, std::string& out) {
+    wrapCCallOut(result, [](etSession* ptr, std::string& out) {
         char* cOut;
         auto status = etSessionHello(ptr, &cOut);
         if (status != ET_SESSION_STATUS_OK) {
@@ -97,7 +81,7 @@ std::string Session::hello() const {
 }
 
 void Session::helloError() const {
-    wrapCCall(mPtr, [](etSession* ptr) { return etSessionHelloError(ptr); });
+    wrapCCall([](etSession* ptr) { return etSessionHelloError(ptr); });
 }
 
 const char* Exception::what() const noexcept {
@@ -105,4 +89,32 @@ const char* Exception::what() const noexcept {
 }
 
 Exception::Exception(std::string_view what) : mWhat(what) {}
+
+template <class F>
+void Session::wrapCCall(F func) {
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,
+                  "invalid function/lambda signature");
+    mapETStatusToException(mPtr, func(mPtr));
+}
+
+template <class F>
+void Session::wrapCCall(F func) const {
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,
+                  "invalid function/lambda signature");
+    mapETStatusToException(mPtr, func(mPtr));
+}
+
+template <class F, class OUT>
+void Session::wrapCCallOut(OUT& out, F func) {
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*, OUT&>,
+                  "invalid function/lambda signature");
+    mapETStatusToException(mPtr, func(mPtr, out));
+}
+
+template <class F, class OUT>
+void Session::wrapCCallOut(OUT& out, F func) const {
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*, OUT&>,
+                  "invalid function/lambda signature");
+    mapETStatusToException(mPtr, func(mPtr, out));
+}
 }    // namespace etcpp

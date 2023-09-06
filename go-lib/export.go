@@ -43,6 +43,7 @@ typedef enum etSessionLoginState {
 import "C"
 import (
 	"context"
+	"github.com/ProtonMail/gluon/async"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
@@ -143,7 +144,7 @@ func mapLoginState(s internal.SessionLoginState) C.etSessionLoginState {
 		return C.ET_SESSION_LOGIN_STATE_LOGGED_OUT
 	case internal.SessionLoginStateAwaitingTOTP:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_TOTP
-	case internal.SessionLoginStatAwaitingMailboxPassword:
+	case internal.SessionLoginStateAwaitingMailboxPassword:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD
 	case internal.SessionLoginStateAwaitingHV:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_HV
@@ -177,8 +178,9 @@ type csession struct {
 }
 
 func newCSession(apiURL string) *csession {
+	clientBuilder := internal.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{})
 	return &csession{
-		s:         internal.NewSession(context.Background(), apiURL),
+		s:         internal.NewSession(context.Background(), clientBuilder),
 		lastError: nil,
 	}
 }

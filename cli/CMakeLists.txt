@@ -12,6 +12,10 @@ target_sources(cli PRIVATE
 
 apply_cpp_flags(cli)
 
+find_package(ftxui CONFIG REQUIRED)
+
+target_link_libraries(cli PRIVATE ftxui::dom ftxui::screen ftxui::component)
+
 copy_shared_libraries(cli etcore)
 
 install(TARGETS cli)

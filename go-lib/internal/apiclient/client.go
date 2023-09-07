@@ -20,6 +20,7 @@ package apiclient
 import (
 	"context"
 	"github.com/ProtonMail/go-proton-api"
+	"io"
 )
 
 type Builder interface {
@@ -30,5 +31,15 @@ type Builder interface {
 type Client interface {
 	Auth2FA(ctx context.Context, req proton.Auth2FAReq) error
 	AuthDelete(ctx context.Context) error
+	GetUser(ctx context.Context) (proton.User, error)
 	Close()
+
+	GetLabels(ctx context.Context, labelTypes ...proton.LabelType) ([]proton.Label, error)
+	GetAddresses(ctx context.Context) ([]proton.Address, error)
+
+	GetGroupedMessageCount(ctx context.Context) ([]proton.MessageGroupCount, error)
+	GetMessage(ctx context.Context, messageID string) (proton.Message, error)
+	GetMessageMetadataPage(ctx context.Context, page, pageSize int, filter proton.MessageFilter) ([]proton.MessageMetadata, error)
+	GetFullMessage(ctx context.Context, messageID string, scheduler proton.Scheduler, storageProvider proton.AttachmentAllocator) (proton.FullMessage, error)
+	GetAttachmentInto(ctx context.Context, attachmentID string, reader io.ReaderFrom) error
 }

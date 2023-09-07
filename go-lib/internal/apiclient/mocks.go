@@ -6,6 +6,7 @@ package apiclient
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 
 	proton "github.com/ProtonMail/go-proton-api"
@@ -124,4 +125,128 @@ func (m *MockClient) Close() {
 func (mr *MockClientMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockClient)(nil).Close))
+}
+
+// GetAddresses mocks base method.
+func (m *MockClient) GetAddresses(arg0 context.Context) ([]proton.Address, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAddresses", arg0)
+	ret0, _ := ret[0].([]proton.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddresses indicates an expected call of GetAddresses.
+func (mr *MockClientMockRecorder) GetAddresses(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddresses", reflect.TypeOf((*MockClient)(nil).GetAddresses), arg0)
+}
+
+// GetAttachmentInto mocks base method.
+func (m *MockClient) GetAttachmentInto(arg0 context.Context, arg1 string, arg2 io.ReaderFrom) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAttachmentInto", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetAttachmentInto indicates an expected call of GetAttachmentInto.
+func (mr *MockClientMockRecorder) GetAttachmentInto(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAttachmentInto", reflect.TypeOf((*MockClient)(nil).GetAttachmentInto), arg0, arg1, arg2)
+}
+
+// GetFullMessage mocks base method.
+func (m *MockClient) GetFullMessage(arg0 context.Context, arg1 string, arg2 proton.Scheduler, arg3 proton.AttachmentAllocator) (proton.FullMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFullMessage", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(proton.FullMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFullMessage indicates an expected call of GetFullMessage.
+func (mr *MockClientMockRecorder) GetFullMessage(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFullMessage", reflect.TypeOf((*MockClient)(nil).GetFullMessage), arg0, arg1, arg2, arg3)
+}
+
+// GetGroupedMessageCount mocks base method.
+func (m *MockClient) GetGroupedMessageCount(arg0 context.Context) ([]proton.MessageGroupCount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGroupedMessageCount", arg0)
+	ret0, _ := ret[0].([]proton.MessageGroupCount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGroupedMessageCount indicates an expected call of GetGroupedMessageCount.
+func (mr *MockClientMockRecorder) GetGroupedMessageCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupedMessageCount", reflect.TypeOf((*MockClient)(nil).GetGroupedMessageCount), arg0)
+}
+
+// GetLabels mocks base method.
+func (m *MockClient) GetLabels(arg0 context.Context, arg1 ...proton.LabelType) ([]proton.Label, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetLabels", varargs...)
+	ret0, _ := ret[0].([]proton.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLabels indicates an expected call of GetLabels.
+func (mr *MockClientMockRecorder) GetLabels(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabels", reflect.TypeOf((*MockClient)(nil).GetLabels), varargs...)
+}
+
+// GetMessage mocks base method.
+func (m *MockClient) GetMessage(arg0 context.Context, arg1 string) (proton.Message, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMessage", arg0, arg1)
+	ret0, _ := ret[0].(proton.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMessage indicates an expected call of GetMessage.
+func (mr *MockClientMockRecorder) GetMessage(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessage", reflect.TypeOf((*MockClient)(nil).GetMessage), arg0, arg1)
+}
+
+// GetMessageMetadataPage mocks base method.
+func (m *MockClient) GetMessageMetadataPage(arg0 context.Context, arg1, arg2 int, arg3 proton.MessageFilter) ([]proton.MessageMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMessageMetadataPage", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]proton.MessageMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMessageMetadataPage indicates an expected call of GetMessageMetadataPage.
+func (mr *MockClientMockRecorder) GetMessageMetadataPage(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessageMetadataPage", reflect.TypeOf((*MockClient)(nil).GetMessageMetadataPage), arg0, arg1, arg2, arg3)
+}
+
+// GetUser mocks base method.
+func (m *MockClient) GetUser(arg0 context.Context) (proton.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", arg0)
+	ret0, _ := ret[0].(proton.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockClientMockRecorder) GetUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockClient)(nil).GetUser), arg0)
 }

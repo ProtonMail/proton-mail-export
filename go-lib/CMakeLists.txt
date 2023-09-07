@@ -89,8 +89,8 @@ add_custom_target(go-lib-lint
 
 add_custom_target(go-lib-mockgen
     COMMAND mockgen
-        -self_package "github.com/ProtonMail/export-tool/internal"
-        -package internal github.com/ProtonMail/export-tool/internal APIClientBuilder,APIClient > "${CMAKE_BINARY_DIR}/mocks_test.go"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/mocks_test.go" "${CMAKE_CURRENT_SOURCE_DIR}/internal/mocks_test.go"
+        -self_package "github.com/ProtonMail/export-tool/internal/apiclient"
+        -package apiclient github.com/ProtonMail/export-tool/internal/apiclient Builder,Client > "${CMAKE_BINARY_DIR}/mocks_test.go"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/mocks_test.go" "${CMAKE_CURRENT_SOURCE_DIR}/internal/apiclient/mocks.go"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

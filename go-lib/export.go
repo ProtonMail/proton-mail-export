@@ -43,6 +43,8 @@ typedef enum etSessionLoginState {
 import "C"
 import (
 	"context"
+	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/gluon/async"
 	"unsafe"
 
@@ -89,7 +91,7 @@ func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 
 //export etSessionGetLoginState
 func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		*outStatus = mapLoginState(session.LoginState())
 		return nil
 	})
@@ -97,7 +99,7 @@ func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) 
 
 //export etSessionLogin
 func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		if err := session.Login(ctx, C.GoString(email), C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
 		}
@@ -109,14 +111,14 @@ func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, pas
 
 //export etSessionLogout
 func etSessionLogout(ptr *C.etSession) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		return session.Logout(ctx)
 	})
 }
 
 //export etSessionSubmitTOTP
 func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		if err := session.SubmitTOTP(ctx, C.GoString(totp)); err != nil {
 			return err
 		}
@@ -128,7 +130,7 @@ func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessi
 
 //export etSessionSubmitMailboxPassword
 func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		if err := session.SubmitMailboxPassword(C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
 		}
@@ -138,24 +140,24 @@ func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passw
 	})
 }
 
-func mapLoginState(s internal.SessionLoginState) C.etSessionLoginState {
+func mapLoginState(s session.LoginState) C.etSessionLoginState {
 	switch s {
-	case internal.SessionLoginStateLoggedOut:
+	case session.LoginStateLoggedOut:
 		return C.ET_SESSION_LOGIN_STATE_LOGGED_OUT
-	case internal.SessionLoginStateAwaitingTOTP:
+	case session.LoginStateAwaitingTOTP:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_TOTP
-	case internal.SessionLoginStateAwaitingMailboxPassword:
+	case session.LoginStateAwaitingMailboxPassword:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD
-	case internal.SessionLoginStateAwaitingHV:
+	case session.LoginStateAwaitingHV:
 		return C.ET_SESSION_LOGIN_STATE_AWAITING_HV
-	case internal.SessionLoginStateLoggedIn:
+	case session.LoginStateLoggedIn:
 		return C.ET_SESSION_LOGIN_STATE_LOGGED_IN
 	default:
 		return C.ET_SESSION_LOGIN_STATE_LOGGED_OUT
 	}
 }
 
-func withSession(ptr *C.etSession, f func(ctx context.Context, session *internal.Session) error) C.etSessionStatus {
+func withSession(ptr *C.etSession, f func(ctx context.Context, session *session.Session) error) C.etSessionStatus {
 	session, ok := resolveSession(ptr)
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
@@ -171,16 +173,16 @@ func withSession(ptr *C.etSession, f func(ctx context.Context, session *internal
 }
 
 type csession struct {
-	s         *internal.Session
+	s         *session.Session
 	ctx       context.Context
 	ctxCancel func()
 	lastError *C.char
 }
 
 func newCSession(apiURL string) *csession {
-	clientBuilder := internal.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{})
+	clientBuilder := apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{})
 	return &csession{
-		s:         internal.NewSession(context.Background(), clientBuilder),
+		s:         session.NewSession(clientBuilder),
 		lastError: nil,
 	}
 }

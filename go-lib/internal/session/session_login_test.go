@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+package session
 
 import (
 	"context"
 	"testing"
 
+	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -33,8 +34,8 @@ var TestUserPassword = []byte("12345")
 func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
 	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
@@ -47,19 +48,19 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 	require.Equal(t, TestUserPassword, session.mailboxPassword)
 }
 
 func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
 	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
@@ -72,11 +73,11 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	err := session.Login(ctx, TestUserEmail, TestUserPassword)
 	require.ErrorIs(t, err, ErrInvalidLoginState)
@@ -85,8 +86,8 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{
 		PasswordMode: proton.TwoPasswordMode,
 	}
@@ -101,16 +102,16 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateAwaitingMailboxPassword, session.LoginState())
+	require.Equal(t, LoginStateAwaitingMailboxPassword, session.LoginState())
 
 	mailboxPassword := []byte("some password")
 
 	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	require.Equal(t, mailboxPassword, session.mailboxPassword)
 }
@@ -118,8 +119,8 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{
 		TwoFA: proton.TwoFAInfo{
 			Enabled: proton.HasTOTP,
@@ -142,21 +143,21 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateAwaitingTOTP, session.LoginState())
+	require.Equal(t, LoginStateAwaitingTOTP, session.LoginState())
 
 	require.NoError(t, session.SubmitTOTP(ctx, totpCode))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 }
 
 func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{
 		TwoFA: proton.TwoFAInfo{
 			Enabled: proton.HasTOTP,
@@ -180,19 +181,19 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateAwaitingTOTP, session.LoginState())
+	require.Equal(t, LoginStateAwaitingTOTP, session.LoginState())
 
 	require.NoError(t, session.SubmitTOTP(ctx, totpCode))
-	require.Equal(t, SessionLoginStateAwaitingMailboxPassword, session.LoginState())
+	require.Equal(t, LoginStateAwaitingMailboxPassword, session.LoginState())
 
 	mailboxPassword := []byte("some password")
 
 	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	require.Equal(t, mailboxPassword, session.mailboxPassword)
 }
@@ -200,8 +201,8 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 func TestSessionLogin_Logout(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	client := NewMockAPIClient(mockCtrl)
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	client := apiclient.NewMockClient(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
 	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
@@ -214,20 +215,20 @@ func TestSessionLogin_Logout(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
+	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	require.NoError(t, session.Logout(ctx))
-	require.Equal(t, SessionLoginStateLoggedOut, session.LoginState())
+	require.Equal(t, LoginStateLoggedOut, session.LoginState())
 }
 
 func TestSessionLogin_CatchHVError(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
-	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
+	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
 	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
@@ -241,9 +242,9 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(ctx, clientBuilder)
+	session := NewSession(clientBuilder)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
-	require.Equal(t, SessionLoginStateAwaitingHV, session.LoginState())
+	require.Equal(t, LoginStateAwaitingHV, session.LoginState())
 }

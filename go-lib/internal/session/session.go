@@ -15,48 +15,47 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+package session
 
 import (
 	"context"
 	"errors"
+	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
 )
 
-type SessionLoginState int
+type LoginState int
 
 var ErrInvalidLoginState = errors.New("invalid login state")
 
 const (
-	SessionLoginStateLoggedOut SessionLoginState = iota
-	SessionLoginStateAwaitingTOTP
-	SessionLoginStateAwaitingMailboxPassword
-	SessionLoginStateAwaitingHV
-	SessionLoginStateLoggedIn
+	LoginStateLoggedOut LoginState = iota
+	LoginStateAwaitingTOTP
+	LoginStateAwaitingMailboxPassword
+	LoginStateAwaitingHV
+	LoginStateLoggedIn
 )
 
 type Session struct {
-	group           *async.Group
-	clientBuilder   APIClientBuilder
-	client          APIClient
-	loginState      SessionLoginState
+	panicHandler    async.PanicHandler
+	clientBuilder   apiclient.Builder
+	client          apiclient.Client
+	loginState      LoginState
 	passwordMode    proton.PasswordMode
 	mailboxPassword []byte
 }
 
-func NewSession(ctx context.Context, builder APIClientBuilder) *Session {
-	panicHandler := &async.NoopPanicHandler{}
+func NewSession(builder apiclient.Builder) *Session {
 	return &Session{
-		group:         async.NewGroup(ctx, panicHandler),
+		panicHandler:  &async.NoopPanicHandler{},
 		client:        nil,
 		clientBuilder: builder,
 	}
 }
 
 func (s *Session) Close(ctx context.Context) {
-	s.group.CancelAndWait()
 	if s.client != nil {
 		if err := s.Logout(ctx); err != nil {
 			logrus.WithError(err).Error("Failed to logout")
@@ -69,14 +68,14 @@ func (s *Session) Close(ctx context.Context) {
 }
 
 func (s *Session) Login(ctx context.Context, email string, password []byte) error {
-	if s.loginState != SessionLoginStateLoggedOut && s.loginState != SessionLoginStateAwaitingHV {
+	if s.loginState != LoginStateLoggedOut && s.loginState != LoginStateAwaitingHV {
 		return ErrInvalidLoginState
 	}
 
 	client, auth, err := s.clientBuilder.NewClient(ctx, email, password)
 	if err != nil {
-		if isHVRequestedError(err) {
-			s.loginState = SessionLoginStateAwaitingHV
+		if apiclient.IsHVRequestedError(err) {
+			s.loginState = LoginStateAwaitingHV
 			return nil
 		}
 
@@ -88,22 +87,22 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 	s.passwordMode = auth.PasswordMode
 
 	if auth.TwoFA.Enabled&proton.HasTOTP != 0 {
-		s.loginState = SessionLoginStateAwaitingTOTP
+		s.loginState = LoginStateAwaitingTOTP
 		return nil
 	}
 
 	if auth.PasswordMode == proton.TwoPasswordMode {
-		s.loginState = SessionLoginStateAwaitingMailboxPassword
+		s.loginState = LoginStateAwaitingMailboxPassword
 		return nil
 	}
 
-	s.loginState = SessionLoginStateLoggedIn
+	s.loginState = LoginStateLoggedIn
 
 	return nil
 }
 
 func (s *Session) Logout(ctx context.Context) error {
-	if s.loginState == SessionLoginStateLoggedOut {
+	if s.loginState == LoginStateLoggedOut {
 		return ErrInvalidLoginState
 	}
 
@@ -111,14 +110,14 @@ func (s *Session) Logout(ctx context.Context) error {
 		return err
 	}
 
-	s.loginState = SessionLoginStateLoggedOut
+	s.loginState = LoginStateLoggedOut
 	s.setMailboxPassword(nil)
 
 	return nil
 }
 
 func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
-	if s.loginState != SessionLoginStateAwaitingTOTP {
+	if s.loginState != LoginStateAwaitingTOTP {
 		return ErrInvalidLoginState
 	}
 
@@ -127,26 +126,38 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 	}
 
 	if s.passwordMode == proton.TwoPasswordMode {
-		s.loginState = SessionLoginStateAwaitingMailboxPassword
+		s.loginState = LoginStateAwaitingMailboxPassword
 	} else {
-		s.loginState = SessionLoginStateLoggedIn
+		s.loginState = LoginStateLoggedIn
 	}
 
 	return nil
 }
 
 func (s *Session) SubmitMailboxPassword(password []byte) error {
-	if s.loginState != SessionLoginStateAwaitingMailboxPassword {
+	if s.loginState != LoginStateAwaitingMailboxPassword {
 		return ErrInvalidLoginState
 	}
 
 	s.setMailboxPassword(password)
-	s.loginState = SessionLoginStateLoggedIn
+	s.loginState = LoginStateLoggedIn
 	return nil
 }
 
-func (s *Session) LoginState() SessionLoginState {
+func (s *Session) LoginState() LoginState {
 	return s.loginState
+}
+
+func (s *Session) GetClient() apiclient.Client {
+	return s.client
+}
+
+func (s *Session) GetMailboxPassword() []byte {
+	return s.mailboxPassword
+}
+
+func (s *Session) GetPanicHandler() async.PanicHandler {
+	return s.panicHandler
 }
 
 func (s *Session) setMailboxPassword(p []byte) {

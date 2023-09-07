@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+package apiclient
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler) *
 	}
 }
 
-func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte) (APIClient, proton.Auth, error) {
+func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {
 	return p.manager.NewClientWithLogin(ctx, username, password)
 }
 
@@ -48,7 +48,7 @@ func (p *ProtonAPIClientBuilder) Close() {
 	p.manager.Close()
 }
 
-func isHVRequestedError(err error) bool {
+func IsHVRequestedError(err error) bool {
 	if err == nil {
 		return false
 	}

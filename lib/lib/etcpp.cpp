@@ -65,11 +65,11 @@ Session& Session::operator=(Session&& rhs) noexcept {
     return *this;
 }
 
-Session::LoginState Session::login(const char* email, const char* password) {
+Session::LoginState Session::login(const char* email, std::string_view password) {
     LoginState ls = LoginState::LoggedOut;
     wrapCCall([&](etSession* ptr) {
         etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
-        auto status = etSessionLogin(ptr, email, password, &els);
+        auto status = etSessionLogin(ptr, email, password.data(), int(password.length()), &els);
         if (status == ET_SESSION_STATUS_OK) {
             ls = mapLoginState(els);
         }
@@ -93,11 +93,12 @@ Session::LoginState Session::loginTOTP(const char* totp) {
     return ls;
 }
 
-Session::LoginState Session::loginMailboxPassword(const char* password) {
+Session::LoginState Session::loginMailboxPassword(std::string_view password) {
     LoginState ls = LoginState::LoggedOut;
     wrapCCall([&](etSession* ptr) {
         etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
-        auto status = etSessionSubmitTOTP(ptr, password, &els);
+        auto status =
+            etSessionSubmitMailboxPassword(ptr, password.data(), int(password.length()), &els);
         if (status == ET_SESSION_STATUS_OK) {
             ls = mapLoginState(els);
         }

@@ -96,9 +96,9 @@ func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) 
 }
 
 //export etSessionLogin
-func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
+func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
-		if err := session.Login(ctx, C.GoString(email), C.GoString(password)); err != nil {
+		if err := session.Login(ctx, C.GoString(email), C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
 		}
 
@@ -127,9 +127,9 @@ func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessi
 }
 
 //export etSessionSubmitMailboxPassword
-func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
+func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *internal.Session) error {
-		if err := session.SubmitMailboxPassword(C.GoString(password)); err != nil {
+		if err := session.SubmitMailboxPassword(C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
 		}
 

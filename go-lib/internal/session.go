@@ -43,7 +43,7 @@ type Session struct {
 	client          APIClient
 	loginState      SessionLoginState
 	passwordMode    proton.PasswordMode
-	mailboxPassword string
+	mailboxPassword []byte
 }
 
 func NewSession(ctx context.Context, builder APIClientBuilder) *Session {
@@ -65,15 +65,15 @@ func (s *Session) Close(ctx context.Context) {
 		s.client.Close()
 	}
 	s.clientBuilder.Close()
-	s.mailboxPassword = ""
+	s.setMailboxPassword(nil)
 }
 
-func (s *Session) Login(ctx context.Context, email, password string) error {
+func (s *Session) Login(ctx context.Context, email string, password []byte) error {
 	if s.loginState != SessionLoginStateLoggedOut && s.loginState != SessionLoginStateAwaitingHV {
 		return ErrInvalidLoginState
 	}
 
-	client, auth, err := s.clientBuilder.NewClient(ctx, email, []byte(password))
+	client, auth, err := s.clientBuilder.NewClient(ctx, email, password)
 	if err != nil {
 		if isHVRequestedError(err) {
 			s.loginState = SessionLoginStateAwaitingHV
@@ -84,7 +84,7 @@ func (s *Session) Login(ctx context.Context, email, password string) error {
 	}
 
 	s.client = client
-	s.mailboxPassword = password
+	s.setMailboxPassword(password)
 	s.passwordMode = auth.PasswordMode
 
 	if auth.TwoFA.Enabled&proton.HasTOTP != 0 {
@@ -112,6 +112,7 @@ func (s *Session) Logout(ctx context.Context) error {
 	}
 
 	s.loginState = SessionLoginStateLoggedOut
+	s.setMailboxPassword(nil)
 
 	return nil
 }
@@ -134,12 +135,12 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 	return nil
 }
 
-func (s *Session) SubmitMailboxPassword(password string) error {
+func (s *Session) SubmitMailboxPassword(password []byte) error {
 	if s.loginState != SessionLoginStateAwaitingMailboxPassword {
 		return ErrInvalidLoginState
 	}
 
-	s.mailboxPassword = password
+	s.setMailboxPassword(password)
 	s.loginState = SessionLoginStateLoggedIn
 	return nil
 }
@@ -148,6 +149,20 @@ func (s *Session) LoginState() SessionLoginState {
 	return s.loginState
 }
 
+func (s *Session) setMailboxPassword(p []byte) {
+	if s.mailboxPassword != nil {
+		zeroSlice(s.mailboxPassword)
+	}
+
+	s.mailboxPassword = p
+}
+
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
+}
+
+func zeroSlice(s []byte) {
+	for i := 0; i < len(s); i++ {
+		s[i] = 0
+	}
 }

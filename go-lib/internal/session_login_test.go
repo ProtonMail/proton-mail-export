@@ -27,7 +27,8 @@ import (
 )
 
 const TestUserEmail = "foo@bar.com"
-const TestUserPassword = "12345"
+
+var TestUserPassword = []byte("12345")
 
 func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
@@ -36,7 +37,7 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	clientBuilder := NewMockAPIClientBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -106,7 +107,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
 	require.Equal(t, SessionLoginStateAwaitingMailboxPassword, session.LoginState())
 
-	const mailboxPassword = "some password"
+	mailboxPassword := []byte("some password")
 
 	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
 	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())
@@ -188,7 +189,7 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	require.NoError(t, session.SubmitTOTP(ctx, totpCode))
 	require.Equal(t, SessionLoginStateAwaitingMailboxPassword, session.LoginState())
 
-	const mailboxPassword = "some password"
+	mailboxPassword := []byte("some password")
 
 	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
 	require.Equal(t, SessionLoginStateLoggedIn, session.LoginState())

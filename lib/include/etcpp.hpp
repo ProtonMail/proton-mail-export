@@ -52,9 +52,9 @@ class Session final {
     Session& operator=(const Session&) = delete;
     Session& operator=(Session&& rhs) noexcept;
 
-    [[nodiscard]] LoginState login(const char* email, const char* password);
+    [[nodiscard]] LoginState login(const char* email, std::string_view password);
     [[nodiscard]] LoginState loginTOTP(const char* totp);
-    [[nodiscard]] LoginState loginMailboxPassword(const char* password);
+    [[nodiscard]] LoginState loginMailboxPassword(std::string_view password);
 
     [[nodiscard]] LoginState getLoginState() const;
 

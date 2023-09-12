@@ -15,10 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package mail
+package utils
 
-import "github.com/ProtonMail/go-proton-api"
+/*
+#include <stdlib.h>
+typedef const char cchar_t;
+*/
+import "C"
+import "unsafe"
 
-func wantLabel(label proton.Label) bool {
-	return label.Type != proton.LabelTypeSystem
+type CLastError struct {
+	err *C.char
+}
+
+func (c *CLastError) Set(err error) {
+	c.Close()
+	if err != nil {
+		c.err = C.CString(err.Error())
+	}
+}
+
+func (c *CLastError) Close() {
+	if c.err != nil {
+		C.free(unsafe.Pointer(c.err))
+		c.err = nil
+	}
+}
+
+func (c *CLastError) GetErr() *C.cchar_t {
+	return c.err
 }

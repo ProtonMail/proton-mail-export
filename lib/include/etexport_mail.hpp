@@ -17,46 +17,58 @@
 
 #pragma once
 
+#include <exception>
 #include <string>
 
-struct etSession;
+extern "C" {
+struct etExportMail;
+}
 
 namespace etcpp {
-class Exception final : public std::exception {
+
+class Session;
+
+class ExportMailException final : public std::exception {
    private:
     friend class Session;
     std::string mWhat;
 
    public:
-    explicit Exception(std::string_view what);
+    explicit ExportMailException(std::string_view what);
     [[nodiscard]] const char* what() const noexcept;
 };
 
-class Session final {
-   private:
-    etSession* mPtr;
-
+class ExportMailCallback {
    public:
-    enum class LoginState {
-        LoggedOut,
-        AwaitingTOTP,
-        AwaitingHV,
-        AwaitingMailboxPassword,
-        LoggedIn
+    enum class Reply {
+        Continue,
+        Cancel,
     };
 
-    explicit Session(const char* serverURL);
-    ~Session();
-    Session(const Session&) = delete;
-    Session(Session&&) noexcept;
-    Session& operator=(const Session&) = delete;
-    Session& operator=(Session&& rhs) noexcept;
+    ExportMailCallback() = default;
+    virtual ~ExportMailCallback() = default;
 
-    [[nodiscard]] LoginState login(const char* email, std::string_view password);
-    [[nodiscard]] LoginState loginTOTP(const char* totp);
-    [[nodiscard]] LoginState loginMailboxPassword(std::string_view password);
+    virtual Reply onProgress(float progress) = 0;
+};
 
-    [[nodiscard]] LoginState getLoginState() const;
+class ExportMail final {
+    friend class Session;
+
+   private:
+    const Session& mSession;
+    etExportMail* mPtr;
+
+   protected:
+    ExportMail(const Session& session, etExportMail* ptr);
+
+   public:
+    ~ExportMail();
+    ExportMail(const ExportMail&) = delete;
+    ExportMail(ExportMail&&) noexcept = delete;
+    ExportMail& operator=(const ExportMail&) = delete;
+    ExportMail& operator=(ExportMail&& rhs) noexcept = delete;
+
+    void start(ExportMailCallback& cb);
 
    private:
     template <class F>

@@ -17,34 +17,16 @@
 
 package main
 
+// #cgo CFLAGS: -I "cgo_headers" -D "ET_CGO=1"
 /*
-#include <stdint.h>
-#include <stdlib.h>
-
-typedef const char cchar_t;
-
-typedef struct etSession etSession;
-
-typedef enum etSessionStatus {
-	ET_SESSION_STATUS_OK,
-	ET_SESSION_STATUS_ERROR,
-	ET_SESSION_STATUS_INVALID,
-} etSessionStatus;
-
-typedef enum etSessionLoginState {
-	ET_SESSION_LOGIN_STATE_LOGGED_OUT,
-	ET_SESSION_LOGIN_STATE_AWAITING_TOTP,
-	ET_SESSION_LOGIN_STATE_AWAITING_HV,
-	ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD,
-	ET_SESSION_LOGIN_STATE_LOGGED_IN,
-} etSessionLoginState;
-
+#include "etsession.h"
 */
 import "C"
 import (
 	"context"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
+	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
 	"unsafe"
 
@@ -86,7 +68,7 @@ func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 		return nil
 	}
 
-	return s.lastError
+	return (*C.cchar_t)(s.lastError.GetErr())
 }
 
 //export etSessionGetLoginState
@@ -176,32 +158,27 @@ type csession struct {
 	s         *session.Session
 	ctx       context.Context
 	ctxCancel func()
-	lastError *C.char
+	lastError utils.CLastError
 }
 
 func newCSession(apiURL string) *csession {
 	clientBuilder := apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{})
+	ctx, cancel := context.WithCancel(context.Background())
 	return &csession{
 		s:         session.NewSession(clientBuilder),
-		lastError: nil,
+		ctx:       ctx,
+		ctxCancel: cancel,
 	}
 }
 
 func (c *csession) close() {
 	c.s.Close(c.ctx)
 	c.ctxCancel()
-	if c.lastError != nil {
-		C.free(unsafe.Pointer(c.lastError))
-		c.lastError = nil
-	}
+	c.lastError.Close()
 }
 
 func (c *csession) setLastError(err error) {
-	if c.lastError != nil {
-		C.free(unsafe.Pointer(c.lastError))
-	}
-
-	c.lastError = C.CString(err.Error())
+	c.lastError.Set(err)
 }
 
 var sessionAllocator = internal.NewHandleMap[csession](5)

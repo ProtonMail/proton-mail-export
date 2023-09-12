@@ -32,6 +32,7 @@ type Client interface {
 	Auth2FA(ctx context.Context, req proton.Auth2FAReq) error
 	AuthDelete(ctx context.Context) error
 	GetUser(ctx context.Context) (proton.User, error)
+	GetSalts(ctx context.Context) (proton.Salts, error)
 	Close()
 
 	GetLabels(ctx context.Context, labelTypes ...proton.LabelType) ([]proton.Label, error)

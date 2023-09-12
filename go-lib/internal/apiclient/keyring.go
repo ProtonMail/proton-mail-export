@@ -38,7 +38,7 @@ func NewUnlockedKeyRing(user *proton.User, addresses []proton.Address, keyPass [
 
 	keyring := &UnlockedKeyRing{
 		keyRing: userKR,
-		addrMap: nil,
+		addrMap: make(map[string]*crypto.KeyRing),
 		user:    user,
 	}
 

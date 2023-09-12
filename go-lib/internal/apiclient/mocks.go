@@ -236,6 +236,21 @@ func (mr *MockClientMockRecorder) GetMessageMetadataPage(arg0, arg1, arg2, arg3 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessageMetadataPage", reflect.TypeOf((*MockClient)(nil).GetMessageMetadataPage), arg0, arg1, arg2, arg3)
 }
 
+// GetSalts mocks base method.
+func (m *MockClient) GetSalts(arg0 context.Context) (proton.Salts, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSalts", arg0)
+	ret0, _ := ret[0].(proton.Salts)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSalts indicates an expected call of GetSalts.
+func (mr *MockClientMockRecorder) GetSalts(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSalts", reflect.TypeOf((*MockClient)(nil).GetSalts), arg0)
+}
+
 // GetUser mocks base method.
 func (m *MockClient) GetUser(arg0 context.Context) (proton.User, error) {
 	m.ctrl.T.Helper()

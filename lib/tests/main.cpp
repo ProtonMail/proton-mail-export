@@ -1,7 +1,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <etcpp.hpp>
+#include <etsession.hpp>
 #include "gpa_server.hpp"
 
 TEST_CASE("SessionLogin") {

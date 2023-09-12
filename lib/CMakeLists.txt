@@ -1,9 +1,11 @@
 
-add_library(etcpp STATIC include/etcpp.hpp)
+add_library(etcpp STATIC include/etsession.hpp)
 
 target_sources(etcpp PRIVATE
-        include/etcpp.hpp
-        lib/etcpp.cpp
+        include/etsession.hpp
+        include/etexport_mail.hpp
+        lib/etsession.cpp
+        lib/etexport_mail.cpp
 )
 
 

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <etcpp.hpp>
+#include <etsession.hpp>
 
 #include <etcore.h>
 #include <etconfig.hpp>
@@ -27,13 +27,13 @@ Session::LoginState mapLoginState(etSessionLoginState s);
 inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     switch (status) {
         case ET_SESSION_STATUS_INVALID:
-            throw Exception("Invalid instance");
+            throw SessionException("Invalid instance");
         case ET_SESSION_STATUS_ERROR: {
             const char* lastErr = etSessionGetLastError(ptr);
             if (lastErr == nullptr) {
                 lastErr = "unknown";
             }
-            throw Exception(lastErr);
+            throw SessionException(lastErr);
         }
         case ET_SESSION_STATUS_OK:
             break;
@@ -122,11 +122,20 @@ Session::LoginState Session::getLoginState() const {
     return ls;
 }
 
-const char* Exception::what() const noexcept {
+ExportMail Session::newExportMail(const char* exportPath) const {
+    etExportMail* exportPtr = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus {
+        return etSessionNewExportMail(ptr, exportPath, &exportPtr);
+    });
+
+    return ExportMail(*this, exportPtr);
+}
+
+const char* SessionException::what() const noexcept {
     return mWhat.c_str();
 }
 
-Exception::Exception(std::string_view what) : mWhat(what) {}
+SessionException::SessionException(std::string_view what) : mWhat(what) {}
 
 template <class F>
 void Session::wrapCCall(F func) {

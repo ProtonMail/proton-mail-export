@@ -33,7 +33,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler) *
 	return &ProtonAPIClientBuilder{
 		manager: proton.New(
 			proton.WithHostURL(apiURL),
-			proton.WithAppVersion("export"),
+			proton.WithAppVersion("Other"),
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
 		),

@@ -44,6 +44,7 @@ type Session struct {
 	client          apiclient.Client
 	loginState      LoginState
 	passwordMode    proton.PasswordMode
+	email           string
 	mailboxPassword []byte
 }
 
@@ -83,6 +84,7 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 		return err
 	}
 
+	s.email = email
 	s.client = client
 	s.setMailboxPassword(password)
 	s.passwordMode = auth.PasswordMode
@@ -114,6 +116,7 @@ func (s *Session) Logout(ctx context.Context) error {
 
 	s.loginState = LoginStateLoggedOut
 	s.setMailboxPassword(nil)
+	s.email = ""
 
 	return nil
 }
@@ -157,6 +160,10 @@ func (s *Session) GetClient() apiclient.Client {
 
 func (s *Session) GetMailboxPassword() []byte {
 	return s.mailboxPassword
+}
+
+func (s *Session) GetEmail() string {
+	return s.email
 }
 
 func (s *Session) GetPanicHandler() async.PanicHandler {

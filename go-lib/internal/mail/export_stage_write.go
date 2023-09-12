@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
+	"github.com/ProtonMail/gluon/rfc822"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/parallel"
 	"github.com/sirupsen/logrus"
@@ -75,7 +76,7 @@ func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, er
 			}
 
 			filePath := filepath.Join(w.dirPath, input.messages[i].ID)
-			metadataPath := filePath + "metadata.json"
+			metadataPath := filePath + ".metadata.json"
 			filePath += ".eml"
 
 			metadataBytes, err := generateMetadataBytes(&input.messages[i])
@@ -106,7 +107,21 @@ func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, er
 	}
 }
 
+type MessageMetadata struct {
+	proton.MessageMetadata
+	Attachments []proton.Attachment
+	MIMEType    rfc822.MIMEType
+	Headers     string
+}
+
 func generateMetadataBytes(msg *proton.FullMessage) ([]byte, error) {
+	metadata := MessageMetadata{
+		MessageMetadata: msg.MessageMetadata,
+		Headers:         msg.Header,
+		Attachments:     msg.Attachments,
+		MIMEType:        msg.MIMEType,
+	}
+
 	// GODT-2925 version metadata.
-	return json.Marshal(msg.MessageMetadata)
+	return json.MarshalIndent(metadata, "", "  ")
 }

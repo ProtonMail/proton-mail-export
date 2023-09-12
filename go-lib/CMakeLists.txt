@@ -13,7 +13,7 @@ set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
 set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/etcore${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(GO_LIB_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore.lib")
 
-file(GLOB go_files
+file(GLOB_RECURSE go_files
     LIST_DIRECTORIES false
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.go"
@@ -54,7 +54,8 @@ endif()
 
 add_custom_target(go-lib-build
     DEPENDS ${go_files}
-    COMMAND "${go_bin}" build -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"  export.go export_gpa.go
+    COMMAND "${go_bin}" build -a -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"
+        export.go export_gpa.go export_mail.go
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     BYPRODUCTS ${GO_LIB}
 )
@@ -72,7 +73,7 @@ set_target_properties(etcore
     IMPORTED_LOCATION ${GO_LIB}
     IMPORTED_RUNTIME ${GO_LIB}
     IMPORTED_IMPLIB ${GO_LIB_WIN32_IMPL}
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/cgo_headers"
 )
 
 install(IMPORTED_RUNTIME_ARTIFACTS etcore DESTINATION bin)

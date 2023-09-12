@@ -20,6 +20,7 @@ package mail
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
@@ -55,9 +56,14 @@ type ExportTask struct {
 
 func NewExportTask(
 	ctx context.Context,
-	tmpDir, exportPath string,
+	exportPath string,
 	session *session.Session,
 ) *ExportTask {
+	exportPath = filepath.Join(exportPath, "mail")
+
+	// Tmp dir needs to be next to export path to as os.rename doesn't work if export path is on a different volume.
+	tmpDir := filepath.Join(exportPath, "temp")
+
 	return &ExportTask{
 		group:     async.NewGroup(ctx, session.GetPanicHandler()),
 		tmpDir:    tmpDir,
@@ -69,10 +75,37 @@ func NewExportTask(
 
 type Reporter interface {
 	StageProgressReporter
-	StageErrorReporter
+}
+
+func (e *ExportTask) Close() {
+	e.group.CancelAndWait()
+
+	if err := os.RemoveAll(e.tmpDir); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			e.log.WithError(err).Error("Failed to remove temp directory")
+		}
+	}
+}
+
+func (e *ExportTask) Cancel() {
+	e.group.Cancel()
 }
 
 func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
+	defer e.log.Info("Finished")
+	e.log.WithFields(logrus.Fields{"tmp-dir": e.tmpDir, "export-dir": e.exportDir}).Info("Starting")
+
+	e.log.Debug("Preparing export dir")
+
+	if err := os.MkdirAll(e.exportDir, 0o700); err != nil {
+		return fmt.Errorf("failed to create export directory: %w", err)
+	}
+
+	if err := os.MkdirAll(e.tmpDir, 0o700); err != nil {
+		return fmt.Errorf("failed to create export tmp directory: %w", err)
+	}
+
+	e.log.Debug("Getting user info")
 	// GODT-2900: Handle network errors/loss.
 	client := e.session.GetClient()
 	// Get user info
@@ -81,26 +114,39 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		return fmt.Errorf("failed to load user info: %w", err)
 	}
 
+	salts, err := client.GetSalts(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get key salts: %w", err)
+	}
+
+	saltedKeyPass, err := salts.SaltForKey(e.session.GetMailboxPassword(), user.Keys.Primary().ID)
+	if err != nil {
+		return fmt.Errorf("failed to salt key password: %w", err)
+	}
+
+	e.log.Debug("Unlocking decryption key")
+	if userKR, err := user.Keys.Unlock(saltedKeyPass, nil); err != nil {
+		return fmt.Errorf("failed to unlock user keys: %w", err)
+	} else if userKR.CountDecryptionEntities() == 0 {
+		return fmt.Errorf("failed to unlock user keys")
+	}
+
+	e.log.Debug("Getting addresses")
 	// Get User addresses
 	addresses, err := client.GetAddresses(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get user addresses: %w", err)
 	}
 
-	keyRing, err := apiclient.NewUnlockedKeyRing(&user, addresses, e.session.GetMailboxPassword())
+	e.log.Debug("Unlocking address keys")
+	keyRing, err := apiclient.NewUnlockedKeyRing(&user, addresses, saltedKeyPass)
 	if err != nil {
 		return fmt.Errorf("failed to unlock user keyring:%w", err)
 	}
 	defer keyRing.Close()
 
-	exportDir := filepath.Join(e.exportDir, user.Email, "mail")
-
-	if err := os.MkdirAll(exportDir, 0o700); err != nil {
-		return fmt.Errorf("failed to create export directory: %w", err)
-	}
-
 	// Create required folders
-	if err := e.WriteLabelMetadata(ctx, e.tmpDir, exportDir); err != nil {
+	if err := e.WriteLabelMetadata(ctx, e.tmpDir, e.exportDir); err != nil {
 		return err
 	}
 
@@ -135,10 +181,11 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	buildStage := NewBuildStage(NumParallelBuilders, e.log, e.session.GetPanicHandler())
 	writeStage := NewWriteStage(e.tmpDir, e.exportDir, NumParallelWriters, e.log, reporter, e.session.GetPanicHandler())
 
+	e.log.Debug("Starting message download")
 	// GODT-2900: Handle network errors/loss.
 	errReporter := &NullErrorReporter{}
 
-	// Start pipeline.
+	// start pipeline.
 	e.group.Once(func(ctx context.Context) {
 		metaStage.Run(ctx, errReporter)
 	})
@@ -156,10 +203,12 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	e.group.WaitToFinish()
 	// collect errors.
 
+	e.log.Debug("Message download finished")
 	return nil
 }
 
 func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath string) error {
+	e.log.Debug("Writing root label metadata")
 	// GODT-2925 version metadata.
 	apiLabels, err := e.session.GetClient().GetLabels(ctx, proton.LabelTypeSystem, proton.LabelTypeFolder, proton.LabelTypeLabel)
 	if err != nil {
@@ -170,7 +219,7 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 		return wantLabel(t)
 	})
 
-	labelData, err := json.Marshal(apiLabels)
+	labelData, err := json.MarshalIndent(apiLabels, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to json encode labels: %w", err)
 	}

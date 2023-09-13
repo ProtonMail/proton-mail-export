@@ -69,7 +69,7 @@ func NewExportTask(
 		tmpDir:    tmpDir,
 		exportDir: exportPath,
 		session:   session,
-		log:       logrus.WithField("export", "mail"),
+		log:       logrus.WithField("export", "mail").WithField("email", session.GetEmail()),
 	}
 }
 

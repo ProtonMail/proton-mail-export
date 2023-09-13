@@ -73,6 +73,8 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 		return ErrInvalidLoginState
 	}
 
+	logrus.Debugf("Performing login for user %v", email)
+
 	// GODT-2900: Handle network errors/loss.
 	client, auth, err := s.clientBuilder.NewClient(ctx, email, password)
 	if err != nil {
@@ -109,6 +111,8 @@ func (s *Session) Logout(ctx context.Context) error {
 		return ErrInvalidLoginState
 	}
 
+	logrus.WithField("email", s.email).Debugf("Logging out")
+
 	// GODT-2900: Handle network errors/loss.
 	if err := s.client.AuthDelete(ctx); err != nil {
 		return err
@@ -125,6 +129,8 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 	if s.loginState != LoginStateAwaitingTOTP {
 		return ErrInvalidLoginState
 	}
+
+	logrus.WithField("email", s.email).Debugf("Submitting TOTP code")
 
 	// GODT-2900: Handle network errors/loss.
 	if err := s.client.Auth2FA(ctx, proton.Auth2FAReq{TwoFactorCode: totp}); err != nil {
@@ -144,6 +150,8 @@ func (s *Session) SubmitMailboxPassword(password []byte) error {
 	if s.loginState != LoginStateAwaitingMailboxPassword {
 		return ErrInvalidLoginState
 	}
+
+	logrus.WithField("email", s.email).Debugf("Submitting Mailbox Password")
 
 	s.setMailboxPassword(password)
 	s.loginState = LoginStateLoggedIn

@@ -4,7 +4,10 @@
 
 add_executable(cli)
 
-target_link_libraries(cli PRIVATE etcpp)
+find_package(cxxopts CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+
+target_link_libraries(cli PRIVATE etcpp cxxopts::cxxopts fmt::fmt)
 
 target_sources(cli PRIVATE
         bin/main.cpp

@@ -50,14 +50,14 @@ inline void mapETExportMailStatusToException(etExportMail* ptr, etExportMailStat
 }
 
 etExportMailCallbacks makeETCallback(ExportMailCallback& cb) {
-    return etExportMailCallbacks{
-        .ptr = &cb,
-        .onProgress =
-            [](void* p, float progress) {
-                return mapToETExportMailCallbackReply(
-                    reinterpret_cast<ExportMailCallback*>(p)->onProgress(progress));
-            },
+    auto r = etExportMailCallbacks{};
+    r.ptr = &cb;
+    r.onProgress = [](void* p, float progress) {
+        return mapToETExportMailCallbackReply(
+            reinterpret_cast<ExportMailCallback*>(p)->onProgress(progress));
     };
+
+    return r;
 }
 
 ExportMail::ExportMail(const etcpp::Session& session, etExportMail* ptr)

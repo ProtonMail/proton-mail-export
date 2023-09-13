@@ -1,6 +1,5 @@
 {
     "dependencies": [
-        "catch2",
-        "ftxui"
+        "catch2"
     ]
 }

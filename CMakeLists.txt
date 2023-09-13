@@ -12,7 +12,7 @@ include(compile_options)
 include(clang_tidy)
 include(clang_format)
 include(shared_lib_copy)
-
+include(mingw)
 
 add_subdirectory(go-lib)
 add_subdirectory(lib)

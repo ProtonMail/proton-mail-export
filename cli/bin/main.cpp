@@ -95,17 +95,20 @@ int main() {
 #if !defined(_WIN32)
     signal(SIGINT, [](int) { onSignalCancel(); });
 #else
-    SetConsoleCtrlHandler(
-        [](DWORD ctrlType) {
-            switch (ctrlType) {
-                case CTRL_C_EVENT:
-                    onSignalCancel();
-                    break;
-                default:
-                    break;
-            }
-        },
-        1);
+    if (SetConsoleCtrlHandler(
+            [](DWORD ctrlType) -> BOOL {
+                switch (ctrlType) {
+                    case CTRL_C_EVENT:
+                        onSignalCancel();
+                        return TRUE;
+                    default:
+                        return FALSE;
+                }
+            },
+            TRUE) == FALSE) {
+        std::cerr << "Failed to instal console control hanlder" << std::endl;
+        return EXIT_FAILURE;
+    }
 #endif
     auto session = etcpp::Session(et::DEFAULT_API_URL);
 

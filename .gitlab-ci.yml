@@ -3,7 +3,8 @@ image: gitlab.protontech.ch:4567/go/bridge-internal:test-go1.21
 variables:
   GOPRIVATE: gitlab.protontech.ch
   GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
-  CMAKE_BUILD_DIR: "/tmp/build"
+  CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release
+  CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
   CMAKE_BUILD_CONFIG: "Release"
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -13,19 +14,8 @@ variables:
   variables:
     VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
   before_script:
-    - export GOROOT=/c/Go1.20/
-    - export PATH=$GOROOT/bin:$PATH
-    - export GOARCH=amd64
-    - export GOPATH=~/go1.20
-    - export GO111MODULE=on
-    - export PATH="${GOPATH}/bin:${PATH}"
-    - export QT6DIR=/c/grrrQt/6.3.2/msvc2019_64
-    - export PATH=$PATH:${QT6DIR}/bin
-    - export PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin:$PATH"
-    - $(git config --global -l | grep -o 'url.*gitlab.protontech.ch.*insteadof' | xargs -L 1 git config --global --unset &> /dev/null) || echo "nothing to remove"
-    - git config --global url.https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}.insteadOf https://${CI_SERVER_HOST}
-    - git config --global safe.directory '*'
-    - git status --porcelain
+    - New-Item -ItemType Directory -Path ${VCPKG_DEFAULT_BINARY_CACHE} -Force
+    - $env:Path = "C:\\\\CMake\\bin;" + $env:Path
   cache:
     key: win-vcpkg
     paths:
@@ -83,11 +73,25 @@ stages:
 
 .script-config-cmake-win:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Visual Studio 17 2022" -A x64 -DMINGW_CACHE_PATH=.cache -DVCPKG_TARGET_TRIPLET=x64-windows-static
+    - $(Get-Command cmake).Source
+    - cmake
+       -S . -B "$CMAKE_BUILD_DIR"
+       -G "Visual Studio 17 2022"
+       -DCMAKE_GENERATOR_PLATFORM=x64
+       -DCMAKE_CL_64=1
+       -A "x64"
+       -DMINGW_CACHE_PATH="$pwd\.cache"
+       -DVCPKG_HOST_TRIPLET=x64-windows-static
+       -DVCPKG_TARGET_TRIPLET=x64-windows-static
+       -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
 
 .script-config-cmake-unix:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+
+.script-install:
+  script:
+     - cmake --install $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
 
 .script-build:
   script:
@@ -117,6 +121,11 @@ build-linux:
   script:
     - !reference [.script-config-cmake-unix, script]
     - !reference [.script-test, script]
+    - !reference [.script-install, script]
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR/bin
+    when: always
 
 #build-darwin:
 #  stage: build
@@ -125,11 +134,21 @@ build-linux:
 #  script:
 #    - !reference [.script-config-cmake-unix, script]
 #    - !reference [.script-test, script]
+#    - !reference [.script-install, script]
+#  artifacts:
+#    paths:
+#      - $CMAKE_INSTALL_DIR/bin
+#    when: always
 
-#build-windows:
-#  stage: build
-#  extends:
-#    - .env-windows
-#  script:
-#    - !reference [.script-config-cmake-win, script]
-#    - !reference [.script-test, script]
+build-windows:
+  stage: build
+  extends:
+    - .env-windows
+  script:
+    - !reference [.script-config-cmake-win, script]
+    - !reference [.script-test, script]
+    - !reference [.script-install, script]
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR/bin
+    when: always

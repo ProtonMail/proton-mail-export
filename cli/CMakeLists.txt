@@ -11,6 +11,8 @@ target_link_libraries(cli PRIVATE etcpp cxxopts::cxxopts)
 
 target_sources(cli PRIVATE
         bin/main.cpp
+        bin/tui_util.cpp
+        bin/tui_util.hpp
 )
 
 apply_cpp_flags(cli)

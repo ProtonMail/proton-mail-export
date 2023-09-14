@@ -15,16 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+#pragma once
 
-// NOTE: This file is auto generated do not touch!
+#include <functional>
+#include <string>
 
-const (
-    ETVersionMajor = 0
-    ETVersionMinor = 1
-    ETVersionPatch = 0
-    ETVersionString = "0.1.0"
-    ETDefaultAPIURL = "https://mail-api.proton.me"
-    ETBuildTime = "2023-09-15T08:22:54Z"
-    ETRevision = "46f153681d"
-)
+void setStdinEcho(bool enable = true);
+
+bool isStdoutTerminal();
+
+bool isStdInTerminal();
+
+/// Install a signal handler.
+/// ThreadSafety: This may get called from any thread at any time.
+bool registerCtrlCSignalHandler(std::function<void()>&& handler);
+
+class CliSpinner {
+   private:
+    int mState = 0;
+
+   public:
+    CliSpinner() = default;
+    char next();
+};
+
+class CLIProgressBar {
+   private:
+    int mActiveBars = -1;
+    std::string mValue;
+
+   public:
+    CLIProgressBar();
+    void update(float progress);
+
+    inline std::string_view value() const { return mValue; }
+};

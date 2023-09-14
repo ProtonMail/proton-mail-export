@@ -95,6 +95,8 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	defer e.log.Info("Finished")
 	e.log.WithFields(logrus.Fields{"tmp-dir": e.tmpDir, "export-dir": e.exportDir}).Info("Starting")
 
+	reporter.OnProgress(0)
+
 	e.log.Debug("Preparing export dir")
 
 	if err := os.MkdirAll(e.exportDir, 0o700); err != nil {

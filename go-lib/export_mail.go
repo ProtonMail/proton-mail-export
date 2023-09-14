@@ -143,7 +143,12 @@ func (m *mailExportReporter) SetMessageTotal(total uint64) {
 func (m *mailExportReporter) OnProgress(delta int) {
 	m.currentMessageCount += uint64(delta)
 
-	progress := float32(float64(m.currentMessageCount) / float64(m.totalMessageCount) * 100.0)
+	var progress float32
+	if m.totalMessageCount != 0 {
+		progress = float32(float64(m.currentMessageCount) / float64(m.totalMessageCount) * 100.0)
+	} else {
+		progress = float32(0.0)
+	}
 
 	if C.etExportMailCallbackOnProgress(m.callbacks, C.float(progress)) == C.ET_EXPORT_MAIL_CALLBACK_REPLY_CANCEL {
 		m.exporter.Cancel()

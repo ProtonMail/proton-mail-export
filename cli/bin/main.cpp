@@ -17,50 +17,20 @@
 
 #include <atomic>
 #include <filesystem>
+#include <future>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <thread>
 
 #include <fmt/format.h>
 #include <cxxopts.hpp>
-
-#if !defined(_WIN32)
-#include <termios.h>
-#include <unistd.h>
-#include <csignal>
-#else
-#include <windows.h>
-#endif
-
 #include <etconfig.hpp>
 #include <etlog.hpp>
 #include <etsession.hpp>
 #include <etutil.hpp>
 
-void setStdinEcho(bool enable = true) {
-#ifdef WIN32
-    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    DWORD mode;
-    GetConsoleMode(hStdin, &mode);
-
-    if (!enable) {
-        mode &= ~ENABLE_ECHO_INPUT;
-    } else {
-        mode |= ENABLE_ECHO_INPUT;
-    }
-
-    SetConsoleMode(hStdin, mode);
-#else
-    struct termios tty;
-    tcgetattr(STDIN_FILENO, &tty);
-    if (!enable)
-        tty.c_lflag &= ~ECHO;
-    else
-        tty.c_lflag |= ECHO;
-
-    (void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
-#endif
-}
+#include "tui_util.hpp"
 
 constexpr int kNumInputRetries = 3;
 
@@ -116,7 +86,10 @@ std::filesystem::path readPath(std::string_view label) {
 std::string readSecret(std::string_view label) {
     struct PasswordScope {
         PasswordScope() { setStdinEcho(false); }
-        ~PasswordScope() { setStdinEcho(true); }
+        ~PasswordScope() {
+            setStdinEcho(true);
+            std::cout << std::endl;
+        }
     };
 
     PasswordScope pscope;
@@ -165,10 +138,13 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
 static std::atomic_bool gShouldQuit = std::atomic_bool(false);
 
 class StdOutExportMailCallback final : public etcpp::ExportMailCallback {
+   private:
+    CLIProgressBar mProgressBar;
+
    public:
     etcpp::ExportMailCallback::Reply onProgress(float progress) override {
-        printf("Export Mail Progress: %.02f", double(progress));
-        std::cout << std::endl;
+        mProgressBar.update(progress);
+        std::cout << "\r" << mProgressBar.value() << std::flush;
 
         if (gShouldQuit) {
             return etcpp::ExportMailCallback::Reply::Cancel;
@@ -178,18 +154,38 @@ class StdOutExportMailCallback final : public etcpp::ExportMailCallback {
     }
 };
 
-void onSignalCancel() {
-    std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
-    gShouldQuit.store(true);
+template <class R, class F>
+R asyncFeedbackTask(std::string_view label, F f) {
+    static_assert(std::is_invocable_r_v<R, F>);
+    auto future = std::async(std::launch::async, f);
+    auto spinner = CliSpinner();
+    do {
+        std::cout << fmt::format("\r{} {}", spinner.next(), label) << std::flush;
+    } while (future.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready);
+    std::cout << "\r\n";
+
+    return future.get();
 }
 
 int main(int argc, const char** argv) {
+    std::cout << "Proton Export (" << et::VERSION_STR << ")\n" << std::endl;
     std::filesystem::path execPath;
     try {
         execPath = etcpp::getExecutableDir();
     } catch (const std::exception& e) {
         std::cerr << "Failed to get executable directory: " << e.what() << std::endl;
         std::cerr << "Will user working directory instead" << std::endl;
+    }
+
+    if (!registerCtrlCSignalHandler([]() {
+            if (!gShouldQuit) {
+                std::cout << std::endl
+                          << "Received Ctrl+C, exiting as soon as possible" << std::endl;
+                gShouldQuit.store(true);
+            }
+        })) {
+        std::cerr << "Failed to register signal handler";
+        return EXIT_FAILURE;
     }
 
     try {
@@ -219,24 +215,6 @@ int main(int argc, const char** argv) {
             return EXIT_SUCCESS;
         }
 
-#if !defined(_WIN32)
-        signal(SIGINT, [](int) { onSignalCancel(); });
-#else
-        if (SetConsoleCtrlHandler(
-                [](DWORD ctrlType) -> BOOL {
-                    switch (ctrlType) {
-                        case CTRL_C_EVENT:
-                            onSignalCancel();
-                            return TRUE;
-                        default:
-                            return FALSE;
-                    }
-                },
-                TRUE) == FALSE) {
-            std::cerr << "Failed to instal console control hanlder" << std::endl;
-            return EXIT_FAILURE;
-        }
-#endif
         auto session = etcpp::Session(et::DEFAULT_API_URL);
 
         etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;
@@ -259,9 +237,12 @@ int main(int argc, const char** argv) {
                                     []() { return readSecret("Password"); });
 
                     try {
-                        loginState = session.login(username.c_str(), password);
+                        loginState = asyncFeedbackTask<etcpp::Session::LoginState>(
+                            "Performing Login", [&]() -> etcpp::Session::LoginState {
+                                return session.login(username.c_str(), password);
+                            });
                     } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to login" << e.what() << std::endl;
+                        std::cerr << "Failed to login: " << e.what() << std::endl;
                         return EXIT_FAILURE;
                     }
                     break;
@@ -273,9 +254,12 @@ int main(int argc, const char** argv) {
                         return EXIT_SUCCESS;
                     }
                     try {
-                        loginState = session.loginTOTP(totp.c_str());
+                        loginState = asyncFeedbackTask<etcpp::Session::LoginState>(
+                            "Submitting TOTP", [&]() -> etcpp::Session::LoginState {
+                                return session.loginTOTP(totp.c_str());
+                            });
                     } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to submit totp code:" << e.what() << std::endl;
+                        std::cerr << "Failed to submit totp code: " << e.what() << std::endl;
                         return EXIT_FAILURE;
                     }
                     break;
@@ -295,7 +279,7 @@ int main(int argc, const char** argv) {
                     try {
                         loginState = session.loginMailboxPassword(mboxPassword);
                     } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to set mailbox password" << e.what() << std::endl;
+                        std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
                         return EXIT_FAILURE;
                     }
                     break;
@@ -304,26 +288,28 @@ int main(int argc, const char** argv) {
                     std::cerr << "Unknown login state" << std::endl;
                     return EXIT_FAILURE;
             }
-
-            std::filesystem::path exportPath;
-            if (argParseResult.count("export-dir")) {
-                exportPath =
-                    std::filesystem::u8path(argParseResult["export-dir"].as<std::string>());
-            }
-            if (exportPath.empty()) {
-                exportPath = readPath("Export Path");
-            }
-
-            auto exportMail = session.newExportMail(exportPath.u8string().c_str());
-            auto cb = StdOutExportMailCallback{};
-
-            try {
-                exportMail.start(cb);
-            } catch (const etcpp::ExportMailException& e) {
-                std::cerr << "Failed to export: " << e.what() << std::endl;
-                return EXIT_FAILURE;
-            }
         }
+
+        std::filesystem::path exportPath;
+        if (argParseResult.count("export-dir")) {
+            exportPath = std::filesystem::u8path(argParseResult["export-dir"].as<std::string>());
+        }
+        if (exportPath.empty()) {
+            exportPath = readPath("Export Path");
+        }
+
+        auto exportMail = session.newExportMail(exportPath.u8string().c_str());
+        auto cb = StdOutExportMailCallback{};
+
+        std::cout << "Starting Export" << std::endl;
+        try {
+            exportMail.start(cb);
+        } catch (const etcpp::ExportMailException& e) {
+            std::cerr << "Failed to export: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+        std::cout << "Export Finished" << std::endl;
+        std::cout << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << "Encountered unexpected error: " << e.what() << std::endl;

@@ -66,13 +66,16 @@ if (WIN32)
 	set(GO_LIB_BUILD_EXTRA COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_etcore.cmake" "${CMAKE_CURRENT_BINARY_DIR}/etcore.h")
 endif()
 
-add_custom_target(go-lib-build
-    DEPENDS ${go_files}
-    COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"
+add_custom_command (OUTPUT ${GO_LIB}
+        DEPENDS ${go_files}
+        COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"
         export.go export_gpa.go export_mail.go
-    ${GO_LIB_BUILD_EXTRA}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    BYPRODUCTS ${GO_LIB}
+        ${GO_LIB_BUILD_EXTRA}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_target(go-lib-build
+    DEPENDS ${GO_LIB}
 )
 
 add_library(etcore SHARED IMPORTED GLOBAL)

@@ -17,24 +17,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <etsession.hpp>
-#include "gpa_server.hpp"
+#include <etutil.hpp>
 
-TEST_CASE("SessionLogin") {
-    GPAServer server;
+TEST_CASE("getExecutablePath") {
+    REQUIRE_NOTHROW(etcpp::getExecutablePath());
+}
 
-    const char* userEmail = "hello@bar.com";
-    const char* userPassword = "12345";
-
-    const auto userID = server.createUser(userEmail, userPassword);
-    const auto url = server.url();
-
-    auto session = etcpp::Session(url.c_str());
-    {
-        auto loginState = session.getLoginState();
-        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
-    }
-
-    auto loginState = session.login(userEmail, userPassword);
-    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+TEST_CASE("getExecutableDir") {
+    REQUIRE_NOTHROW(etcpp::getExecutableDir());
 }

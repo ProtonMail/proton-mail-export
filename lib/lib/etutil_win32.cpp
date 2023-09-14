@@ -15,26 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#include "etutil.hpp"
 
-#include <etsession.hpp>
-#include "gpa_server.hpp"
+#include <fmt/format.h>
+#include <windows.h>
 
-TEST_CASE("SessionLogin") {
-    GPAServer server;
-
-    const char* userEmail = "hello@bar.com";
-    const char* userPassword = "12345";
-
-    const auto userID = server.createUser(userEmail, userPassword);
-    const auto url = server.url();
-
-    auto session = etcpp::Session(url.c_str());
-    {
-        auto loginState = session.getLoginState();
-        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+namespace etcpp {
+std::filesystem::path getExecutablePath() {
+    constexpr int WIN32_MAX_PATH = 4096;
+    wchar_t rawPathName[WIN32_MAX_PATH];
+    if (GetModuleFileNameW(NULL, rawPathName, WIN32_MAX_PATH) == 0) {
+        throw std::runtime_error(fmt::format("failed to get executable path {:x}", GetLastError()));
     }
-
-    auto loginState = session.login(userEmail, userPassword);
-    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+    return std::filesystem::path(rawPathName);
 }
+}    // namespace etcpp

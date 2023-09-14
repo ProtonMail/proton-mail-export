@@ -131,12 +131,6 @@ ExportMail Session::newExportMail(const char* exportPath) const {
     return ExportMail(*this, exportPtr);
 }
 
-const char* SessionException::what() const noexcept {
-    return mWhat.c_str();
-}
-
-SessionException::SessionException(std::string_view what) : mWhat(what) {}
-
 template <class F>
 void Session::wrapCCall(F func) {
     static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,

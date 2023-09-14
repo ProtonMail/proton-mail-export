@@ -69,7 +69,7 @@ endif()
 add_custom_command (OUTPUT ${GO_LIB}
         DEPENDS ${go_files}
         COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"
-        export.go export_gpa.go export_mail.go
+        export.go export_gpa.go export_mail.go export_log.go
         ${GO_LIB_BUILD_EXTRA}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

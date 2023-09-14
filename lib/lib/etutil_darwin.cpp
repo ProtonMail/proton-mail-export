@@ -15,26 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#include "etutil.hpp"
 
-#include <etsession.hpp>
-#include "gpa_server.hpp"
+#include <mach-o/dyld.h>
+#include <climits>
 
-TEST_CASE("SessionLogin") {
-    GPAServer server;
+namespace etcpp {
+std::filesystem::path getExecutablePath() {
+    char rawPathName[PATH_MAX];
+    char realPathName[PATH_MAX];
+    auto rawPathSize = (uint32_t)sizeof(rawPathName);
 
-    const char* userEmail = "hello@bar.com";
-    const char* userPassword = "12345";
-
-    const auto userID = server.createUser(userEmail, userPassword);
-    const auto url = server.url();
-
-    auto session = etcpp::Session(url.c_str());
-    {
-        auto loginState = session.getLoginState();
-        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+    if (_NSGetExecutablePath(rawPathName, &rawPathSize) != 0) {
+        throw std::runtime_error("failed to extract nsexecutable path");
+    }
+    if (realpath(rawPathName, realPathName) == nullptr) {
+        throw std::runtime_error(strerror(errno));
     }
 
-    auto loginState = session.login(userEmail, userPassword);
-    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+    return std::filesystem::u8path(realPathName);
 }
+}    // namespace etcpp

@@ -18,6 +18,8 @@
 #pragma once
 
 #include <string>
+
+#include "etexception.hpp"
 #include "etexport_mail.hpp"
 
 extern "C" {
@@ -26,14 +28,9 @@ struct etSession;
 
 namespace etcpp {
 
-class SessionException final : public std::exception {
-   private:
-    friend class Session;
-    std::string mWhat;
-
+class SessionException final : public Exception {
    public:
-    explicit SessionException(std::string_view what);
-    [[nodiscard]] const char* what() const noexcept;
+    explicit SessionException(std::string_view what) : Exception(what) {}
 };
 
 class Session final {

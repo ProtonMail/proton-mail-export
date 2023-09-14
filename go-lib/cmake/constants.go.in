@@ -25,4 +25,6 @@ const (
     ETVersionPatch = @ET_VERSION_PATCH@
     ETVersionString = "@ET_VERSION_STR@"
     ETDefaultAPIURL = "@ET_DEFAULT_API_URL@"
+    ETBuildTime = "@ET_BUILD_TIME@"
+    ETRevision = "@ET_REVISION@"
 )

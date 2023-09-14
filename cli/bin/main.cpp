@@ -33,7 +33,9 @@
 #endif
 
 #include <etconfig.hpp>
+#include <etlog.hpp>
 #include <etsession.hpp>
+#include <etutil.hpp>
 
 void setStdinEcho(bool enable = true) {
 #ifdef WIN32
@@ -182,7 +184,18 @@ void onSignalCancel() {
 }
 
 int main(int argc, const char** argv) {
+    std::filesystem::path execPath;
     try {
+        execPath = etcpp::getExecutableDir();
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to get executable directory: " << e.what() << std::endl;
+        std::cerr << "Will user working directory instead" << std::endl;
+    }
+
+    try {
+        execPath.append("logs");
+        auto logScope = etcpp::LogScope(execPath);
+
         const char* helpText = "Proton Data Exporter v{}";
 
         cxxopts::Options options("proton-export", fmt::format(helpText, et::VERSION_STR));

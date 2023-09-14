@@ -90,9 +90,4 @@ void ExportMail::wrapCCall(F func) const {
     mapETExportMailStatusToException(mPtr, func(mPtr));
 }
 
-ExportMailException::ExportMailException(std::string_view what) : mWhat(what) {}
-
-const char* ExportMailException::what() const noexcept {
-    return mWhat.c_str();
-}
 }    // namespace etcpp

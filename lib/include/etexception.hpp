@@ -15,26 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#pragma once
 
-#include <etsession.hpp>
-#include "gpa_server.hpp"
+#include <exception>
+#include <string>
+#include <string_view>
 
-TEST_CASE("SessionLogin") {
-    GPAServer server;
+namespace etcpp {
 
-    const char* userEmail = "hello@bar.com";
-    const char* userPassword = "12345";
+class Exception : public std::exception {
+   protected:
+    std::string mWhat;
 
-    const auto userID = server.createUser(userEmail, userPassword);
-    const auto url = server.url();
+   public:
+    inline Exception(std::string_view what) : mWhat(what) {}
+    virtual ~Exception() = default;
 
-    auto session = etcpp::Session(url.c_str());
-    {
-        auto loginState = session.getLoginState();
-        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
-    }
+    Exception(const Exception&) = delete;
+    Exception(Exception&&) = default;
+    Exception& operator=(const Exception&) = delete;
+    Exception& operator=(Exception&&) = default;
 
-    auto loginState = session.login(userEmail, userPassword);
-    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
-}
+    [[nodiscard]] const char* what() const noexcept override { return mWhat.c_str(); }
+};
+}    // namespace etcpp

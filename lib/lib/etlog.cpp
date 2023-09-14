@@ -15,26 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#include "etlog.hpp"
+#include <etcore.h>
 
-#include <etsession.hpp>
-#include "gpa_server.hpp"
+namespace etcpp {
 
-TEST_CASE("SessionLogin") {
-    GPAServer server;
+LogScope::LogScope(const std::filesystem::path& path) {
+    auto cpath = path.u8string();
+    if (etLogInit(cpath.c_str()) != 0) {
+        const char* lastErr = etLogGetLastError();
+        if (lastErr == nullptr) {
+            lastErr = "unknown error";
+        }
 
-    const char* userEmail = "hello@bar.com";
-    const char* userPassword = "12345";
-
-    const auto userID = server.createUser(userEmail, userPassword);
-    const auto url = server.url();
-
-    auto session = etcpp::Session(url.c_str());
-    {
-        auto loginState = session.getLoginState();
-        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+        throw LogException(lastErr);
     }
-
-    auto loginState = session.login(userEmail, userPassword);
-    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
 }
+
+LogScope::~LogScope() {
+    etLogClose();
+}
+
+static thread_local std::string tlBuffer;
+std::string& getThreadLocalLogBuffer() {
+    tlBuffer.clear();
+    return tlBuffer;
+}
+}    // namespace etcpp

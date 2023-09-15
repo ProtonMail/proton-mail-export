@@ -25,6 +25,6 @@ const (
     ETVersionPatch = 0
     ETVersionString = "0.1.0"
     ETDefaultAPIURL = "https://mail-api.proton.me"
-    ETBuildTime = "2023-09-13T10:24:32Z"
-    ETRevision = "e3df5f4ff6"
+    ETBuildTime = "2023-09-15T08:04:18Z"
+    ETRevision = "8bf1698e5a"
 )

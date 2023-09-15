@@ -33,7 +33,7 @@ else()
 	message(STATUS "gendef-bin=${gendef-bin}")
     endif()
     add_custom_target(go-lib-gendef
-        COMMAND gendef ${GO_LIB}
+        COMMAND ${gendef-bin} ${GO_LIB}
         BYPRODUCTS ${GO_DEF}
     )
 

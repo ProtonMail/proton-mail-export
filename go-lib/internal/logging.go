@@ -24,7 +24,8 @@ import (
 )
 
 func NewLogFileName() string {
-	return time.Now().Format(time.DateTime) + " export.log"
+	const format = "20060102_150405"
+	return time.Now().Format(format) + "_export.log"
 }
 
 func NewLogFormatter() logrus.Formatter {

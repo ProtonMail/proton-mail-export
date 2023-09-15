@@ -21,6 +21,8 @@ set(DOWNLOAD_ZIP_FILE "${MINGW_CACHE_PATH}/mingw.zip")
 
 set(MINGW_PATH "${MINGW_CACHE_PATH}/mingw64/bin")
 
+set(MINGW_ZIP_IS_NEW FALSE)
+
 if (EXISTS "${DOWNLOAD_ZIP_FILE}")
 	message(STATUS "Found mingw.zip in cache path, validating hash")
 	file(SHA256 "${DOWNLOAD_ZIP_FILE}" filehash)
@@ -29,11 +31,12 @@ if (EXISTS "${DOWNLOAD_ZIP_FILE}")
         else()
 		message(STATUS "File not found or hash no longer matches, downloading mingw")
 		file(DOWNLOAD "${ZIP_URL}" "${DOWNLOAD_ZIP_FILE}" EXPECTED_HASH "SHA256=${EXPECTED_MINGW_ZIP_HASH}" SHOW_PROGRESS)
+		set(MINGW_ZIP_IS_NEW TRUE)
 	endif()
 endif()
 
-if (EXISTS "${MINGW_PATH}")
-	message(STATUS "Not extracting migw, folder exists ${MINGW_PATH}")
+if (EXISTS "${MINGW_PATH}" AND NOT MINGW_ZIP_IS_NEW)
+	message(STATUS "Not extracting mingw, folder exists ${MINGW_PATH}")
 else()
     message(STATUS "Extracting mingw archive")
     file(ARCHIVE_EXTRACT INPUT "${DOWNLOAD_ZIP_FILE}" DESTINATION "${MINGW_CACHE_PATH}")

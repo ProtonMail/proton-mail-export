@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <csignal>
 #else
+#include <io.h>
 #include <windows.h>
 #endif
 
@@ -76,7 +77,7 @@ static std::function<void()> gSignalHandler = []() {};
 bool registerCtrlCSignalHandler(std::function<void()>&& handler) {
 #if !defined(_WIN32)
     if (signal(SIGINT, [](int) { gSignalHandler(); }) == SIG_ERR) {
-        return -1;
+        return false;
     }
 #else
     if (SetConsoleCtrlHandler(
@@ -90,7 +91,7 @@ bool registerCtrlCSignalHandler(std::function<void()>&& handler) {
                 }
             },
             TRUE) == FALSE) {
-        return -1;
+        return false;
     }
 #endif
     gSignalHandler = handler;

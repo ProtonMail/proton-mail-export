@@ -3,9 +3,10 @@ module github.com/ProtonMail/export-tool
 go 1.20
 
 require (
-	github.com/ProtonMail/gluon v0.17.1-0.20230829112217-5d5c25c504b5
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20230831064234-0e3a549b3f36
-	github.com/ProtonMail/proton-bridge/v3 v3.4.2
+	github.com/ProtonMail/gluon v0.17.1-0.20230911134257-5eb2eeebbef5
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20230915070741-3de73982c764
+	github.com/ProtonMail/gopenpgp/v2 v2.7.1-proton
+	github.com/ProtonMail/proton-bridge/v3 v3.5.0
 	github.com/bradenaw/juniper v0.12.0
 	github.com/golang/mock v1.6.0
 	github.com/sirupsen/logrus v1.9.2
@@ -18,7 +19,6 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230518184743-7afd39499903 // indirect
 	github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f // indirect
 	github.com/ProtonMail/go-srp v0.0.7 // indirect
-	github.com/ProtonMail/gopenpgp/v2 v2.7.1-proton // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
@@ -73,6 +73,7 @@ require (
 )
 
 replace (
+	github.com/ProtonMail/proton-bridge/v3 => ../bridge
 	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.13.1-0.20230526094639-b62c999c85b7
 	github.com/keybase/go-keychain => github.com/cuthix/go-keychain v0.0.0-20230517073537-fc1740a83768
 )

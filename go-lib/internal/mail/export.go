@@ -31,6 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 const NumParallelDownloads = 10
@@ -185,7 +186,11 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	e.log.Debug("Starting message download")
 	// GODT-2900: Handle network errors/loss.
-	errReporter := &NullErrorReporter{}
+	errReporter := &exportErrReporter{
+		export: e,
+		lock:   sync.Mutex{},
+		errors: nil,
+	}
 
 	// start pipeline.
 	e.group.Once(func(ctx context.Context) {
@@ -203,10 +208,21 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	// wait for downloads to finish.
 	e.group.WaitToFinish()
-	// collect errors.
 
 	e.log.Debug("Message download finished")
-	return nil
+
+	// collect errors.
+	exportError := errReporter.getErrors()
+	if len(exportError) == 0 {
+		return nil
+	}
+
+	e.log.Error("Export task ran into the following errors")
+	for i, err := range exportError {
+		e.log.WithError(err).Errorf("Error %v", i)
+	}
+
+	return exportError[0]
 }
 
 func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath string) error {
@@ -233,4 +249,28 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 
 func getLabelFileName() string {
 	return "labels.json"
+}
+
+type exportErrReporter struct {
+	export *ExportTask
+	lock   sync.Mutex
+	errors []error
+}
+
+func (e *exportErrReporter) ReportStageError(err error) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	if len(e.errors) == 0 {
+		e.export.log.Debug("Cancelling context due to error")
+		e.export.group.Cancel()
+	}
+	e.errors = append(e.errors, err)
+}
+
+func (e *exportErrReporter) getErrors() []error {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	return e.errors
 }

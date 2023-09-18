@@ -23,15 +23,13 @@ import (
 	"errors"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
-	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
 	"github.com/bradenaw/juniper/parallel"
 	"github.com/sirupsen/logrus"
 )
 
 type BuildStageOutput struct {
-	messages []proton.FullMessage
-	result   []BuildResult
+	messages []MessageWriter
 }
 
 type BuildStage struct {
@@ -39,11 +37,6 @@ type BuildStage struct {
 	log              *logrus.Entry
 	outputCh         chan BuildStageOutput
 	parallelBuilders int
-}
-
-type BuildResult struct {
-	eml bytes.Buffer
-	err error
 }
 
 var ErrBuildNoAddrKey = errors.New("no key found for address")
@@ -72,7 +65,7 @@ func (b *BuildStage) Run(
 			return
 		}
 
-		results := make([]BuildResult, len(input.metadata))
+		results := make([]MessageWriter, len(input.metadata))
 
 		if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
 
@@ -80,16 +73,25 @@ func (b *BuildStage) Run(
 
 			kr, ok := keys.GetAddrKeyRing(addrID)
 			if !ok {
-				results[i].err = ErrBuildNoAddrKey
+				b.log.WithField("addrID", addrID).Warn("Address has no key ring")
+				results[i] = &AddrKeyRingMissingMessageWriter{msg: input.messages[i]}
 				return nil
 			}
 
-			results[i].eml.Grow(input.messages[i].Size)
+			var buffer bytes.Buffer
+			buffer.Grow(input.messages[i].Size)
 
-			// Detected decryption errors GODT-2915.
-			if err := message.BuildRFC822Into(kr, input.messages[i].Message, input.messages[i].AttData, defaultMessageJobOpts(), &results[i].eml); err != nil {
-				results[i].err = err
+			decrypted := message.DecryptMessage(kr, input.messages[i].Message, input.messages[i].AttData)
+
+			if err := message.BuildRFC822Into(kr, &decrypted, defaultMessageJobOpts(), &buffer); err != nil {
+				b.log.WithError(err).WithField("addrID", addrID).Warn("Failed to build message")
+				results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}
 				return nil
+			}
+
+			results[i] = &DecryptedAndBuiltMessageWriter{
+				msg: input.messages[i],
+				eml: buffer,
 			}
 
 			return nil
@@ -102,8 +104,7 @@ func (b *BuildStage) Run(
 		case <-ctx.Done():
 			return
 		case b.outputCh <- BuildStageOutput{
-			messages: input.messages,
-			result:   results,
+			messages: results,
 		}:
 		}
 	}

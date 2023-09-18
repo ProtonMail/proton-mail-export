@@ -23,18 +23,21 @@ MailTask::MailTask(etcpp::Session& session, const std::filesystem::path& exportP
     : mExport(session.newExportMail(exportPath.u8string().c_str())) {}
 
 void MailTask::start(std::atomic_bool& shouldQuit) {
-    std::cout << mProgressBar.value() << std::flush;
+    try {
+        runBackground([&](float progress) -> Task::Result {
+            if (shouldQuit) {
+                return Task::Result::Cancel;
+            }
 
-    runBackground([&](float progress) -> Task::Result {
-        if (shouldQuit) {
-            return Task::Result::Cancel;
-        }
+            mProgressBar.update(progress);
+            std::cout << '\r' << mProgressBar.value() << std::flush;
 
-        mProgressBar.update(progress);
-        std::cout << '\r' << mProgressBar.value() << std::flush;
-
-        return Task::Result::Continue;
-    });
+            return Task::Result::Continue;
+        });
+    } catch (const std::exception& e) {
+        std::cout << std::endl;
+        throw e;
+    }
 
     std::cout << std::endl;
 }

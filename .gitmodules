@@ -1,3 +1,6 @@
 [submodule "vcpkg"]
 	path = vcpkg
 	url = https://github.com/microsoft/vcpkg
+[submodule "bridge"]
+	path = bridge
+	url = https://gitlab.protontech.ch/go/bridge.git

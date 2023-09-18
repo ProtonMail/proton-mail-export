@@ -15,16 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+#pragma once
 
-// NOTE: This file is auto generated do not touch!
+#include <etexport_mail.hpp>
+#include <filesystem>
 
-const (
-    ETVersionMajor = 0
-    ETVersionMinor = 1
-    ETVersionPatch = 0
-    ETVersionString = "0.1.0"
-    ETDefaultAPIURL = "https://mail-api.proton.me"
-    ETBuildTime = "2023-09-18T08:05:43Z"
-    ETRevision = "dc316a89d3"
-)
+#include "tasks/task.hpp"
+#include "tui_util.hpp"
+
+class MailTask final : public Task<float>, etcpp::ExportMailCallback {
+   private:
+    etcpp::ExportMail mExport;
+    CLIProgressBar mProgressBar;
+
+   public:
+    MailTask(etcpp::Session& session, const std::filesystem::path& exportPath);
+    ~MailTask() override = default;
+    MailTask(const MailTask&) = delete;
+    MailTask(MailTask&&) = delete;
+    MailTask& operator=(const MailTask&) = delete;
+    MailTask& operator=(MailTask&&) = delete;
+
+    void start(std::atomic_bool& shouldQuit) override;
+
+   private:
+    void startTask() override;
+
+    void cancelTask() override;
+
+    void onProgress(float progress) override;
+};

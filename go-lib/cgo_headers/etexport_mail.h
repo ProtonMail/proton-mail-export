@@ -15,14 +15,9 @@ typedef enum etExportMailMessageType {
 	ET_EXPORT_MAIL_MESSAGE_TYPE_PROGRESS,
 } etExportMailMessageType;
 
-typedef enum etExportMailCallbackReply {
-    ET_EXPORT_MAIL_CALLBACK_REPLY_CONTINUE,
-    ET_EXPORT_MAIL_CALLBACK_REPLY_CANCEL,
-} etExportMailCallbackReply;
-
 typedef struct etExportMailCallbacks {
     void* ptr;
-    etExportMailCallbackReply (*onProgress)(void* ptr, float progress);
+    void (*onProgress)(void* ptr, float progress);
 } etExportMailCallbacks;
 
 #endif // ET_EXPORT_MAIL_H

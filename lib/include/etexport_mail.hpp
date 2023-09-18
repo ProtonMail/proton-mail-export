@@ -37,15 +37,10 @@ class ExportMailException final : public Exception {
 
 class ExportMailCallback {
    public:
-    enum class Reply {
-        Continue,
-        Cancel,
-    };
-
     ExportMailCallback() = default;
     virtual ~ExportMailCallback() = default;
 
-    virtual Reply onProgress(float progress) = 0;
+    virtual void onProgress(float progress) = 0;
 };
 
 class ExportMail final {
@@ -66,6 +61,8 @@ class ExportMail final {
     ExportMail& operator=(ExportMail&& rhs) noexcept = delete;
 
     void start(ExportMailCallback& cb);
+
+    void cancel();
 
    private:
     template <class F>

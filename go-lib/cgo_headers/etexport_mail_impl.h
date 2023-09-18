@@ -5,8 +5,8 @@
 
 #ifdef ET_CGO
 
-inline etExportMailCallbackReply etExportMailCallbackOnProgress(etExportMailCallbacks* cb, float progress) {
-    return cb->onProgress(cb->ptr, progress);
+inline void etExportMailCallbackOnProgress(etExportMailCallbacks* cb, float progress) {
+    cb->onProgress(cb->ptr, progress);
 }
 
 #endif // ET_CGO

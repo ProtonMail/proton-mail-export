@@ -30,6 +30,7 @@
 #include <etsession.hpp>
 #include <etutil.hpp>
 
+#include "tasks/mail_task.hpp"
 #include "tui_util.hpp"
 
 constexpr int kNumInputRetries = 3;
@@ -136,23 +137,6 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
 }
 
 static std::atomic_bool gShouldQuit = std::atomic_bool(false);
-
-class StdOutExportMailCallback final : public etcpp::ExportMailCallback {
-   private:
-    CLIProgressBar mProgressBar;
-
-   public:
-    etcpp::ExportMailCallback::Reply onProgress(float progress) override {
-        mProgressBar.update(progress);
-        std::cout << "\r" << mProgressBar.value() << std::flush;
-
-        if (gShouldQuit) {
-            return etcpp::ExportMailCallback::Reply::Cancel;
-        }
-
-        return etcpp::ExportMailCallback::Reply::Continue;
-    }
-};
 
 template <class R, class F>
 R asyncFeedbackTask(std::string_view label, F f) {
@@ -298,12 +282,11 @@ int main(int argc, const char** argv) {
             exportPath = readPath("Export Path");
         }
 
-        auto exportMail = session.newExportMail(exportPath.u8string().c_str());
-        auto cb = StdOutExportMailCallback{};
+        auto exportMail = MailTask(session, exportPath);
 
         std::cout << "Starting Export" << std::endl;
         try {
-            exportMail.start(cb);
+            exportMail.start(gShouldQuit);
         } catch (const etcpp::ExportMailException& e) {
             std::cerr << "Failed to export: " << e.what() << std::endl;
             return EXIT_FAILURE;

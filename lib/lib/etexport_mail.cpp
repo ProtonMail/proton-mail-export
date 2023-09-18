@@ -22,17 +22,6 @@
 
 namespace etcpp {
 
-inline etExportMailCallbackReply mapToETExportMailCallbackReply(ExportMailCallback::Reply r) {
-    switch (r) {
-        case ExportMailCallback::Reply::Continue:
-            return ET_EXPORT_MAIL_CALLBACK_REPLY_CONTINUE;
-        case ExportMailCallback::Reply::Cancel:
-            return ET_EXPORT_MAIL_CALLBACK_REPLY_CANCEL;
-        default:
-            return ET_EXPORT_MAIL_CALLBACK_REPLY_CONTINUE;
-    }
-}
-
 inline void mapETExportMailStatusToException(etExportMail* ptr, etExportMailStatus status) {
     switch (status) {
         case ET_EXPORT_MAIL_STATUS_INVALID:
@@ -53,8 +42,7 @@ etExportMailCallbacks makeETCallback(ExportMailCallback& cb) {
     auto r = etExportMailCallbacks{};
     r.ptr = &cb;
     r.onProgress = [](void* p, float progress) {
-        return mapToETExportMailCallbackReply(
-            reinterpret_cast<ExportMailCallback*>(p)->onProgress(progress));
+        reinterpret_cast<ExportMailCallback*>(p)->onProgress(progress);
     };
 
     return r;
@@ -74,6 +62,10 @@ void ExportMail::start(ExportMailCallback& cb) {
         auto etCb = makeETCallback(cb);
         return etExportMailStart(ptr, &etCb);
     });
+}
+
+void ExportMail::cancel() {
+    wrapCCall([&](etExportMail* ptr) { return etExportMailCancel(ptr); });
 }
 
 template <class F>

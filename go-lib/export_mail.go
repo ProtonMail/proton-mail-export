@@ -99,6 +99,18 @@ func etExportMailStart(ptr *C.etExportMail, callbacks *C.etExportMailCallbacks) 
 	return C.ET_EXPORT_MAIL_STATUS_OK
 }
 
+//export etExportMailCancel
+func etExportMailCancel(ptr *C.etExportMail) C.etExportMailStatus {
+	ce, ok := resolveExportMail(ptr)
+	if !ok {
+		return C.ET_EXPORT_MAIL_STATUS_INVALID
+	}
+
+	ce.exporter.Cancel()
+
+	return C.ET_EXPORT_MAIL_STATUS_OK
+}
+
 //export etExportMailGetLastError
 func etExportMailGetLastError(ptr *C.etExportMail) *C.cchar_t {
 	ce, ok := resolveExportMail(ptr)
@@ -150,7 +162,5 @@ func (m *mailExportReporter) OnProgress(delta int) {
 		progress = float32(0.0)
 	}
 
-	if C.etExportMailCallbackOnProgress(m.callbacks, C.float(progress)) == C.ET_EXPORT_MAIL_CALLBACK_REPLY_CANCEL {
-		m.exporter.Cancel()
-	}
+	C.etExportMailCallbackOnProgress(m.callbacks, C.float(progress))
 }

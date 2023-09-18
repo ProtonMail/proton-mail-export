@@ -13,10 +13,11 @@ target_sources(etcpp_test PRIVATE
     test_etutil.cpp
 )
 
-target_link_libraries(etcpp_test PRIVATE etcpp etcore Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(etcpp_test PRIVATE etcpp etcore etgpa Catch2::Catch2 Catch2::Catch2WithMain)
 
 add_test(NAME etcpp-test
     COMMAND etcpp_test
 )
 
 copy_shared_libraries(etcpp_test etcore)
+copy_shared_libraries(etcpp_test etgpa)

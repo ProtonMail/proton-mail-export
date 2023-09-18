@@ -21,7 +21,7 @@
 #include <string>
 #include <string_view>
 
-#include "etcore.h"
+#include "etgpa.h"
 
 class GPAException final : public std::exception {
    private:

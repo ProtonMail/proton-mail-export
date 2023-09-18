@@ -110,3 +110,5 @@ func resolveGPAServer(ptr *C.gpaServer) (*internal.GPAServer, bool) {
 
 	return gpaServerAllocator.Resolve(h)
 }
+
+func main() {}

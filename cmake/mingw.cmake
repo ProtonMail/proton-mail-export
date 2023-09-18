@@ -43,3 +43,40 @@ else()
 endif()
 
 message(STATUS "MINGW_PATH=${MINGW_PATH}")
+
+find_program(gendef-bin gendef PATHS "${MINGW_PATH}")
+if (NOT gendef-bin)
+	message(FATAL_ERROR "could not find gendef binary")
+else()
+	message(STATUS "gendef-bin=${gendef-bin}")
+endif()
+
+find_program(dlltool-bin dlltool PATHS "${MINGW_PATH}")
+if (NOT dlltool-bin)
+	message(FATAL_ERROR "could not find dlltool, please install with 'pacman -S binutils'")
+else()
+	message(STATUS "dlltool-bin=${dlltool-bin}")
+endif()
+
+function(win32_gen_implib target bin_dir go_build_target shared_lib lib_file)
+	set(def_file "${bin_dir}/${target}.def")
+
+	add_custom_target("${target}-gendef"
+		DEPENDS ${shared_lib}
+		COMMAND ${gendef-bin} "${shared_lib}"
+		BYPRODUCTS "${def_file}"
+		COMMAND_EXPAND_LISTS
+		COMMENT "Generating ${def_file}"
+	)
+
+	add_custom_target("${target}-implib"
+		DEPENDS ${def_file}
+		COMMAND ${dlltool-bin} -d ${def_file} -l ${lib_file}
+		BYPRODUCTS ${lib_file}
+		COMMENT "Generating ${lib_file}"
+	)
+
+	add_dependencies("${target}-gendef" ${go_build_target})
+	add_dependencies("${target}-implib" "${target}-gendef")
+	add_dependencies("${target}" "${target}-implib")
+endfunction()

@@ -12,6 +12,8 @@ set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
 set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/etcore${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(GO_LIB_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore.lib")
+set(GO_LIB_TEST "${CMAKE_CURRENT_BINARY_DIR}/etcore-test${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(GO_LIB_TEST_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore-test.lib")
 
 file(GLOB_RECURSE go_files
     LIST_DIRECTORIES false
@@ -19,84 +21,83 @@ file(GLOB_RECURSE go_files
     "${CMAKE_CURRENT_SOURCE_DIR}/*.go"
 )
 
-
-set(ADDITIONAL_FLAGS)
-
-if (WIN32)
-    # Unfortunately for us, c-shared dlls produced by go don't produce a .lib file
-    # so we have to generate one ourselfs... sigh.
-    set(GO_DEF ${CMAKE_CURRENT_BINARY_DIR}/etcore.def)
-    find_program(gendef-bin gendef PATHS "${MINGW_PATH}")
-    if (NOT gendef-bin)
-        message(FATAL_ERROR "could not find gendef binary")
-else()
-	message(STATUS "gendef-bin=${gendef-bin}")
-    endif()
-    add_custom_target(go-lib-gendef
-        COMMAND ${gendef-bin} ${GO_LIB}
-        BYPRODUCTS ${GO_DEF}
+function(build_cgo_lib)
+    cmake_parse_arguments(CGO ""
+            "TARGET;NAME"
+            "TAGS;GO_SOURCES;GO_EXPORTS"
+            ${ARGN}
     )
 
-    find_program(dlltool-bin dlltool PATHS "${MINGW_PATH}")
-    if (NOT dlltool-bin)
-        message(FATAL_ERROR "could not find dlltool, please install with 'pacman -S binutils'")
-    else()
-	    message(STATUS "dlltool-bin=${dlltool-bin}")
+    set(target ${CGO_TARGET})
+    set(name ${CGO_NAME})
+
+    set(ADDITIONAL_FLAGS)
+    set(lib "${CMAKE_CURRENT_BINARY_DIR}/${name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(win32_imp_lib "${CMAKE_CURRENT_BINARY_DIR}/${name}.lib")
+
+    if (UNIX AND NOT APPLE)
+        list(APPEND ADDITIONAL_FLAGS -ldflags '-extldflags -Wl,-soname,${name}${CMAKE_SHARED_LIBRARY_SUFFIX}')
     endif()
-    add_custom_target(go-lib-gen-implib
-        DEPENDS ${GO_DEF}
-        COMMAND ${dlltool-bin} -d ${GO_DEF} -l ${GO_LIB_WIN32_IMPL}
-        BYPRODUCTS ${GO_LIB_WIN32_IMPL}
+
+    set(ENV_MANIP)
+
+    set(GO_LIB_BUILD_EXTRA)
+
+    if (WIN32)
+        set(ENV_MANIP ${CMAKE_COMMAND} -E env "CGO_ENABLED=1" "GOOS=windows" "PATH=${MINGW_PATH}")
+        set(GO_LIB_BUILD_EXTRA COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_etcore.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${name}.h")
+    endif()
+
+    add_custom_command (OUTPUT ${lib}
+            DEPENDS ${CGO_GO_SOURCES}
+            COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="${CGO_TAGS}" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${lib}"
+            ${CGO_GO_EXPORTS}
+            ${GO_LIB_BUILD_EXTRA}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-    add_dependencies(go-lib-gendef go-lib-build)
-    add_dependencies(go-lib-gen-implib go-lib-gendef)
-endif()
+    add_custom_target("${target}-go-lib-build"
+            DEPENDS ${lib}
+    )
 
-if (UNIX AND NOT APPLE)
-    list(APPEND ADDITIONAL_FLAGS -ldflags '-extldflags -Wl,-soname,etcore${CMAKE_SHARED_LIBRARY_SUFFIX}')
-endif()
+    add_library(${target} SHARED IMPORTED GLOBAL)
 
-set(ENV_MANIP)
 
-set(GO_LIB_BUILD_EXTRA)
+    if (WIN32)
+        win32_gen_implib(${target} "${CMAKE_CURRENT_BINARY_DIR}" "${target}-go-lib-build" ${lib} ${win32_imp_lib})
+	else()
+        add_dependencies(${target} "${target}-go-lib-build")
+    endif()
 
-if (WIN32)	
-    set(ENV_MANIP ${CMAKE_COMMAND} -E env "CGO_ENABLED=1" "GOOS=windows" "PATH=${MINGW_PATH}")
-	set(GO_LIB_BUILD_EXTRA COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_etcore.cmake" "${CMAKE_CURRENT_BINARY_DIR}/etcore.h")
-endif()
+    set_target_properties(${target}
+            PROPERTIES
+            IMPORTED_LOCATION ${lib}
+            IMPORTED_RUNTIME ${lib}
+            IMPORTED_IMPLIB "${win32_imp_lib}"
+            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/cgo_headers"
+    )
+endfunction()
 
-add_custom_command (OUTPUT ${GO_LIB}
-        DEPENDS ${go_files}
-        COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="gpa_server" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${GO_LIB}"
-        export.go export_gpa.go export_mail.go export_log.go
-        ${GO_LIB_BUILD_EXTRA}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+build_cgo_lib(
+    TARGET etcore
+    NAME etcore
+    GO_SOURCES ${go_files}
+    GO_EXPORTS export.go export_log.go export_mail.go
 )
 
-add_custom_target(go-lib-build
-    DEPENDS ${GO_LIB}
+build_cgo_lib(
+        TARGET etgpa
+        NAME etgpa
+        TAGS gpa_server
+        GO_SOURCES ${go_files}
+        GO_EXPORTS export_gpa.go
 )
-
-add_library(etcore SHARED IMPORTED GLOBAL)
-add_dependencies(etcore go-lib-build)
-
-if (WIN32)
-	add_dependencies(etcore go-lib-gen-implib)
-endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/constants.go.in
     ${CMAKE_CURRENT_SOURCE_DIR}/internal/constants.go
     @ONLY
 )
 
-set_target_properties(etcore
-    PROPERTIES
-    IMPORTED_LOCATION ${GO_LIB}
-    IMPORTED_RUNTIME ${GO_LIB}
-    IMPORTED_IMPLIB ${GO_LIB_WIN32_IMPL}
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/cgo_headers"
-)
 
 install(IMPORTED_RUNTIME_ARTIFACTS etcore DESTINATION bin)
 

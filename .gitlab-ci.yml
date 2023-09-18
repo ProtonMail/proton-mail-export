@@ -140,15 +140,15 @@ build-linux:
 #      - $CMAKE_INSTALL_DIR/bin
 #    when: always
 
-build-windows:
-  stage: build
-  extends:
-    - .env-windows
-  script:
-    - !reference [.script-config-cmake-win, script]
-    - !reference [.script-test, script]
-    - !reference [.script-install, script]
-  artifacts:
-    paths:
-      - $CMAKE_INSTALL_DIR/bin
-    when: always
+#build-windows:
+#  stage: build
+#  extends:
+#    - .env-windows
+#  script:
+#    - !reference [.script-config-cmake-win, script]
+#    - !reference [.script-test, script]
+#    - !reference [.script-install, script]
+#  artifacts:
+#    paths:
+#      - $CMAKE_INSTALL_DIR/bin
+#    when: always

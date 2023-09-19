@@ -20,7 +20,6 @@ package mail
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
@@ -114,9 +113,10 @@ func NewMessageMetadata(writerType MessageWriterType, msg *proton.Message) Messa
 	}
 }
 
+const MessageMetadataVersion = 1
+
 func (m *MessageMetadata) toBytes() ([]byte, error) {
-	// GODT-2925 version metadata.
-	return json.MarshalIndent(m, "", "  ")
+	return utils.GenerateVersionedJSON(MessageMetadataVersion, m)
 }
 
 type MessageWriterType int

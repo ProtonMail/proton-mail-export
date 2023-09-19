@@ -15,16 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+package utils
 
-// NOTE: This file is auto generated do not touch!
-
-const (
-    ETVersionMajor = 0
-    ETVersionMinor = 1
-    ETVersionPatch = 0
-    ETVersionString = "0.1.0"
-    ETDefaultAPIURL = "https://mail-api.proton.me"
-    ETBuildTime = "2023-09-19T09:20:57Z"
-    ETRevision = "fe5065d4ac"
+import (
+	"github.com/stretchr/testify/require"
+	"testing"
 )
+
+func TestGenerateVersionedJSON(t *testing.T) {
+	type MyStruct struct {
+		Foo int
+		Bar bool
+	}
+
+	const Version = 10
+	expected := MyStruct{
+		Foo: 20,
+		Bar: true,
+	}
+
+	bytes, err := GenerateVersionedJSON(Version, expected)
+	require.NoError(t, err)
+
+	v, err := NewVersionedJSON[MyStruct](Version, bytes)
+	require.NoError(t, err)
+	require.Equal(t, Version, v.Version)
+	require.Equal(t, expected, v.Payload)
+
+}

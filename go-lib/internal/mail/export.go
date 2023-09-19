@@ -19,7 +19,6 @@ package mail
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
@@ -225,9 +224,10 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	return exportError[0]
 }
 
+const LabelMetadataVersion = 1
+
 func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath string) error {
 	e.log.Debug("Writing root label metadata")
-	// GODT-2925 version metadata.
 	apiLabels, err := e.session.GetClient().GetLabels(ctx, proton.LabelTypeSystem, proton.LabelTypeFolder, proton.LabelTypeLabel)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve labels: %w", err)
@@ -237,7 +237,7 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 		return wantLabel(t)
 	})
 
-	labelData, err := json.MarshalIndent(apiLabels, "", "  ")
+	labelData, err := utils.GenerateVersionedJSON(LabelMetadataVersion, apiLabels)
 	if err != nil {
 		return fmt.Errorf("failed to json encode labels: %w", err)
 	}

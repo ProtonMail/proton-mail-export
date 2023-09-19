@@ -41,6 +41,5 @@ type Client interface {
 	GetGroupedMessageCount(ctx context.Context) ([]proton.MessageGroupCount, error)
 	GetMessage(ctx context.Context, messageID string) (proton.Message, error)
 	GetMessageMetadataPage(ctx context.Context, page, pageSize int, filter proton.MessageFilter) ([]proton.MessageMetadata, error)
-	GetFullMessage(ctx context.Context, messageID string, scheduler proton.Scheduler, storageProvider proton.AttachmentAllocator) (proton.FullMessage, error)
 	GetAttachmentInto(ctx context.Context, attachmentID string, reader io.ReaderFrom) error
 }

@@ -47,7 +47,6 @@ func (m *MetadataStage) Run(ctx context.Context, errReporter StageErrorReporter)
 
 	var lastMessageID string
 
-	// GODT-2900: Handle network errors/loss.
 	client := m.client
 
 	for {

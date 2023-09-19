@@ -108,7 +108,6 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	}
 
 	e.log.Debug("Getting user info")
-	// GODT-2900: Handle network errors/loss.
 	client := e.session.GetClient()
 	// Get user info
 	user, err := client.GetUser(ctx)
@@ -184,7 +183,6 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	writeStage := NewWriteStage(e.tmpDir, e.exportDir, NumParallelWriters, e.log, reporter, e.session.GetPanicHandler())
 
 	e.log.Debug("Starting message download")
-	// GODT-2900: Handle network errors/loss.
 	errReporter := &exportErrReporter{
 		export: e,
 		lock:   sync.Mutex{},

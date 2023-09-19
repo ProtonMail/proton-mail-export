@@ -75,7 +75,6 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 
 	logrus.Debugf("Performing login for user %v", email)
 
-	// GODT-2900: Handle network errors/loss.
 	client, auth, err := s.clientBuilder.NewClient(ctx, email, password)
 	if err != nil {
 		if apiclient.IsHVRequestedError(err) {
@@ -86,6 +85,7 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 		return err
 	}
 
+	client = apiclient.NewAutoRetryClient(client, &apiclient.SleepRetryStrategyBuilder{})
 	s.email = email
 	s.client = client
 	s.setMailboxPassword(password)
@@ -113,7 +113,6 @@ func (s *Session) Logout(ctx context.Context) error {
 
 	logrus.WithField("email", s.email).Debugf("Logging out")
 
-	// GODT-2900: Handle network errors/loss.
 	if err := s.client.AuthDelete(ctx); err != nil {
 		return err
 	}
@@ -132,7 +131,6 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 
 	logrus.WithField("email", s.email).Debugf("Submitting TOTP code")
 
-	// GODT-2900: Handle network errors/loss.
 	if err := s.client.Auth2FA(ctx, proton.Auth2FAReq{TwoFactorCode: totp}); err != nil {
 		return err
 	}

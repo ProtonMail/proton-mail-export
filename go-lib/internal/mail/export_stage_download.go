@@ -98,7 +98,6 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 }
 
 func downloadMessageAndAttachments(ctx context.Context, client apiclient.Client, metadata proton.MessageMetadata) (proton.FullMessage, error) {
-	// GODT-2900: Handle network errors/loss.
 	msg, err := client.GetMessage(ctx, metadata.ID)
 	if err != nil {
 		return proton.FullMessage{}, err
@@ -113,7 +112,6 @@ func downloadMessageAndAttachments(ctx context.Context, client apiclient.Client,
 		attData := make([][]byte, len(msg.Attachments))
 
 		for i, a := range msg.Attachments {
-			// GODT-2900: Handle network errors/loss.
 			buffer := bytes.Buffer{}
 
 			buffer.Grow(int(a.Size))

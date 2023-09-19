@@ -47,13 +47,15 @@ type Session struct {
 	passwordMode    proton.PasswordMode
 	email           string
 	mailboxPassword []byte
+	callbacks       Callbacks
 }
 
-func NewSession(builder apiclient.Builder) *Session {
+func NewSession(builder apiclient.Builder, callbacks Callbacks) *Session {
 	return &Session{
 		panicHandler:  &async.NoopPanicHandler{},
 		client:        nil,
 		clientBuilder: builder,
+		callbacks:     callbacks,
 	}
 }
 

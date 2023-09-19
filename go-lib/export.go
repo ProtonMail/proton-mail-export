@@ -20,10 +20,12 @@ package main
 // #cgo CFLAGS: -I "cgo_headers" -D "ET_CGO=1"
 /*
 #include "etsession.h"
+#include "etsession_impl.h"
 */
 import "C"
 import (
 	"context"
+	"sync"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
@@ -36,9 +38,9 @@ import (
 type SessionHandle = internal.Handle[csession]
 
 //export etSessionNew
-func etSessionNew(apiURL *C.cchar_t) *C.etSession {
+func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks) *C.etSession {
 	goAPIURL := C.GoString(apiURL)
-	h := sessionAllocator.Alloc(newCSession(goAPIURL))
+	h := sessionAllocator.Alloc(newCSession(goAPIURL, cb))
 	// Intentional misuse of unsafe pointer.
 	p := unsafe.Pointer(uintptr(h)) //nolint:govet
 	return (*C.etSession)(p)
@@ -70,6 +72,20 @@ func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 	}
 
 	return (*C.cchar_t)(s.lastError.GetErr())
+}
+
+//export etSessionCancel
+func etSessionCancel(ptr *C.etSession) C.etSessionStatus {
+	h := ptrToHandle(ptr)
+
+	s, ok := sessionAllocator.Resolve(h)
+	if !ok {
+		return C.ET_SESSION_STATUS_INVALID
+	}
+
+	s.cancel()
+
+	return C.ET_SESSION_STATUS_OK
 }
 
 //export etSessionGetLoginState
@@ -156,17 +172,22 @@ func withSession(ptr *C.etSession, f func(ctx context.Context, session *session.
 }
 
 type csession struct {
-	s         *session.Session
-	ctx       context.Context
-	ctxCancel func()
-	lastError utils.CLastError
+	s          *session.Session
+	ctx        context.Context
+	cancelOnce sync.Once
+	ctxCancel  func()
+	lastError  utils.CLastError
 }
 
-func newCSession(apiURL string) *csession {
-	clientBuilder := apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{})
+func newCSession(apiURL string, cb C.etSessionCallbacks) *csession {
+	sessionCb := newCSessionCallback(cb)
+	clientBuilder := apiclient.NewAutoRetryClientBuilder(
+		apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{}, sessionCb),
+		&apiclient.SleepRetryStrategyBuilder{},
+	)
 	ctx, cancel := context.WithCancel(context.Background())
 	return &csession{
-		s:         session.NewSession(clientBuilder),
+		s:         session.NewSession(clientBuilder, sessionCb),
 		ctx:       ctx,
 		ctxCancel: cancel,
 	}
@@ -174,8 +195,12 @@ func newCSession(apiURL string) *csession {
 
 func (c *csession) close() {
 	c.s.Close(c.ctx)
-	c.ctxCancel()
+	c.cancel()
 	c.lastError.Close()
+}
+
+func (c *csession) cancel() {
+	c.cancelOnce.Do(c.ctxCancel)
 }
 
 func (c *csession) setLastError(err error) {
@@ -193,6 +218,22 @@ func resolveSession(ptr *C.etSession) (*csession, bool) {
 	h := ptrToHandle(ptr)
 
 	return sessionAllocator.Resolve(h)
+}
+
+type csessionCallback struct {
+	cb C.etSessionCallbacks
+}
+
+func newCSessionCallback(cb C.etSessionCallbacks) session.Callbacks {
+	return &csessionCallback{cb: cb}
+}
+
+func (c *csessionCallback) OnNetworkRestored() {
+	C.etSessionCallbackOnNetworkRestored(&c.cb) //nolint:gocritic
+}
+
+func (c *csessionCallback) OnNetworkLost() {
+	C.etSessionCallbackOnNetworkLost(&c.cb) //nolint:gocritic
 }
 
 func main() {}

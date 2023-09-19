@@ -48,7 +48,7 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -73,7 +73,7 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -102,7 +102,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -143,7 +143,7 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -181,7 +181,7 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -215,7 +215,7 @@ func TestSessionLogin_Logout(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -242,7 +242,7 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder)
+	session := NewSession(clientBuilder, nil)
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))

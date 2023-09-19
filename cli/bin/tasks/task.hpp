@@ -22,66 +22,57 @@
 #include <mutex>
 #include <thread>
 
-/// CLI background task helper.
-template <class P>
+template <class R>
 class Task {
-    static_assert(std::is_default_constructible_v<P> && std::is_move_assignable_v<P>);
-
    protected:
-    std::mutex mMutex;
-    std::condition_variable mCond;
-    std::once_flag mCancelCall;
-    P mValue;
+    Task() = default;
 
    public:
-    Task() = default;
     virtual ~Task() = default;
-    Task(const Task&) = delete;
-    Task& operator=(const Task&) = delete;
-    Task(Task&&) = delete;
-    Task& operator=(const Task&&) = delete;
+    Task(const Task<R>&) = delete;
+    Task<R>& operator=(const Task<R>&) = delete;
+    Task(Task<R>&&) = delete;
+    Task<R>& operator=(const Task<R>&&) = delete;
 
-    /// Start a task. If the task should cancel, simply set shouldQuit to true.
-    virtual void start(std::atomic_bool& shouldQuit) = 0;
+    virtual R run() = 0;
+
+    virtual void cancel() = 0;
+
+    virtual std::string_view description() const = 0;
+};
+
+template <class R>
+class TaskWithProgress : public Task<R> {
+   private:
+    std::mutex mMutex;
+    std::condition_variable mCond;
+    float mProgress;
 
    protected:
-    enum class Result { Continue, Cancel };
+    TaskWithProgress() = default;
 
-    /// Run a task in the background and periodically run F on the main thread so that we can
-    /// produce an update while the task is running. If the task needs to be cancelled, call to F
-    /// should return Result::Cancel and the task cancellation code will be cancelled once. Note: It
-    /// is safe to return cancel more than once, this helper class ensures cancel is only called
-    /// once.
-    template <class F>
-    void runBackground(F&& f) {
-        static_assert(std::is_invocable_r_v<Result, F, const P&>);
-        auto future = std::async(std::launch::async, [&] { startTask(); });
-        do {
-            std::unique_lock lockScope(mMutex);
-            if (mCond.wait_for(lockScope, std::chrono::milliseconds(500)) ==
-                std::cv_status::no_timeout) {
-                if (f(mValue) == Result::Cancel) {
-                    std::call_once(mCancelCall, [&] { cancelTask(); });
-                }
-            }
-        } while (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
+   public:
+    virtual ~TaskWithProgress() = default;
 
-        return future.get();
+    float pollProgress() {
+        std::unique_lock lockScope(mMutex);
+        mCond.wait_for(lockScope, std::chrono::milliseconds(500));
+        return mProgress;
     }
 
-    virtual void startTask() = 0;
-
-    virtual void cancelTask() = 0;
-
-    void sendUpdate(P p) {
+   protected:
+    void updateProgress(float progress) {
         std::unique_lock lockScope(mMutex);
-        mValue = std::move(p);
+        mProgress = progress;
         mCond.notify_one();
     }
+};
 
-    void sendUpdate(P&& p) {
-        std::unique_lock lockScope(mMutex);
-        mValue = std::move(p);
-        mCond.notify_one();
-    }
+class TaskAppState {
+   public:
+    virtual ~TaskAppState() = default;
+
+    virtual bool shouldQuit() const = 0;
+
+    virtual bool networkLost() const = 0;
 };

@@ -29,6 +29,39 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type AutoRetryClientBuilder struct {
+	builder              Builder
+	retryStrategyBuilder RetryStrategyBuilder
+}
+
+func NewAutoRetryClientBuilder(builder Builder, retryBuilder RetryStrategyBuilder) *AutoRetryClientBuilder {
+	return &AutoRetryClientBuilder{
+		builder:              builder,
+		retryStrategyBuilder: retryBuilder,
+	}
+}
+
+func (a *AutoRetryClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {
+	retryStrategy := a.retryStrategyBuilder.NewRetryStrategy()
+	for {
+		client, auth, err := a.builder.NewClient(ctx, username, password)
+		if err != nil {
+			if !isRetrieableError(err) {
+				return nil, proton.Auth{}, err
+			}
+
+			retryStrategy.HandleRetry(ctx)
+			continue
+		}
+
+		return client, auth, nil
+	}
+}
+
+func (a *AutoRetryClientBuilder) Close() {
+	a.builder.Close()
+}
+
 type AutoRetryClient struct {
 	client               Client
 	retryStrategyBuilder RetryStrategyBuilder

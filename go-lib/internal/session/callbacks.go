@@ -2,7 +2,7 @@
 //
 // This file is part of Proton Export Tool.
 //
-// Proton Mail Bridge is free software: you can redistribute it and/or modify
+// Proton Mail Bridge is Free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -15,25 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "tasks/mail_task.hpp"
-#include <etsession.hpp>
-#include <iostream>
+package session
 
-MailTask::MailTask(etcpp::Session& session, const std::filesystem::path& exportPath)
-    : mExport(session.newExportMail(exportPath.u8string().c_str())) {}
-
-void MailTask::onProgress(float progress) {
-    updateProgress(progress);
+type Callbacks interface {
+	OnNetworkRestored()
+	OnNetworkLost()
 }
 
-void MailTask::run() {
-    mExport.start(*this);
-}
+type NullCallbacks struct{}
 
-void MailTask::cancel() {
-    mExport.cancel();
-}
+func (n NullCallbacks) OnNetworkRestored() {}
 
-std::string_view MailTask::description() const {
-    return "Export Mail";
-}
+func (n NullCallbacks) OnNetworkLost() {}

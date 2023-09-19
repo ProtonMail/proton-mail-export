@@ -40,7 +40,24 @@ inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     }
 }
 
-Session::Session(const char* serverURL) : mPtr(etSessionNew(serverURL)) {}
+etSessionCallbacks makeCCallback(SessionCallback* ptr) {
+    etSessionCallbacks cb{};
+
+    if (ptr == nullptr) {
+        return cb;
+    }
+
+    cb.ptr = ptr;
+    cb.onNetworkLost = [](void* p) { reinterpret_cast<SessionCallback*>(p)->onNetworkLost(); };
+    cb.onNetworkRestored = [](void* p) {
+        reinterpret_cast<SessionCallback*>(p)->onNetworkRestored();
+    };
+
+    return cb;
+}
+
+Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& callbacks)
+    : mPtr(etSessionNew(serverURL, makeCCallback(callbacks.get()))), mCallbacks(callbacks) {}
 
 Session::~Session() {
     if (mPtr != nullptr) {
@@ -129,6 +146,10 @@ ExportMail Session::newExportMail(const char* exportPath) const {
     });
 
     return ExportMail(*this, exportPtr);
+}
+
+void Session::cancel() {
+    wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }
 
 template <class F>

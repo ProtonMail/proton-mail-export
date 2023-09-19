@@ -26,19 +26,42 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ProtonAPIClientBuilder struct {
-	manager *proton.Manager
+type ProtonCallbacks interface {
+	OnNetworkRestored()
+	OnNetworkLost()
 }
 
-func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler) *ProtonAPIClientBuilder {
-	return &ProtonAPIClientBuilder{
+type ProtonAPIClientBuilder struct {
+	manager  *proton.Manager
+	callback ProtonCallbacks
+}
+
+func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, callbacks ProtonCallbacks) *ProtonAPIClientBuilder {
+	b := &ProtonAPIClientBuilder{
 		manager: proton.New(
 			proton.WithHostURL(apiURL),
 			proton.WithAppVersion("Other"),
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
 		),
+		callback: callbacks,
 	}
+
+	b.manager.AddStatusObserver(func(status proton.Status) {
+		if status == proton.StatusDown {
+			logrus.Info("Connection to proton servers lost")
+			if callbacks != nil {
+				callbacks.OnNetworkLost()
+			}
+		} else {
+			logrus.Info("Connection to proton servers restored")
+			if callbacks != nil {
+				callbacks.OnNetworkRestored()
+			}
+		}
+	})
+
+	return b
 }
 
 func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {

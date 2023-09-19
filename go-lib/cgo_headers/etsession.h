@@ -22,4 +22,10 @@ typedef enum etSessionLoginState {
 	ET_SESSION_LOGIN_STATE_LOGGED_IN,
 } etSessionLoginState;
 
+typedef struct etSessionCallbacks {
+    void *ptr;
+    void (*onNetworkLost)(void*);
+    void (*onNetworkRestored)(void*);
+} etSessionCallbacks;
+
 #endif // ET_SESSION_H

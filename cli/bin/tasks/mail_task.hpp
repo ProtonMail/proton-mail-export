@@ -23,7 +23,7 @@
 #include "tasks/task.hpp"
 #include "tui_util.hpp"
 
-class MailTask final : public Task<float>, etcpp::ExportMailCallback {
+class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback {
    private:
     etcpp::ExportMail mExport;
     CLIProgressBar mProgressBar;
@@ -36,12 +36,12 @@ class MailTask final : public Task<float>, etcpp::ExportMailCallback {
     MailTask& operator=(const MailTask&) = delete;
     MailTask& operator=(MailTask&&) = delete;
 
-    void start(std::atomic_bool& shouldQuit) override;
+    void run() override;
+
+    void cancel() override;
+
+    std::string_view description() const override;
 
    private:
-    void startTask() override;
-
-    void cancelTask() override;
-
     void onProgress(float progress) override;
 };

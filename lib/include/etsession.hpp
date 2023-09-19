@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "etexception.hpp"
@@ -33,9 +34,17 @@ class SessionException final : public Exception {
     explicit SessionException(std::string_view what) : Exception(what) {}
 };
 
+class SessionCallback {
+   public:
+    virtual ~SessionCallback() = default;
+    virtual void onNetworkRestored() = 0;
+    virtual void onNetworkLost() = 0;
+};
+
 class Session final {
    private:
     etSession* mPtr;
+    std::shared_ptr<SessionCallback> mCallbacks;
 
    public:
     enum class LoginState {
@@ -46,7 +55,8 @@ class Session final {
         LoggedIn
     };
 
-    explicit Session(const char* serverURL);
+    inline explicit Session(const char* serverURL) : Session(serverURL, {}) {}
+    explicit Session(const char* serverURL, const std::shared_ptr<SessionCallback>& mCallbacks);
     ~Session();
     Session(const Session&) = delete;
     Session(Session&&) noexcept;
@@ -60,6 +70,8 @@ class Session final {
     [[nodiscard]] LoginState getLoginState() const;
 
     [[nodiscard]] ExportMail newExportMail(const char* exportPath) const;
+
+    void cancel();
 
    private:
     template <class F>

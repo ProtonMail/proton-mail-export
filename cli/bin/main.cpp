@@ -17,20 +17,19 @@
 
 #include <atomic>
 #include <filesystem>
-#include <future>
 #include <iostream>
 #include <optional>
 #include <string>
-#include <thread>
 
-#include <fmt/format.h>
 #include <cxxopts.hpp>
 #include <etconfig.hpp>
 #include <etlog.hpp>
 #include <etsession.hpp>
 #include <etutil.hpp>
 
+#include "task_runner.hpp"
 #include "tasks/mail_task.hpp"
+#include "tasks/session_task.hpp"
 #include "tui_util.hpp"
 
 constexpr int kNumInputRetries = 3;
@@ -137,21 +136,23 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
 }
 
 static std::atomic_bool gShouldQuit = std::atomic_bool(false);
+static std::atomic_bool gConnectionActive = std::atomic_bool(true);
 
-template <class R, class F>
-R asyncFeedbackTask(std::string_view label, F f) {
-    static_assert(std::is_invocable_r_v<R, F>);
-    auto future = std::async(std::launch::async, f);
-    auto spinner = CliSpinner();
-    do {
-        std::cout << fmt::format("\r{} {}", spinner.next(), label) << std::flush;
-    } while (future.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready);
-    std::cout << "\r\n";
+class SessionCallback final : public etcpp::SessionCallback {
+   public:
+    void onNetworkLost() override { gConnectionActive.store(false); }
+    void onNetworkRestored() override { gConnectionActive.store(true); }
+};
 
-    return future.get();
-}
+class CLIAppState final : public TaskAppState {
+   public:
+    bool shouldQuit() const override { return gShouldQuit.load(); }
+
+    bool networkLost() const override { return !gConnectionActive.load(); }
+};
 
 int main(int argc, const char** argv) {
+    auto appState = CLIAppState();
     std::cout << "Proton Export (" << et::VERSION_STR << ")\n" << std::endl;
     std::filesystem::path execPath;
     try {
@@ -199,7 +200,7 @@ int main(int argc, const char** argv) {
             return EXIT_SUCCESS;
         }
 
-        auto session = etcpp::Session(et::DEFAULT_API_URL);
+        auto session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());
 
         etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;
 
@@ -221,10 +222,12 @@ int main(int argc, const char** argv) {
                                     []() { return readSecret("Password"); });
 
                     try {
-                        loginState = asyncFeedbackTask<etcpp::Session::LoginState>(
-                            "Performing Login", [&]() -> etcpp::Session::LoginState {
-                                return session.login(username.c_str(), password);
-                            });
+                        auto task =
+                            LoginSessionTask(session, "Logging In",
+                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState {
+                                                 return s.login(username.c_str(), password);
+                                             });
+                        loginState = runTask(appState, task);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to login: " << e.what() << std::endl;
                         return EXIT_FAILURE;
@@ -238,10 +241,12 @@ int main(int argc, const char** argv) {
                         return EXIT_SUCCESS;
                     }
                     try {
-                        loginState = asyncFeedbackTask<etcpp::Session::LoginState>(
-                            "Submitting TOTP", [&]() -> etcpp::Session::LoginState {
-                                return session.loginTOTP(totp.c_str());
-                            });
+                        auto task =
+                            LoginSessionTask(session, "Submitting TOTP",
+                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState {
+                                                 return s.loginTOTP(totp.c_str());
+                                             });
+                        loginState = runTask(appState, task);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to submit totp code: " << e.what() << std::endl;
                         return EXIT_FAILURE;
@@ -286,13 +291,12 @@ int main(int argc, const char** argv) {
 
         std::cout << "Starting Export" << std::endl;
         try {
-            exportMail.start(gShouldQuit);
+            runTaskWithProgress(appState, exportMail);
         } catch (const etcpp::ExportMailException& e) {
             std::cerr << "Failed to export: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
         std::cout << "Export Finished" << std::endl;
-        std::cout << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << "Encountered unexpected error: " << e.what() << std::endl;

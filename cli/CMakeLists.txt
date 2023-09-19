@@ -15,9 +15,11 @@ target_sources(cli PRIVATE
         bin/main.cpp
         bin/tui_util.cpp
         bin/tui_util.hpp
+        bin/task_runner.hpp
         bin/tasks/task.hpp
         bin/tasks/mail_task.cpp
         bin/tasks/mail_task.hpp
+        bin/tasks/session_task.hpp
 )
 
 apply_cpp_flags(cli)

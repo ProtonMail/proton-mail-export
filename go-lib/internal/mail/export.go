@@ -21,6 +21,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/export-tool/internal/utils"
@@ -28,9 +32,6 @@ import (
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/xslices"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"sync"
 )
 
 const NumParallelDownloads = 10
@@ -231,9 +232,7 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 		return fmt.Errorf("failed to retrieve labels: %w", err)
 	}
 
-	apiLabels = xslices.Filter(apiLabels, func(t proton.Label) bool {
-		return wantLabel(t)
-	})
+	apiLabels = xslices.Filter(apiLabels, wantLabel)
 
 	labelData, err := utils.GenerateVersionedJSON(LabelMetadataVersion, apiLabels)
 	if err != nil {

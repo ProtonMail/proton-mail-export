@@ -19,6 +19,7 @@ package apiclient
 
 import (
 	"fmt"
+
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/sirupsen/logrus"

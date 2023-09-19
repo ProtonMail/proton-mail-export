@@ -3,12 +3,13 @@ package mail
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestMetadataStage_Run(t *testing.T) {
@@ -51,7 +52,6 @@ func encodeMetadataExpectations(client *apiclient.MockClient, metadata []proton.
 	}
 
 	for i := 0; i < len(metadata); i += pageSize - 1 {
-
 		if i != 0 {
 			filter.EndID = metadata[i].ID
 		}

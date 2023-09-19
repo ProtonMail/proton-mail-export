@@ -63,7 +63,7 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -92,7 +92,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 		PasswordMode: proton.TwoPasswordMode,
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -127,7 +127,7 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 		},
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -165,7 +165,7 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 		PasswordMode: proton.TwoPasswordMode,
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -205,7 +205,7 @@ func TestSessionLogin_Logout(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		client,
 		clientAuth,
 		nil,
@@ -231,7 +231,7 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq([]byte(TestUserPassword))).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
 		nil,
 		clientAuth,
 		&proton.APIError{

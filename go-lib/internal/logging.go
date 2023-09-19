@@ -18,9 +18,10 @@
 package internal
 
 import (
-	"github.com/sirupsen/logrus"
 	"runtime"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func NewLogFileName() string {
@@ -47,6 +48,7 @@ func NewLogFormatter() logrus.Formatter {
 }
 
 func LogPrelude() {
+	logrus.SetLevel(logrus.DebugLevel)
 	logrus.
 		WithField("appName", "Proton Export").
 		WithField("version", ETVersionString).

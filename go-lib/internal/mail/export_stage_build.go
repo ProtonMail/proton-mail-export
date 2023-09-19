@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
@@ -68,7 +69,6 @@ func (b *BuildStage) Run(
 		results := make([]MessageWriter, len(input.metadata))
 
 		if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
-
 			addrID := input.messages[i].AddressID
 
 			kr, ok := keys.GetAddrKeyRing(addrID)

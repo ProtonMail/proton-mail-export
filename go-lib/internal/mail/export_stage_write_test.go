@@ -20,14 +20,15 @@ package mail
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 func TestAddrKeyRingMissingMessageWriter(t *testing.T) {

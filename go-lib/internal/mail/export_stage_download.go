@@ -20,6 +20,7 @@ package mail
 import (
 	"bytes"
 	"context"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"

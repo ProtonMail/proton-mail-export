@@ -20,6 +20,7 @@ package session
 import (
 	"context"
 	"errors"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
@@ -182,10 +183,6 @@ func (s *Session) setMailboxPassword(p []byte) {
 	}
 
 	s.mailboxPassword = p
-}
-
-func init() {
-	logrus.SetLevel(logrus.DebugLevel)
 }
 
 func zeroSlice(s []byte) {

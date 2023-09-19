@@ -112,4 +112,5 @@ type globalLog struct {
 	lastError utils.CLastError
 }
 
+//nolint:gochecknoglobals
 var globalLogInstance globalLog

@@ -24,13 +24,13 @@ package main
 import "C"
 import (
 	"context"
+	"unsafe"
+
+	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
-	"unsafe"
-
-	"github.com/ProtonMail/export-tool/internal"
 )
 
 type SessionHandle = internal.Handle[csession]
@@ -39,7 +39,8 @@ type SessionHandle = internal.Handle[csession]
 func etSessionNew(apiURL *C.cchar_t) *C.etSession {
 	goAPIURL := C.GoString(apiURL)
 	h := sessionAllocator.Alloc(newCSession(goAPIURL))
-	p := unsafe.Pointer(uintptr(h))
+	// Intentional misuse of unsafe pointer.
+	p := unsafe.Pointer(uintptr(h)) //nolint:govet
 	return (*C.etSession)(p)
 }
 
@@ -181,6 +182,7 @@ func (c *csession) setLastError(err error) {
 	c.lastError.Set(err)
 }
 
+//nolint:gochecknoglobals
 var sessionAllocator = internal.NewHandleMap[csession](5)
 
 func ptrToHandle(ptr *C.etSession) SessionHandle {

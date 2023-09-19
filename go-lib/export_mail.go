@@ -24,13 +24,13 @@ package main
 */
 import "C"
 import (
-	"github.com/ProtonMail/export-tool/internal/utils"
 	"path/filepath"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/mail"
 	"github.com/ProtonMail/export-tool/internal/session"
+	"github.com/ProtonMail/export-tool/internal/utils"
 )
 
 //export etSessionNewExportMail
@@ -55,7 +55,8 @@ func etSessionNewExportMail(sessionPtr *C.etSession, cExportPath *C.cchar_t, out
 		exporter: mailExport,
 	})
 
-	*outExportMail = (*C.etExportMail)(unsafe.Pointer(uintptr(h)))
+	// Intentional misuse of unsafe pointer.
+	*outExportMail = (*C.etExportMail)(unsafe.Pointer(uintptr(h))) //nolint:govet
 
 	return C.ET_SESSION_STATUS_OK
 }
@@ -127,6 +128,7 @@ type cExportMail struct {
 	lastError utils.CLastError
 }
 
+//nolint:gochecknoglobals
 var exportMailAllocator = internal.NewHandleMap[cExportMail](5)
 
 type ExportMailHandle = internal.Handle[cExportMail]

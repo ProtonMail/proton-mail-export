@@ -20,6 +20,7 @@ package apiclient
 import (
 	"context"
 	"errors"
+
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"

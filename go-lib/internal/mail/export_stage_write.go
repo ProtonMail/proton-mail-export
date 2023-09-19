@@ -21,6 +21,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/gluon/rfc822"
@@ -28,8 +31,6 @@ import (
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
 	"github.com/bradenaw/juniper/parallel"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 )
 
 type WriteStage struct {
@@ -199,7 +200,6 @@ func (a *AssembleFailedMessageWriter) WriteMessage(dir string, tempDir string, l
 			log.WithField("msg-id", a.decrypted.Msg.ID).WithField("attID", attachmentInfo.ID).WithError(err).Errorf("Failed to write %v", attachmentPath)
 			return fmt.Errorf("failed to write '%v': %w", attachmentPath, err)
 		}
-
 	}
 
 	return nil
@@ -241,7 +241,6 @@ func (a *AddrKeyRingMissingMessageWriter) WriteMessage(dir string, tempDir strin
 			log.WithField("msg-id", a.msg.ID).WithField("attID", attachment.ID).WithError(err).Errorf("Failed to write %v", attachmentPath)
 			return fmt.Errorf("failed to write '%v': %w", attachmentPath, err)
 		}
-
 	}
 
 	return nil

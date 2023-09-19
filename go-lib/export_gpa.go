@@ -41,6 +41,7 @@ import (
 	"unsafe"
 )
 
+//nolint:gochecknoglobals
 var gpaServerAllocator = internal.HandleMap[internal.GPAServer]{}
 
 type GPAHandle = internal.Handle[internal.GPAServer]

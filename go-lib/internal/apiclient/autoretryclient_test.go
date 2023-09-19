@@ -20,12 +20,13 @@ package apiclient
 import (
 	"context"
 	"encoding/json"
-	"github.com/ProtonMail/go-proton-api"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net"
 	"testing"
+
+	"github.com/ProtonMail/go-proton-api"
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAutoRetryClientRepetition(t *testing.T) {

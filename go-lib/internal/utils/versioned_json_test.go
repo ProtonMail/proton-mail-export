@@ -18,8 +18,9 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateVersionedJSON(t *testing.T) {
@@ -41,5 +42,4 @@ func TestGenerateVersionedJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, Version, v.Version)
 	require.Equal(t, expected, v.Payload)
-
 }

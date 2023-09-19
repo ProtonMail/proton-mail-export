@@ -18,10 +18,11 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestWriteFileSafe(t *testing.T) {

@@ -19,8 +19,9 @@ package apiclient
 
 import (
 	"context"
-	"github.com/ProtonMail/go-proton-api"
 	"io"
+
+	"github.com/ProtonMail/go-proton-api"
 )
 
 type Builder interface {

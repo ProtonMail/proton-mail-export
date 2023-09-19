@@ -20,12 +20,13 @@ package apiclient
 import (
 	"context"
 	"errors"
-	"github.com/ProtonMail/go-proton-api"
-	"github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"net"
 	"time"
+
+	"github.com/ProtonMail/go-proton-api"
+	"github.com/sirupsen/logrus"
 )
 
 type AutoRetryClient struct {
@@ -201,6 +202,7 @@ func (s *SleepRetryStrategy) nextWaitTime() time.Duration {
 	return nextWaitTime
 }
 
+//nolint:gochecknoglobals
 var expWaitTimes = []time.Duration{
 	20 * time.Second,
 	40 * time.Second,

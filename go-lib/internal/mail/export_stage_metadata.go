@@ -19,6 +19,7 @@ package mail
 
 import (
 	"context"
+
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"

@@ -90,7 +90,7 @@ func (s *Sha256IntegrityChecker) Initialize(i []byte) {
 }
 
 func (s *Sha256IntegrityChecker) Check(path string) error {
-	input, err := os.Open(path)
+	input, err := os.Open(path) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("failed to open tmp file for checksum validation:%w", err)
 	}

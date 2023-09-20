@@ -17,6 +17,10 @@ target_sources(etcpp PRIVATE
         lib/etutil.cpp
 )
 
+if (UNIX)
+    target_sources(etcpp PRIVATE lib/etutil_unix.cpp)
+endif()
+
 if (WIN32)
     target_sources(etcpp PRIVATE lib/etutil_win32.cpp)
 elseif(APPLE)
@@ -37,6 +41,10 @@ target_link_libraries(etcpp
         PRIVATE etcore
         PUBLIC fmt::fmt
 )
+
+if (WIN32)
+    target_link_libraries(etcpp PUBLIC Userenv)
+endif()
 
 target_include_directories(etcpp PUBLIC include ${config_file_dir})
 

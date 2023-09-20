@@ -64,20 +64,21 @@ std::filesystem::path readPath(std::string_view label) {
             continue;
         }
 
-        // Ensure the path is converted from utf8 to native type.
-        auto utf8Path = std::filesystem::u8path(result);
+        auto utf8path = std::filesystem::u8path(result);
+        auto expandedPath = etcpp::expandCLIPath(utf8path);
 
         try {
-            if (std::filesystem::exists(utf8Path) && !std::filesystem::is_directory(utf8Path)) {
+            if (std::filesystem::exists(expandedPath) &&
+                !std::filesystem::is_directory(expandedPath)) {
                 std::cerr << "Path is not a directory" << std::endl;
                 continue;
             }
         } catch (const std::exception& e) {
-            std::cerr << "Failed to check export path:" << e.what() << std::endl;
+            std::cerr << "Failed to check export utf8path:" << e.what() << std::endl;
             continue;
         }
 
-        return utf8Path;
+        return expandedPath;
     }
 
     throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
@@ -296,7 +297,8 @@ int main(int argc, const char** argv) {
 
         std::filesystem::path exportPath;
         if (argParseResult.count("export-dir")) {
-            exportPath = std::filesystem::u8path(argParseResult["export-dir"].as<std::string>());
+            exportPath = etcpp::expandCLIPath(
+                std::filesystem::u8path(argParseResult["export-dir"].as<std::string>()));
         }
         if (exportPath.empty()) {
             exportPath = readPath("Export Path");
@@ -304,7 +306,7 @@ int main(int argc, const char** argv) {
 
         auto exportMail = MailTask(session, exportPath);
 
-        std::cout << "Starting Export" << std::endl;
+        std::cout << "Starting Export - Path=" << exportPath << std::endl;
         try {
             runTaskWithProgress(appState, exportMail);
         } catch (const etcpp::ExportMailException& e) {

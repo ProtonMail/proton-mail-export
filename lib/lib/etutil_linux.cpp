@@ -26,6 +26,9 @@
 #define PROC_SELF_EXE "/proc/self/exe"
 #endif
 
+#include <fmt/format.h>
+#include <wordexp.h>
+
 namespace etcpp {
 std::filesystem::path getExecutablePath() {
     char rawPathName[PATH_MAX];
@@ -34,4 +37,5 @@ std::filesystem::path getExecutablePath() {
     }
     return std::filesystem::u8path(rawPathName);
 }
+
 }    // namespace etcpp

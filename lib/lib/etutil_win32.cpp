@@ -18,15 +18,30 @@
 #include "etutil.hpp"
 
 #include <fmt/format.h>
+#include <userenv.h>
 #include <windows.h>
 
 namespace etcpp {
+constexpr int WIN32_MAX_PATH = 4096;
+
 std::filesystem::path getExecutablePath() {
-    constexpr int WIN32_MAX_PATH = 4096;
     wchar_t rawPathName[WIN32_MAX_PATH];
     if (GetModuleFileNameW(NULL, rawPathName, WIN32_MAX_PATH) == 0) {
         throw std::runtime_error(fmt::format("failed to get executable path {:x}", GetLastError()));
     }
     return std::filesystem::path(rawPathName);
 }
+
+std::filesystem::path expandCLIPath(const std::filesystem::path& path) {
+    wchar_t outBuffer[WIN32_MAX_PATH];
+
+    const auto value = path.wstring();
+
+    if (ExpandEnvironmentStringsForUserW(NULL, value.c_str(), outBuffer, WIN32_MAX_PATH) == FALSE) {
+        throw std::runtime_error(fmt::format("failed to expand '{}'", path.u8string()));
+    }
+
+    return std::filesystem::path(outBuffer);
+}
+
 }    // namespace etcpp

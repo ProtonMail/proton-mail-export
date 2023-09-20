@@ -15,16 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+#include "etutil.hpp"
 
-// NOTE: This file is auto generated do not touch!
+#include <fmt/format.h>
+#include <wordexp.h>
 
-const (
-    ETVersionMajor = 0
-    ETVersionMinor = 1
-    ETVersionPatch = 0
-    ETVersionString = "0.1.0"
-    ETDefaultAPIURL = "https://mail-api.proton.me"
-    ETBuildTime = "2023-09-20T13:02:40Z"
-    ETRevision = "7c3451bc98"
-)
+namespace etcpp {
+
+std::filesystem::path expandCLIPath(const std::filesystem::path& path) {
+    auto value = path.u8string();
+
+    wordexp_t p;
+
+    if (wordexp(value.c_str(), &p, 0) != 0) {
+        throw std::runtime_error(fmt::format("failed to expand '{}'", value));
+    }
+
+    if (p.we_wordc > 1) {
+        wordfree(&p);
+        throw std::runtime_error(fmt::format("'{}' expands into more than one value", value));
+    }
+
+    auto result = std::filesystem::u8path(p.we_wordv[0]);
+    wordfree(&p);
+
+    return result;
+}
+
+}    // namespace etcpp

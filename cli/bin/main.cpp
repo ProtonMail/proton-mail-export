@@ -204,9 +204,17 @@ int main(int argc, const char** argv) {
 
         etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;
 
+        constexpr int kMaxNumLoginAttempts = 3;
+        int numLoginAttempts = 0;
+
         while (loginState != etcpp::Session::LoginState::LoggedIn) {
             if (gShouldQuit) {
                 return EXIT_SUCCESS;
+            }
+
+            if (numLoginAttempts >= kMaxNumLoginAttempts) {
+                std::cerr << "Failed to login: Max attempts reached";
+                return EXIT_FAILURE;
             }
 
             switch (loginState) {
@@ -230,8 +238,11 @@ int main(int argc, const char** argv) {
                         loginState = runTask(appState, task);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to login: " << e.what() << std::endl;
-                        return EXIT_FAILURE;
+                        numLoginAttempts += 1;
+                        continue;
                     }
+
+                    numLoginAttempts = 0;
                     break;
                 }
                 case etcpp::Session::LoginState::AwaitingTOTP: {
@@ -254,7 +265,7 @@ int main(int argc, const char** argv) {
                     break;
                 }
                 case etcpp::Session::LoginState::AwaitingHV: {
-                    std::cerr << "Not yet implemented" << std::endl;
+                    std::cerr << "HV: Not yet implemented" << std::endl;
                     return EXIT_FAILURE;
                 }
                 case etcpp::Session::LoginState::AwaitingMailboxPassword: {

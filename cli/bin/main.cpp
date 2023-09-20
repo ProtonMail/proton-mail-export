@@ -200,6 +200,10 @@ int main(int argc, const char** argv) {
             return EXIT_SUCCESS;
         }
 
+        if (const auto& logPath = logScope.getLogPath(); logPath) {
+            std::cout << "Session Log: " << *logPath << '\n' << std::endl;
+        }
+
         auto session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());
 
         etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;

@@ -18,6 +18,7 @@
 package main
 
 /*
+	#include <stdlib.h>
 	typedef const char cchar_t;
 */
 import "C"
@@ -25,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/utils"
@@ -54,6 +56,8 @@ func etLogInit(filePath *C.cchar_t) C.int {
 		return -1
 	}
 
+	globalLogInstance.clogPath = C.CString(path)
+
 	logrus.SetOutput(file)
 	logrus.SetFormatter(internal.NewLogFormatter())
 	internal.LogPrelude()
@@ -73,6 +77,10 @@ func etLogClose() {
 		} else {
 			globalLogInstance.file = nil
 		}
+	}
+
+	if globalLogInstance.clogPath != nil {
+		C.free(unsafe.Pointer(globalLogInstance.clogPath))
 	}
 
 	globalLogInstance.lastError.Close()
@@ -106,10 +114,19 @@ func etLogError(tag *C.cchar_t, txt *C.cchar_t) {
 	logrus.WithField("tag", C.GoString(tag)).Error(C.GoString(txt))
 }
 
+//export etLogGetPath
+func etLogGetPath() *C.cchar_t {
+	globalLogInstance.mutex.Lock()
+	defer globalLogInstance.mutex.Unlock()
+
+	return globalLogInstance.clogPath
+}
+
 type globalLog struct {
 	mutex     sync.Mutex
 	file      *os.File
 	lastError utils.CLastError
+	clogPath  *C.char
 }
 
 //nolint:gochecknoglobals

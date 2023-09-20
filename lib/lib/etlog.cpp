@@ -36,6 +36,15 @@ LogScope::~LogScope() {
     etLogClose();
 }
 
+std::optional<std::filesystem::path> LogScope::getLogPath() const {
+    const char* clogPath = etLogGetPath();
+    if (clogPath == nullptr) {
+        return {};
+    }
+
+    return std::filesystem::u8path(clogPath);
+}
+
 static thread_local std::string tlBuffer;
 std::string& getThreadLocalLogBuffer() {
     tlBuffer.clear();

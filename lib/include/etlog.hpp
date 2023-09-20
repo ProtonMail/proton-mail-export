@@ -21,6 +21,7 @@
 #include <string_view>
 
 #include <fmt/format.h>
+#include <optional>
 #include "etexception.hpp"
 
 #if defined(_WIN32)
@@ -56,6 +57,8 @@ class LogScope final {
     LogScope(LogScope&&) = delete;
     LogScope& operator=(const LogScope&) = delete;
     LogScope operator=(LogScope&&) = delete;
+
+    std::optional<std::filesystem::path> getLogPath() const;
 };
 
 template <typename... T>

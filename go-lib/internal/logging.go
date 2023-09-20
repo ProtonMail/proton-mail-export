@@ -18,10 +18,13 @@
 package internal
 
 import (
+	"bytes"
+	"fmt"
 	"runtime"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 func NewLogFileName() string {
@@ -30,21 +33,7 @@ func NewLogFileName() string {
 }
 
 func NewLogFormatter() logrus.Formatter {
-	return &logrus.TextFormatter{
-		ForceColors:            false,
-		DisableColors:          true,
-		ForceQuote:             false,
-		DisableTimestamp:       false,
-		FullTimestamp:          false,
-		TimestampFormat:        time.StampMilli,
-		DisableSorting:         false,
-		SortingFunc:            nil,
-		DisableLevelTruncation: false,
-		PadLevelText:           true,
-		QuoteEmptyFields:       false,
-		FieldMap:               nil,
-		CallerPrettyfier:       nil,
-	}
+	return &logFormatter{}
 }
 
 func LogPrelude() {
@@ -56,4 +45,81 @@ func LogPrelude() {
 		WithField("build", ETBuildTime).
 		WithField("runtime", runtime.GOOS).
 		Info("Starting App")
+}
+
+type logFormatter struct{}
+
+func (l logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	var b *bytes.Buffer
+	if entry.Buffer != nil {
+		b = entry.Buffer
+	} else {
+		b = &bytes.Buffer{}
+	}
+
+	// write time.
+	if _, err := b.WriteString(entry.Time.Format(time.StampMilli)); err != nil {
+		return nil, err
+	}
+
+	b.WriteByte('|')
+
+	// write level.
+	if _, err := b.Write(levelToBytes(entry.Level)); err != nil {
+		return nil, err
+	}
+
+	b.WriteByte('|')
+	b.WriteByte(' ')
+
+	// write message.
+	if _, err := b.WriteString(entry.Message); err != nil {
+		return nil, err
+	}
+	b.WriteByte('\n')
+
+	maxKeyLen := 0
+
+	for _, f := range maps.Keys(entry.Data) {
+		l := len(f)
+		if l > maxKeyLen {
+			maxKeyLen = l
+		}
+	}
+
+	for f, v := range entry.Data {
+		b.WriteByte('\t')
+		if _, err := b.WriteString(fmt.Sprintf("%*s=", maxKeyLen, f)); err != nil {
+			return nil, err
+		}
+
+		if _, err := b.WriteString(fmt.Sprint(v)); err != nil {
+			return nil, err
+		}
+
+		b.WriteByte('\n')
+	}
+
+	return b.Bytes(), nil
+}
+
+func levelToBytes(level logrus.Level) []byte {
+	switch level {
+	case logrus.TraceLevel:
+		return []byte("trace")
+	case logrus.DebugLevel:
+		return []byte("debug")
+	case logrus.InfoLevel:
+		return []byte("info ")
+	case logrus.WarnLevel:
+		return []byte("warn ")
+	case logrus.ErrorLevel:
+		return []byte("error")
+	case logrus.FatalLevel:
+		return []byte("fatal")
+	case logrus.PanicLevel:
+		return []byte("panic")
+	default:
+		return []byte("unkno")
+	}
 }

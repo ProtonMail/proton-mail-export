@@ -85,6 +85,8 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 			return nil
 		}
 
+		logrus.WithError(err).Error("Failed to login")
+
 		return err
 	}
 
@@ -117,6 +119,7 @@ func (s *Session) Logout(ctx context.Context) error {
 	logrus.WithField("email", s.email).Debugf("Logging out")
 
 	if err := s.client.AuthDelete(ctx); err != nil {
+		logrus.WithField("email", s.email).WithError(err).Error("Failed to logout")
 		return err
 	}
 
@@ -135,6 +138,7 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 	logrus.WithField("email", s.email).Debugf("Submitting TOTP code")
 
 	if err := s.client.Auth2FA(ctx, proton.Auth2FAReq{TwoFactorCode: totp}); err != nil {
+		logrus.WithField("email", s.email).WithError(err).Error("Failed to Submit totp")
 		return err
 	}
 

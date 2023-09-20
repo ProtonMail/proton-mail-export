@@ -25,6 +25,7 @@ package main
 import "C"
 import (
 	"context"
+	"errors"
 	"sync"
 	"unsafe"
 
@@ -100,7 +101,7 @@ func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) 
 func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		if err := session.Login(ctx, C.GoString(email), C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
-			return err
+			return internal.MapError(err)
 		}
 
 		*outStatus = mapLoginState(session.LoginState())
@@ -111,7 +112,7 @@ func etSessionLogin(ptr *C.etSession, email *C.cchar_t, password *C.cchar_t, pas
 //export etSessionLogout
 func etSessionLogout(ptr *C.etSession) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
-		return session.Logout(ctx)
+		return internal.MapError(session.Logout(ctx))
 	})
 }
 
@@ -119,7 +120,7 @@ func etSessionLogout(ptr *C.etSession) C.etSessionStatus {
 func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
 		if err := session.SubmitTOTP(ctx, C.GoString(totp)); err != nil {
-			return err
+			return internal.MapError(err)
 		}
 
 		*outStatus = mapLoginState(session.LoginState())
@@ -164,6 +165,10 @@ func withSession(ptr *C.etSession, f func(ctx context.Context, session *session.
 
 	err := f(session.ctx, session.s)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return C.ET_SESSION_STATUS_CANCELLED
+		}
+
 		session.setLastError(err)
 		return C.ET_SESSION_STATUS_ERROR
 	}

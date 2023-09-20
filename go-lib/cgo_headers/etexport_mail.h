@@ -9,6 +9,7 @@ typedef enum etExportMailStatus {
 	ET_EXPORT_MAIL_STATUS_OK,
 	ET_EXPORT_MAIL_STATUS_ERROR,
 	ET_EXPORT_MAIL_STATUS_INVALID,
+	ET_EXPORT_MAIL_STATUS_CANCELLED,
 } etExportMailStatus;
 
 typedef enum etExportMailMessageType {

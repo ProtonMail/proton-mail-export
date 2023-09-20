@@ -298,6 +298,8 @@ int main(int argc, const char** argv) {
         }
         std::cout << "Export Finished" << std::endl;
 
+    } catch (const etcpp::CancelledException&) {
+        return EXIT_SUCCESS;
     } catch (const std::exception& e) {
         std::cerr << "Encountered unexpected error: " << e.what() << std::endl;
         return EXIT_FAILURE;

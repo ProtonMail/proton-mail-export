@@ -24,6 +24,8 @@ package main
 */
 import "C"
 import (
+	"context"
+	"errors"
 	"path/filepath"
 	"unsafe"
 
@@ -93,7 +95,11 @@ func etExportMailStart(ptr *C.etExportMail, callbacks *C.etExportMailCallbacks) 
 	}
 
 	if err := ce.exporter.Run(ce.csession.ctx, reporter); err != nil {
-		ce.lastError.Set(err)
+		if errors.Is(err, context.Canceled) {
+			return C.ET_EXPORT_MAIL_STATUS_CANCELLED
+		}
+
+		ce.lastError.Set(internal.MapError(err))
 		return C.ET_EXPORT_MAIL_STATUS_ERROR
 	}
 

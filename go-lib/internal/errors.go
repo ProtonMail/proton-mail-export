@@ -15,32 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+package internal
 
-#include <exception>
-#include <string>
-#include <string_view>
+import (
+	"errors"
+	"fmt"
 
-namespace etcpp {
+	"github.com/ProtonMail/go-proton-api"
+)
 
-class Exception : public std::exception {
-   protected:
-    std::string mWhat;
+func MapError(err error) error {
+	if err == nil {
+		return nil
+	}
 
-   public:
-    inline explicit Exception(std::string_view what) : mWhat(what) {}
-    ~Exception() override = default;
+	var protonErr *proton.APIError
+	if errors.As(err, &protonErr) {
+		return fmt.Errorf(protonErr.Message)
+	}
 
-    Exception(const Exception&) = delete;
-    Exception(Exception&&) = default;
-    Exception& operator=(const Exception&) = delete;
-    Exception& operator=(Exception&&) = default;
-
-    [[nodiscard]] const char* what() const noexcept override { return mWhat.c_str(); }
-};
-
-class CancelledException final : public Exception {
-   public:
-    inline CancelledException() : Exception("Operation Cancelled") {}
-};
-}    // namespace etcpp
+	return err
+}

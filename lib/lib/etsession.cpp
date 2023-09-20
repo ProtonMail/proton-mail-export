@@ -35,6 +35,8 @@ inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
             }
             throw SessionException(lastErr);
         }
+        case ET_SESSION_STATUS_CANCELLED:
+            throw CancelledException();
         case ET_SESSION_STATUS_OK:
             break;
     }

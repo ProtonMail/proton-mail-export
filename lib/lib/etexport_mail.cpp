@@ -33,6 +33,8 @@ inline void mapETExportMailStatusToException(etExportMail* ptr, etExportMailStat
             }
             throw ExportMailException(lastErr);
         }
+        case ET_EXPORT_MAIL_STATUS_CANCELLED:
+            throw CancelledException();
         case ET_EXPORT_MAIL_STATUS_OK:
             break;
     }

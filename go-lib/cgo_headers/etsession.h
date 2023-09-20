@@ -12,6 +12,7 @@ typedef enum etSessionStatus {
 	ET_SESSION_STATUS_OK,
 	ET_SESSION_STATUS_ERROR,
 	ET_SESSION_STATUS_INVALID,
+	ET_SESSION_STATUS_CANCELLED,
 } etSessionStatus;
 
 typedef enum etSessionLoginState {

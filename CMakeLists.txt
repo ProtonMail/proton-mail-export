@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.23)
 project(ExportTool CXX C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+if (UNIX AND NOT APPLE)
+    set(CMAKE_INSTALL_RPATH "$\{ORIGIN\}")
+endif()
 
 enable_testing()
 

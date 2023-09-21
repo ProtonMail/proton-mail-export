@@ -20,6 +20,7 @@ package mail
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
@@ -30,9 +31,7 @@ import (
 )
 
 type DownloadStageOutput struct {
-	metadata []proton.MessageMetadata
 	messages []proton.FullMessage
-	errors   []error
 }
 
 type DownloadStage struct {
@@ -62,6 +61,8 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 	d.log.Debug("Starting")
 	defer d.log.Debug("Exiting")
 
+	const Failed422ID = "MsgFailed422"
+
 	defer close(d.outputCh)
 	for metadata := range input {
 		for _, chunk := range xslices.Chunk(metadata, d.parallelWorkers) {
@@ -70,24 +71,37 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 			}
 
 			result := DownloadStageOutput{
-				metadata: chunk,
 				messages: make([]proton.FullMessage, len(chunk)),
-				errors:   make([]error, len(chunk)),
 			}
 
 			if err := parallel.DoContext(ctx, d.parallelWorkers, len(chunk), func(ctx context.Context, i int) error {
 				defer async.HandlePanic(d.panicHandler)
 
 				msg, err := downloadMessageAndAttachments(ctx, d.client, chunk[i])
+				if err != nil {
+					var apiErr *proton.APIError
+					if errors.As(err, &apiErr) && apiErr.Status == 422 {
+						d.log.WithField("msgID", chunk[i].ID).Warn("Failed to download message due to 422")
+						result.messages[i].ID = Failed422ID
+						return nil
+					}
+
+					d.log.WithError(err).WithField("msgID", chunk[i].ID).Error("Failed to download message or attachment")
+					return err
+				}
 
 				result.messages[i] = msg
-				result.errors[i] = err
 
 				return nil
 			}); err != nil {
 				errReporter.ReportStageError(err)
 				return
 			}
+
+			// Remove any failed 422 downloads.
+			result.messages = xslices.Filter(result.messages, func(t proton.FullMessage) bool {
+				return t.ID != Failed422ID
+			})
 
 			select {
 			case <-ctx.Done():

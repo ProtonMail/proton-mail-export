@@ -66,7 +66,7 @@ func (b *BuildStage) Run(
 			return
 		}
 
-		results := make([]MessageWriter, len(input.metadata))
+		results := make([]MessageWriter, len(input.messages))
 
 		if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
 			addrID := input.messages[i].AddressID

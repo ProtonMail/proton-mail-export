@@ -152,27 +152,23 @@ func TestDownloadStage_Run(t *testing.T) {
 		},
 	}
 
-	msgError := errors.New("something went wrong")
+	msgError := &proton.APIError{Status: 422}
+
+	inputMetadata := []proton.MessageMetadata{
+		{
+			ID: msgID1,
+		},
+		{
+			ID: msgID2,
+		},
+	}
 
 	expected := DownloadStageOutput{
-		metadata: []proton.MessageMetadata{
-			{
-				ID: msgID1,
-			},
-			{
-				ID: msgID2,
-			},
-		},
 		messages: []proton.FullMessage{
-			{},
 			{
 				Message: msgData,
 				AttData: [][]byte{attData1, attData2},
 			},
-		},
-		errors: []error{
-			msgError,
-			nil,
 		},
 	}
 
@@ -193,10 +189,41 @@ func TestDownloadStage_Run(t *testing.T) {
 		stage.Run(context.Background(), input, errReporter)
 	}()
 
-	input <- expected.metadata
+	input <- inputMetadata
 	close(input)
 
 	result := <-stage.outputCh
 
 	require.Equal(t, expected, result)
+}
+
+func TestDownloadStage_RunOtherErrorsReported(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	client := apiclient.NewMockClient(mockCtrl)
+	errReporter := NewMockStageErrorReporter(mockCtrl)
+	stage := NewDownloadStage(client, 2, logrus.WithField("test", "test"), &async.NoopPanicHandler{})
+
+	input := make(chan []proton.MessageMetadata)
+
+	const msgID1 = "msgID1"
+
+	msgError := errors.New("unexpected error")
+
+	inputMetadata := []proton.MessageMetadata{
+		{
+			ID: msgID1,
+		},
+	}
+
+	client.EXPECT().GetMessage(gomock.Any(), gomock.Eq(msgID1)).Return(proton.Message{}, msgError)
+	errReporter.EXPECT().ReportStageError(gomock.Eq(msgError))
+
+	go func() {
+		stage.Run(context.Background(), input, errReporter)
+	}()
+
+	input <- inputMetadata
+	close(input)
+
+	<-stage.outputCh
 }

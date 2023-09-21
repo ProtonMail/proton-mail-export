@@ -54,9 +54,7 @@ ExportMail::ExportMail(const etcpp::Session& session, etExportMail* ptr)
     : mSession(session), mPtr(ptr) {}
 
 ExportMail::~ExportMail() {
-    if (mPtr != nullptr) {
-        wrapCCall([](etExportMail* ptr) { return etExportMailDelete(ptr); });
-    }
+    wrapCCall([](etExportMail* ptr) { return etExportMailDelete(ptr); });
 }
 
 void ExportMail::start(ExportMailCallback& cb) {

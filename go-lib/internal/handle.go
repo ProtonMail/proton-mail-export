@@ -40,21 +40,25 @@ func (a *HandleMap[T]) Alloc(i *T) Handle[T] {
 
 	a.instances = append(a.instances, i)
 
-	return Handle[T](len(a.instances) - 1)
+	// Return index +1 so we can still do null checks with c pointers.
+	return Handle[T](len(a.instances))
 }
 
 func (a *HandleMap[T]) Free(h Handle[T]) {
 	a.sync.Lock()
 	defer a.sync.Unlock()
 
-	a.instances[h] = nil
+	index := h - 1
+
+	a.instances[index] = nil
 }
 
 func (a *HandleMap[T]) Resolve(h Handle[T]) (*T, bool) {
 	a.sync.RLock()
 	defer a.sync.RUnlock()
 
-	instance := a.instances[h]
+	index := h - 1
+	instance := a.instances[index]
 
 	return instance, instance != nil
 }

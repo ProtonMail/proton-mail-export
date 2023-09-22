@@ -48,6 +48,28 @@ function(build_cgo_lib)
         set(GO_LIB_BUILD_EXTRA COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_etcore.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${name}.h")
     endif()
 
+    if (APPLE)
+        set(go_arch)
+        if ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
+            set(go_arch "arm64")
+        elseif ("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "x86_64")
+            set(go_arch "amd64")
+        else()
+            message(FATAL_ERROR "Unknown Mac OS arch")
+        endif()
+
+        set(ENV_MANIP ${CMAKE_COMMAND} -E env
+            "CGO_ENABLED=1"
+            "MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+            "GOARCH=${go_arch}"
+        )
+
+        list(APPEND ADDITIONAL_FLAGS -gccgoflags
+            '-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}'
+            -ldflags '-extldflags -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}'
+        )
+    endif()
+
     add_custom_command (OUTPUT ${lib}
             DEPENDS ${CGO_GO_SOURCES}
             COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="${CGO_TAGS}" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${lib}"

@@ -1,5 +1,4 @@
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-
+include(cmake/vcpkg_setup.cmake)
 cmake_minimum_required(VERSION 3.23)
 project(ExportTool CXX C)
 

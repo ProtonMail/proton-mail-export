@@ -92,6 +92,14 @@ stages:
   script:
      - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
 
+.script-config-cmake-macos-arm64:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" -DCMAKE_OSX_ARCHITECTURES=arm64
+
+.script-config-cmake-macos-x86_64:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" -DCMAKE_OSX_ARCHITECTURES=x86_64
+
 .script-install:
   script:
      - cmake --install $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
@@ -131,19 +139,34 @@ build-linux:
       - $CMAKE_INSTALL_DIR/bin
     when: always
 
-#build-darwin:
+#build-darwin-arm64:
 #  stage: build
 #  extends:
 #    - .env-darwin
 #  script:
 #    - !reference [.script-config-git, script]
-#    - !reference [.script-config-cmake-unix, script]
+#    - !reference [.script-config-cmake-macos-amr64, script]
 #    - !reference [.script-test, script]
 #    - !reference [.script-install, script]
 #  artifacts:
 #    paths:
 #      - $CMAKE_INSTALL_DIR/bin
 #    when: always
+
+#build-darwin-x86_64:
+#  stage: build
+#  extends:
+#    - .env-darwin
+#  script:
+#    - !reference [.script-config-git, script]
+#    - !reference [.script-config-cmake-unix-x86_64, script]
+#    - !reference [.script-test, script]
+#    - !reference [.script-install, script]
+#  artifacts:
+#    paths:
+#      - $CMAKE_INSTALL_DIR/bin
+#    when: always
+
 
 #build-windows:
 #  stage: build

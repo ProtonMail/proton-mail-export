@@ -72,6 +72,9 @@ R runTaskWithProgress(const TaskAppState& state, TaskWithProgress<R>& task) {
         } else {
             const float progress = task.pollProgress();
             progressBar.update(progress);
+            if (state.shouldQuit()) {
+                continue;
+            }
 
             if (state.networkLost()) {
                 std::cout << '\r' << spinner.next() << " " << kNetworkLostText << std::flush;

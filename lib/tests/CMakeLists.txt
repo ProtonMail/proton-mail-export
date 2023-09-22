@@ -11,6 +11,7 @@ target_sources(etcpp_test PRIVATE
     gpa_server.cpp
     gpa_server.hpp
     test_etutil.cpp
+    test_mail_export.cpp
 )
 
 target_link_libraries(etcpp_test PRIVATE etcpp etcore etgpa Catch2::Catch2 Catch2::Catch2WithMain)

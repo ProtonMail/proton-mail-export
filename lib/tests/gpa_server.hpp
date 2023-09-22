@@ -20,6 +20,7 @@
 #include <exception>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "etgpa.h"
 
@@ -41,9 +42,15 @@ class GPAServer {
     GPAServer();
     ~GPAServer();
 
-    std::string createUser(const char* email, const char* password);
+    std::string createUser(const char* email, const char* password, std::string& outAddrID);
 
     std::string url() const;
+
+    std::vector<std::string> createTestMessages(const char* userID,
+                                                const char* addrRD,
+                                                const char* email,
+                                                const char* password,
+                                                int count);
 
     GPAServer(const GPAServer&) = delete;
     GPAServer(GPAServer&&) = delete;

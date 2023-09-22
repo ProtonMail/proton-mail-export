@@ -18,9 +18,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <etsession.hpp>
+#include <filesystem>
+
 #include "gpa_server.hpp"
 
-TEST_CASE("SessionLogin") {
+class NullCallback final : public etcpp::ExportMailCallback {
+   public:
+    void onProgress(float) override {}
+};
+
+TEST_CASE("MailExport") {
     GPAServer server;
 
     const char* userEmail = "hello@bar.com";
@@ -38,4 +45,29 @@ TEST_CASE("SessionLogin") {
 
     auto loginState = session.login(userEmail, userPassword);
     REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+
+    std::vector<std::string> messageIDs;
+    REQUIRE_NOTHROW(messageIDs = server.createTestMessages(userID.c_str(), addrID.c_str(),
+                                                           userEmail, userPassword, 50));
+
+    time_t t = time(nullptr);
+
+    auto tmpDir = std::filesystem::temp_directory_path();
+
+    // Japanese text below to test unicode path handling on Win32.
+    tmpDir /= std::filesystem::u8path("ことわざ") / std::to_string(t);
+
+    {
+        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto nullCallback = NullCallback();
+        REQUIRE_NOTHROW(exporter.start(nullCallback));
+    }
+
+    auto exportDir = tmpDir / userEmail / "mail";
+
+    for (const auto& msgID : messageIDs) {
+        auto msgPath = exportDir / (msgID + ".eml");
+        auto metadataPath = exportDir / (msgID + ".metadata.json");
+        REQUIRE(std::filesystem::is_regular_file(msgPath));
+    }
 }

@@ -38,6 +38,7 @@ import "C"
 import (
 	"context"
 	"github.com/ProtonMail/export-tool/internal"
+	"github.com/sirupsen/logrus"
 	"unsafe"
 )
 
@@ -71,7 +72,7 @@ func gpaServerDelete(ptr *C.gpaServer) C.gpaServerStatus {
 }
 
 //export gpaServerCreateUser
-func gpaServerCreateUser(ptr *C.gpaServer, email *C.cchar_t, password *C.cchar_t, outID **C.char) C.gpaServerStatus {
+func gpaServerCreateUser(ptr *C.gpaServer, email *C.cchar_t, password *C.cchar_t, outID **C.char, outAddrID **C.char) C.gpaServerStatus {
 	s, ok := resolveGPAServer(ptr)
 	if !ok {
 		return C.GPA_SERVER_STATUS_INVALID
@@ -80,12 +81,13 @@ func gpaServerCreateUser(ptr *C.gpaServer, email *C.cchar_t, password *C.cchar_t
 	goEmail := C.GoString(email)
 	goPassword := C.GoString(password)
 
-	userID, _, err := s.CreateUser(goEmail, goPassword)
+	userID, addrID, err := s.CreateUser(goEmail, goPassword)
 	if err != nil {
 		return C.GPA_SERVER_STATUS_FAILED
 	}
 
 	*outID = C.CString(userID)
+	*outAddrID = C.CString(addrID)
 
 	return C.GPA_SERVER_STATUS_OK
 }
@@ -98,6 +100,40 @@ func gpaServerGetURL(ptr *C.gpaServer, outURL **C.char) C.gpaServerStatus {
 	}
 
 	*outURL = C.CString(s.GetURL())
+
+	return C.GPA_SERVER_STATUS_OK
+}
+
+//export gpaServerCreateMessages
+func gpaServerCreateMessages(ptr *C.gpaServer,
+	userID *C.cchar_t,
+	addrID *C.cchar_t,
+	email *C.cchar_t,
+	password *C.cchar_t,
+	count C.size_t,
+	outIDS **C.char,
+) C.gpaServerStatus {
+	s, ok := resolveGPAServer(ptr)
+	if !ok {
+		return C.GPA_SERVER_STATUS_INVALID
+	}
+
+	goUserID := C.GoString(userID)
+	goAddrID := C.GoString(addrID)
+	goEmail := C.GoString(email)
+	goPassword := C.GoString(password)
+
+	messageIDs, err := s.CreateTestMessages(goUserID, goAddrID, goEmail, goPassword, int(count))
+	if err != nil {
+		logrus.WithError(err).Error("Failed to create test messages")
+		return C.GPA_SERVER_STATUS_FAILED
+	}
+
+	cMessageIDs := unsafe.Slice(outIDS, int(count))
+
+	for i, v := range messageIDs {
+		cMessageIDs[i] = C.CString(v)
+	}
 
 	return C.GPA_SERVER_STATUS_OK
 }

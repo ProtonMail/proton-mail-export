@@ -57,6 +57,8 @@ func NewDownloadStage(
 	}
 }
 
+const MaxDownloadMemMB = 128 * 1024 * 1024
+
 func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMetadata, errReporter StageErrorReporter) {
 	d.log.Debug("Starting")
 	defer d.log.Debug("Exiting")
@@ -65,7 +67,8 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 
 	defer close(d.outputCh)
 	for metadata := range input {
-		for _, chunk := range xslices.Chunk(metadata, d.parallelWorkers) {
+		memChucked := chunkMemLimitMetadata(metadata, MaxDownloadMemMB)
+		for _, chunk := range memChucked {
 			if ctx.Err() != nil {
 				return
 			}
@@ -142,4 +145,14 @@ func downloadMessageAndAttachments(ctx context.Context, client apiclient.Client,
 	}
 
 	return full, nil
+}
+
+func chunkMemLimitMetadata(batch []proton.MessageMetadata, maxMemory uint64) [][]proton.MessageMetadata {
+	// Message are alive for 4 stages. Even though there are technically 2 stages after this one
+	// Due to pipelining up to 4 batches can be in circulation at any given time.
+	const stageMultiplier = 4
+
+	return chunkMemLimit(batch, maxMemory, stageMultiplier, func(message proton.MessageMetadata) uint64 {
+		return uint64(message.Size)
+	})
 }

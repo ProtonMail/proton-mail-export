@@ -22,3 +22,35 @@ import "github.com/ProtonMail/go-proton-api"
 func wantLabel(label proton.Label) bool {
 	return label.Type != proton.LabelTypeSystem
 }
+
+func chunkMemLimit[T any](batch []T, maxMemory uint64, stageMultiplier uint64, getSize func(T) uint64) [][]T {
+	var expectedMemUsage uint64
+	var chunks [][]T
+	var lastIndex int
+	var index int
+
+	for _, v := range batch {
+		dataSize := getSize(v)
+
+		// 2x increase for attachment due to extra memory needed for decrypting and writing
+		// in memory buffer.
+		dataSize *= stageMultiplier
+
+		nextMemSize := expectedMemUsage + dataSize
+		if nextMemSize >= maxMemory {
+			chunks = append(chunks, batch[lastIndex:index])
+			lastIndex = index
+			expectedMemUsage = dataSize
+		} else {
+			expectedMemUsage = nextMemSize
+		}
+
+		index++
+	}
+
+	if lastIndex < len(batch) {
+		chunks = append(chunks, batch[lastIndex:])
+	}
+
+	return chunks
+}

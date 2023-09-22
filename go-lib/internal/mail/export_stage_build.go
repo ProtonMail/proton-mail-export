@@ -24,6 +24,7 @@ import (
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
+	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
 	"github.com/bradenaw/juniper/parallel"
 	"github.com/sirupsen/logrus"
@@ -51,6 +52,8 @@ func NewBuildStage(parallelBuilders int, log *logrus.Entry, panicHandler async.P
 	}
 }
 
+const MaxBuildMemMB = 128 * 1024 * 1024
+
 func (b *BuildStage) Run(
 	ctx context.Context,
 	inputs <-chan DownloadStageOutput,
@@ -62,50 +65,52 @@ func (b *BuildStage) Run(
 	defer close(b.outputCh)
 
 	for input := range inputs {
-		if ctx.Err() != nil {
-			return
-		}
+		for _, chunk := range chunkMemLimitFullMessage(input.messages, MaxBuildMemMB) {
+			if ctx.Err() != nil {
+				return
+			}
 
-		results := make([]MessageWriter, len(input.messages))
+			results := make([]MessageWriter, len(chunk))
 
-		if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
-			addrID := input.messages[i].AddressID
+			if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
+				addrID := chunk[i].AddressID
 
-			kr, ok := keys.GetAddrKeyRing(addrID)
-			if !ok {
-				b.log.WithField("addrID", addrID).Warn("Address has no key ring")
-				results[i] = &AddrKeyRingMissingMessageWriter{msg: input.messages[i]}
+				kr, ok := keys.GetAddrKeyRing(addrID)
+				if !ok {
+					b.log.WithField("addrID", addrID).Warn("Address has no key ring")
+					results[i] = &AddrKeyRingMissingMessageWriter{msg: chunk[i]}
+					return nil
+				}
+
+				var buffer bytes.Buffer
+				buffer.Grow(chunk[i].Size)
+
+				decrypted := message.DecryptMessage(kr, chunk[i].Message, chunk[i].AttData)
+
+				if err := message.BuildRFC822Into(kr, &decrypted, defaultMessageJobOpts(), &buffer); err != nil {
+					b.log.WithError(err).WithField("addrID", addrID).Warn("Failed to build message")
+					results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}
+					return nil
+				}
+
+				results[i] = &DecryptedAndBuiltMessageWriter{
+					msg: chunk[i],
+					eml: buffer,
+				}
+
 				return nil
+			}); err != nil {
+				errReporter.ReportStageError(err)
+				return
 			}
 
-			var buffer bytes.Buffer
-			buffer.Grow(input.messages[i].Size)
-
-			decrypted := message.DecryptMessage(kr, input.messages[i].Message, input.messages[i].AttData)
-
-			if err := message.BuildRFC822Into(kr, &decrypted, defaultMessageJobOpts(), &buffer); err != nil {
-				b.log.WithError(err).WithField("addrID", addrID).Warn("Failed to build message")
-				results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}
-				return nil
+			select {
+			case <-ctx.Done():
+				return
+			case b.outputCh <- BuildStageOutput{
+				messages: results,
+			}:
 			}
-
-			results[i] = &DecryptedAndBuiltMessageWriter{
-				msg: input.messages[i],
-				eml: buffer,
-			}
-
-			return nil
-		}); err != nil {
-			errReporter.ReportStageError(err)
-			return
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case b.outputCh <- BuildStageOutput{
-			messages: results,
-		}:
 		}
 	}
 }
@@ -119,4 +124,19 @@ func defaultMessageJobOpts() message.JobOptions {
 		AddMessageDate:         true, // Whether to include message time as X-Pm-Date.
 		AddMessageIDReference:  true, // Whether to include the MessageID in References.
 	}
+}
+
+func chunkMemLimitFullMessage(batch []proton.FullMessage, maxMemory uint64) [][]proton.FullMessage {
+	// Message are alive for 2 stages.
+	const stageMultiplier = 2
+
+	return chunkMemLimit(batch, maxMemory, stageMultiplier, func(message proton.FullMessage) uint64 {
+		var dataSize uint64
+		for _, a := range message.Attachments {
+			dataSize += uint64(a.Size)
+		}
+		dataSize += uint64(len(message.Body))
+
+		return dataSize
+	})
 }

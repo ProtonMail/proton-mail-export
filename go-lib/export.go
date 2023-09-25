@@ -39,9 +39,16 @@ import (
 type SessionHandle = internal.Handle[csession]
 
 //export etSessionNew
-func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks) *C.etSession {
+func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks, cErr **C.char) *C.etSession {
 	goAPIURL := C.GoString(apiURL)
-	h := sessionAllocator.Alloc(newCSession(goAPIURL, cb))
+
+	cSession, err := newCSession(goAPIURL, cb)
+	if err != nil {
+		*cErr = C.CString(err.Error())
+		return nil
+	}
+
+	h := sessionAllocator.Alloc(cSession)
 	// Intentional misuse of unsafe pointer.
 	p := unsafe.Pointer(uintptr(h)) //nolint:govet
 	return (*C.etSession)(p)
@@ -184,18 +191,25 @@ type csession struct {
 	lastError  utils.CLastError
 }
 
-func newCSession(apiURL string, cb C.etSessionCallbacks) *csession {
+func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 	sessionCb := newCSessionCallback(cb)
+	builder, err := apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{}, sessionCb)
+	if err != nil {
+		return nil, err
+	}
+
 	clientBuilder := apiclient.NewAutoRetryClientBuilder(
-		apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{}, sessionCb),
+		builder,
 		&apiclient.SleepRetryStrategyBuilder{},
 	)
+
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &csession{
 		s:         session.NewSession(clientBuilder, sessionCb),
 		ctx:       ctx,
 		ctxCancel: cancel,
-	}
+	}, nil
 }
 
 func (c *csession) close() {

@@ -20,6 +20,9 @@ package apiclient
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
@@ -36,13 +39,19 @@ type ProtonAPIClientBuilder struct {
 	callback ProtonCallbacks
 }
 
-func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, callbacks ProtonCallbacks) *ProtonAPIClientBuilder {
+func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, callbacks ProtonCallbacks) (*ProtonAPIClientBuilder, error) {
+	cookieJar, err := newCookieJar(apiURL)
+	if err != nil {
+		return nil, err
+	}
+
 	b := &ProtonAPIClientBuilder{
 		manager: proton.New(
 			proton.WithHostURL(apiURL),
 			proton.WithAppVersion("Other"),
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
+			proton.WithCookieJar(cookieJar),
 		),
 		callback: callbacks,
 	}
@@ -61,7 +70,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 		}
 	})
 
-	return b
+	return b, nil
 }
 
 func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {
@@ -84,4 +93,27 @@ func IsHVRequestedError(err error) bool {
 	}
 
 	return protonErr.Code == 9001
+}
+
+func newCookieJar(apiURL string) (*cookiejar.Jar, error) {
+	url, err := url.Parse(apiURL)
+	if err != nil {
+		return nil, err
+	}
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for name, value := range map[string]string{
+		"hhn":  getProtectedHostname(),
+		"tz":   getTimeZone(),
+		"lng":  getSystemLang(),
+		"arch": getHostArch(),
+	} {
+		jar.SetCookies(url, []*http.Cookie{{Name: name, Value: value, Secure: true}})
+	}
+
+	return jar, nil
 }

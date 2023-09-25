@@ -59,7 +59,15 @@ etSessionCallbacks makeCCallback(SessionCallback* ptr) {
 }
 
 Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& callbacks)
-    : mPtr(etSessionNew(serverURL, makeCCallback(callbacks.get()))), mCallbacks(callbacks) {}
+    : mCallbacks(callbacks) {
+    char* outErr = nullptr;
+    mPtr = etSessionNew(serverURL, makeCCallback(mCallbacks.get()), &outErr);
+    if (mPtr == nullptr) {
+        auto ex = SessionException(outErr);
+        free(outErr);
+        throw std::move(ex);
+    }
+}
 
 Session::~Session() {
     if (mPtr != nullptr) {

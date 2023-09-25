@@ -42,10 +42,9 @@ func TestAddrKeyRingMissingMessageWriter(t *testing.T) {
 			MessageMetadata: proton.MessageMetadata{
 				ID: msgID,
 			},
-			Header:        "",
-			ParsedHeaders: nil,
-			Body:          msgBody,
-			MIMEType:      "",
+			Header:   "",
+			Body:     msgBody,
+			MIMEType: "",
 			Attachments: []proton.Attachment{
 				{
 					ID:          attID,
@@ -53,7 +52,6 @@ func TestAddrKeyRingMissingMessageWriter(t *testing.T) {
 					Size:        int64(len(attData)),
 					MIMEType:    "",
 					Disposition: "",
-					Headers:     nil,
 					KeyPackets:  "",
 					Signature:   "",
 				},
@@ -93,10 +91,9 @@ func TestAssembleFailedMessageWriter_NotDecrypted(t *testing.T) {
 			MessageMetadata: proton.MessageMetadata{
 				ID: msgID,
 			},
-			Header:        "",
-			ParsedHeaders: nil,
-			Body:          msgBody,
-			MIMEType:      "",
+			Header:   "",
+			Body:     msgBody,
+			MIMEType: "",
 			Attachments: []proton.Attachment{
 				{
 					ID:          attID,
@@ -104,7 +101,6 @@ func TestAssembleFailedMessageWriter_NotDecrypted(t *testing.T) {
 					Size:        int64(len(attData)),
 					MIMEType:    "",
 					Disposition: "",
-					Headers:     nil,
 					KeyPackets:  "",
 					Signature:   "",
 				},
@@ -160,9 +156,8 @@ func TestAssembleFailedMessageWriter_AllDecrypted(t *testing.T) {
 			MessageMetadata: proton.MessageMetadata{
 				ID: msgID,
 			},
-			Header:        "",
-			ParsedHeaders: nil,
-			MIMEType:      "",
+			Header:   "",
+			MIMEType: "",
 			Attachments: []proton.Attachment{
 				{
 					ID:   attID,

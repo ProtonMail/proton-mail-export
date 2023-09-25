@@ -44,7 +44,6 @@ func TestDownloadMessageAndAttachments_NoAttachments(t *testing.T) {
 	msgData := proton.Message{
 		MessageMetadata: metaData,
 		Header:          "Foo",
-		ParsedHeaders:   nil,
 		Body:            "MsgBody",
 		MIMEType:        "",
 		Attachments:     nil,
@@ -78,7 +77,6 @@ func TestDownloadMessageAndAttachments_WithAttachments(t *testing.T) {
 	msgData := proton.Message{
 		MessageMetadata: metaData,
 		Header:          "Foo",
-		ParsedHeaders:   nil,
 		Body:            "MsgBody",
 		MIMEType:        "",
 		Attachments: []proton.Attachment{
@@ -137,7 +135,6 @@ func TestDownloadStage_Run(t *testing.T) {
 	msgData := proton.Message{
 		MessageMetadata: metaData,
 		Header:          "Foo",
-		ParsedHeaders:   nil,
 		Body:            "MsgBody",
 		MIMEType:        "",
 		Attachments: []proton.Attachment{

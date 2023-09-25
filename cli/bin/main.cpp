@@ -301,6 +301,12 @@ int main(int argc, const char** argv) {
                 std::filesystem::u8path(argParseResult["export-dir"].as<std::string>()));
         }
         if (exportPath.empty()) {
+#if defined(_WIN32)
+            const std::string_view exampleDir = "%USERPROFILE%\\Documents";
+#else
+            const std::string_view exampleDir = "~/Documents";
+#endif
+            std::cout << "Please input desired export path. E.g.: " << exampleDir << std::endl;
             exportPath = readPath("Export Path");
         }
 

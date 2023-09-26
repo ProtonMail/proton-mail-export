@@ -68,6 +68,16 @@ void ExportMail::cancel() {
     wrapCCall([&](etExportMail* ptr) { return etExportMailCancel(ptr); });
 }
 
+std::filesystem::path ExportMail::getExportPath() const {
+    char* outPath = nullptr;
+    wrapCCall([&](etExportMail* ptr) { return etExportMailGetExportPath(ptr, &outPath); });
+
+    auto result = std::filesystem::u8path(outPath);
+    free(outPath);
+
+    return result;
+}
+
 template <class F>
 void ExportMail::wrapCCall(F func) {
     static_assert(std::is_invocable_r_v<etExportMailStatus, F, etExportMail*>,

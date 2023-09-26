@@ -18,6 +18,7 @@
 #pragma once
 
 #include <exception>
+#include <filesystem>
 #include <string>
 
 #include "etexception.hpp"
@@ -63,6 +64,8 @@ class ExportMail final {
     void start(ExportMailCallback& cb);
 
     void cancel();
+
+    std::filesystem::path getExportPath() const;
 
    private:
     template <class F>

@@ -128,6 +128,18 @@ func etExportMailGetLastError(ptr *C.etExportMail) *C.cchar_t {
 	return (*C.cchar_t)(ce.lastError.GetErr())
 }
 
+//export etExportMailGetExportPath
+func etExportMailGetExportPath(ptr *C.etExportMail, outPath **C.char) C.etExportMailStatus {
+	ce, ok := resolveExportMail(ptr)
+	if !ok {
+		return C.ET_EXPORT_MAIL_STATUS_INVALID
+	}
+
+	*outPath = C.CString(ce.exporter.GetExportPath())
+
+	return C.ET_EXPORT_MAIL_STATUS_OK
+}
+
 type cExportMail struct {
 	csession  *csession
 	exporter  *mail.ExportTask

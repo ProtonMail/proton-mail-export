@@ -244,6 +244,10 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 	return utils.WriteFileSafe(tmpDir, labelFile, labelData, &utils.Sha256IntegrityChecker{})
 }
 
+func (e *ExportTask) GetExportPath() string {
+	return e.exportDir
+}
+
 func getLabelFileName() string {
 	return "labels.json"
 }

@@ -175,8 +175,8 @@ int main(int argc, const char** argv) {
     }
 
     try {
-        execPath.append("logs");
-        auto logScope = etcpp::LogScope(execPath);
+        auto logDir = execPath / "logs";
+        auto logScope = etcpp::LogScope(logDir);
 
         const char* helpText = "Proton Data Exporter v{}";
 
@@ -310,9 +310,13 @@ int main(int argc, const char** argv) {
             exportPath = readPath("Export Path");
         }
 
+        if (exportPath.is_relative()) {
+            exportPath = execPath / exportPath;
+        }
+
         auto exportMail = MailTask(session, exportPath);
 
-        std::cout << "Starting Export - Path=" << exportPath << std::endl;
+        std::cout << "Starting Export - Path=" << exportMail.getExportPath() << std::endl;
         try {
             runTaskWithProgress(appState, exportMail);
         } catch (const etcpp::ExportMailException& e) {

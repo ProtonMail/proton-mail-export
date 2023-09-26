@@ -42,6 +42,8 @@ class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback 
 
     std::string_view description() const override;
 
+    inline std::filesystem::path getExportPath() const { return mExport.getExportPath(); }
+
    private:
     void onProgress(float progress) override;
 };

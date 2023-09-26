@@ -73,7 +73,7 @@ std::filesystem::path ExportMail::getExportPath() const {
     wrapCCall([&](etExportMail* ptr) { return etExportMailGetExportPath(ptr, &outPath); });
 
     auto result = std::filesystem::u8path(outPath);
-    free(outPath);
+    etFree(outPath);
 
     return result;
 }

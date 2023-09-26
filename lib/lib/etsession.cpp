@@ -64,7 +64,7 @@ Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& 
     mPtr = etSessionNew(serverURL, makeCCallback(mCallbacks.get()), &outErr);
     if (mPtr == nullptr) {
         auto ex = SessionException(outErr);
-        free(outErr);
+        etFree(outErr);
         throw std::move(ex);
     }
 }

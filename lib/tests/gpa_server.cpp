@@ -32,10 +32,10 @@ std::string GPAServer::createUser(const char* email, const char* password, std::
     }
 
     auto result = std::string(userID);
-    free(userID);
+    gpaFree(userID);
 
     outAddrID = addrID;
-    free(addrID);
+    gpaFree(addrID);
 
     return result;
 }
@@ -47,7 +47,7 @@ std::string GPAServer::url() const {
     }
 
     auto result = std::string(outURL);
-    free(outURL);
+    gpaFree(outURL);
 
     return result;
 }
@@ -70,7 +70,7 @@ std::vector<std::string> GPAServer::createTestMessages(const char* userID,
 
     for (const auto& id : output) {
         result.emplace_back(id);
-        free(id);
+        gpaFree(id);
     }
 
     return result;

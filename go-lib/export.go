@@ -147,6 +147,11 @@ func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passw
 	})
 }
 
+//export etFree
+func etFree(ptr *C.void) {
+	C.free(unsafe.Pointer(ptr))
+}
+
 func mapLoginState(s session.LoginState) C.etSessionLoginState {
 	switch s {
 	case session.LoginStateLoggedOut:

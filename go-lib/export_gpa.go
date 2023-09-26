@@ -138,6 +138,11 @@ func gpaServerCreateMessages(ptr *C.gpaServer,
 	return C.GPA_SERVER_STATUS_OK
 }
 
+//export gpaFree
+func gpaFree(ptr *C.void) {
+	C.free(unsafe.Pointer(ptr))
+}
+
 func gpaPtrToHandle(ptr *C.gpaServer) GPAHandle {
 	return GPAHandle(uintptr(unsafe.Pointer(ptr)))
 }

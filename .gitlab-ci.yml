@@ -28,24 +28,21 @@ variables:
   variables:
     VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
   before_script:
-    - export PATH=/usr/local/bin:$PATH
-    - export PATH=/usr/local/opt/git/bin:$PATH
-    - export PATH=/usr/local/opt/make/libexec/gnubin:$PATH
-    - export PATH=/usr/local/opt/gnu-sed/libexec/gnubin:$PATH
-    - export GOROOT=~/local/opt/go@1.20
-    - export PATH="${GOROOT}/bin:$PATH"
-    - export GOPATH=~/go1.20
+    - export PATH=/opt/homebrew/bin:$PATH
+    - export PATH=/opt/homebrew/opt/llvm/bin:$PATH
+    - export GOPATH=~/go
     - export PATH="${GOPATH}/bin:$PATH"
-    - export QT6DIR=/opt/Qt/6.3.2/macos
-    - export PATH="${QT6DIR}/bin:$PATH"
     - uname -a
+    - which ninja && ninja --version
+    - which cmake && cmake --version
+    - mkdir -p ${VCPKG_DEFAULT_BINARY_CACHE}
   cache:
     key: darwin-vcpkg
     paths:
       - .cache
     when: 'always'
   tags:
-    - macos-m1-bridge
+    - macos-m1-export
 
 .env-linux-build:
   variables:
@@ -139,33 +136,33 @@ build-linux:
       - $CMAKE_INSTALL_DIR/bin
     when: always
 
-#build-darwin-arm64:
-#  stage: build
-#  extends:
-#    - .env-darwin
-#  script:
-#    - !reference [.script-config-git, script]
-#    - !reference [.script-config-cmake-macos-amr64, script]
-#    - !reference [.script-test, script]
-#    - !reference [.script-install, script]
-#  artifacts:
-#    paths:
-#      - $CMAKE_INSTALL_DIR/bin
-#    when: always
+build-darwin-arm64:
+  stage: build
+  extends:
+    - .env-darwin
+  script:
+    - !reference [.script-config-git, script]
+    - !reference [.script-config-cmake-macos-arm64, script]
+    - !reference [.script-test, script]
+    - !reference [.script-install, script]
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR/bin
+    when: always
 
-#build-darwin-x86_64:
-#  stage: build
-#  extends:
-#    - .env-darwin
-#  script:
-#    - !reference [.script-config-git, script]
-#    - !reference [.script-config-cmake-unix-x86_64, script]
-#    - !reference [.script-test, script]
-#    - !reference [.script-install, script]
-#  artifacts:
-#    paths:
-#      - $CMAKE_INSTALL_DIR/bin
-#    when: always
+build-darwin-x86_64:
+  stage: build
+  extends:
+    - .env-darwin
+  script:
+    - !reference [.script-config-git, script]
+    - !reference [.script-config-cmake-macos-x86_64, script]
+    - !reference [.script-build, script]
+    - !reference [.script-install, script]
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR/bin
+    when: always
 
 
 #build-windows:

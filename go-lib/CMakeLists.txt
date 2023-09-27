@@ -66,7 +66,8 @@ function(build_cgo_lib)
 
         list(APPEND ADDITIONAL_FLAGS -gccgoflags
             '-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}'
-            -ldflags '-extldflags -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}'
+            # Due to a latest Mac os linker, we need to disable debug symbol generation for the time being (-w).
+            -ldflags '-w -extldflags -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}'
         )
     endif()
 

@@ -15,7 +15,7 @@ endif()
 if (clang_tidy_bin)
 
 set(CMAKE_CXX_CLANG_TIDY
-   ${clang_tidy_bin};-checks=-*,performance-*,portability-*,-readability-*,-performance-unnecessary-value-param,clang-analyzer-*;
+   ${clang_tidy_bin};-checks=-*,performance-*,portability-*,-readability-*,-performance-unnecessary-value-param,clang-analyzer-*,-performance-avoid-endl;
 )
 
 endif()

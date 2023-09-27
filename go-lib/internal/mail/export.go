@@ -31,6 +31,7 @@ import (
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/xslices"
+	"github.com/pbnjay/memory"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,6 +39,11 @@ const NumParallelDownloads = 10
 const NumParallelBuilders = 4
 const NumParallelWriters = 4
 const MetadataPageSize = 64
+const MB = 1024 * 1024
+const MinDownloadMemMB = 128 * MB
+const MinBuildMemMB = 128 * MB
+const MaxDownloadMemMB = 1024 * MB
+const MaxBuildMemMB = 512 * MB
 
 // Mail Exports will be created in the given directory and will be structured:
 // <email>
@@ -177,10 +183,25 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		return fmt.Errorf("failed to determine total message count")
 	}
 
+	totalMemory := memory.TotalMemory()
+
+	var (
+		buildMemMB    uint64
+		downloadMemMb uint64
+	)
+
+	if totalMemory >= 4096*MB {
+		buildMemMB = MaxBuildMemMB
+		downloadMemMb = MaxDownloadMemMB
+	} else {
+		buildMemMB = MinBuildMemMB
+		downloadMemMb = MinDownloadMemMB
+	}
+
 	// Build stages
 	metaStage := NewMetadataStage(client, e.log, MetadataPageSize)
-	downloadStage := NewDownloadStage(client, NumParallelDownloads, e.log, e.session.GetPanicHandler())
-	buildStage := NewBuildStage(NumParallelBuilders, e.log, e.session.GetPanicHandler())
+	downloadStage := NewDownloadStage(client, NumParallelDownloads, e.log, downloadMemMb, e.session.GetPanicHandler())
+	buildStage := NewBuildStage(NumParallelBuilders, e.log, buildMemMB, e.session.GetPanicHandler())
 	writeStage := NewWriteStage(e.tmpDir, e.exportDir, NumParallelWriters, e.log, reporter, e.session.GetPanicHandler())
 
 	e.log.Debug("Starting message download")

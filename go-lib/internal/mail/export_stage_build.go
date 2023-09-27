@@ -39,20 +39,25 @@ type BuildStage struct {
 	log              *logrus.Entry
 	outputCh         chan BuildStageOutput
 	parallelBuilders int
+	maxBuildMemMB    uint64
 }
 
 var ErrBuildNoAddrKey = errors.New("no key found for address")
 
-func NewBuildStage(parallelBuilders int, log *logrus.Entry, panicHandler async.PanicHandler) *BuildStage {
+func NewBuildStage(
+	parallelBuilders int,
+	log *logrus.Entry,
+	maxBuildMemMB uint64,
+	panicHandler async.PanicHandler,
+) *BuildStage {
 	return &BuildStage{
 		panicHandler:     panicHandler,
 		log:              log.WithField("stage", "build"),
 		outputCh:         make(chan BuildStageOutput),
 		parallelBuilders: parallelBuilders,
+		maxBuildMemMB:    maxBuildMemMB,
 	}
 }
-
-const MaxBuildMemMB = 128 * 1024 * 1024
 
 func (b *BuildStage) Run(
 	ctx context.Context,
@@ -65,7 +70,7 @@ func (b *BuildStage) Run(
 	defer close(b.outputCh)
 
 	for input := range inputs {
-		for _, chunk := range chunkMemLimitFullMessage(input.messages, MaxBuildMemMB) {
+		for _, chunk := range chunkMemLimitFullMessage(input.messages, b.maxBuildMemMB) {
 			if ctx.Err() != nil {
 				return
 			}

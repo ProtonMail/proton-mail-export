@@ -117,7 +117,7 @@ func TestDownloadStage_Run(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	client := apiclient.NewMockClient(mockCtrl)
 	errReporter := NewMockStageErrorReporter(mockCtrl)
-	stage := NewDownloadStage(client, 2, logrus.WithField("test", "test"), &async.NoopPanicHandler{})
+	stage := NewDownloadStage(client, 2, logrus.WithField("test", "test"), MinDownloadMemMB, &async.NoopPanicHandler{})
 
 	input := make(chan []proton.MessageMetadata)
 
@@ -198,7 +198,7 @@ func TestDownloadStage_RunOtherErrorsReported(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	client := apiclient.NewMockClient(mockCtrl)
 	errReporter := NewMockStageErrorReporter(mockCtrl)
-	stage := NewDownloadStage(client, 2, logrus.WithField("test", "test"), &async.NoopPanicHandler{})
+	stage := NewDownloadStage(client, 2, logrus.WithField("test", "test"), MinDownloadMemMB, &async.NoopPanicHandler{})
 
 	input := make(chan []proton.MessageMetadata)
 

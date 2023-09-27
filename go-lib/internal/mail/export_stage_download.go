@@ -35,29 +35,30 @@ type DownloadStageOutput struct {
 }
 
 type DownloadStage struct {
-	client          apiclient.Client
-	log             *logrus.Entry
-	outputCh        chan DownloadStageOutput
-	parallelWorkers int
-	panicHandler    async.PanicHandler
+	client           apiclient.Client
+	log              *logrus.Entry
+	outputCh         chan DownloadStageOutput
+	parallelWorkers  int
+	maxDownloadMemMB uint64
+	panicHandler     async.PanicHandler
 }
 
 func NewDownloadStage(
 	client apiclient.Client,
 	parallelWorkers int,
 	log *logrus.Entry,
+	maxDownloadMemMB uint64,
 	panicHandler async.PanicHandler,
 ) *DownloadStage {
 	return &DownloadStage{
-		client:          client,
-		log:             log.WithField("stage", "download"),
-		outputCh:        make(chan DownloadStageOutput),
-		parallelWorkers: parallelWorkers,
-		panicHandler:    panicHandler,
+		client:           client,
+		log:              log.WithField("stage", "download"),
+		outputCh:         make(chan DownloadStageOutput),
+		parallelWorkers:  parallelWorkers,
+		panicHandler:     panicHandler,
+		maxDownloadMemMB: maxDownloadMemMB,
 	}
 }
-
-const MaxDownloadMemMB = 128 * 1024 * 1024
 
 func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMetadata, errReporter StageErrorReporter) {
 	d.log.Debug("Starting")
@@ -67,7 +68,7 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 
 	defer close(d.outputCh)
 	for metadata := range input {
-		memChucked := chunkMemLimitMetadata(metadata, MaxDownloadMemMB)
+		memChucked := chunkMemLimitMetadata(metadata, d.maxDownloadMemMB)
 		for _, chunk := range memChucked {
 			if ctx.Err() != nil {
 				return

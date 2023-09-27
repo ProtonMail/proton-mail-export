@@ -137,6 +137,9 @@ build-linux:
     when: always
 
 build-darwin-arm64:
+  variables:
+    CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-arm64
+    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-arm64
   stage: build
   extends:
     - .env-darwin
@@ -151,6 +154,9 @@ build-darwin-arm64:
     when: always
 
 build-darwin-x86_64:
+  variables:
+    CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-x86_64
+    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-x86_64
   stage: build
   extends:
     - .env-darwin

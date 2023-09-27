@@ -128,6 +128,24 @@ func etExportMailGetLastError(ptr *C.etExportMail) *C.cchar_t {
 	return (*C.cchar_t)(ce.lastError.GetErr())
 }
 
+//export etExportMailGetRequiredDiskSpaceEstimate
+func etExportMailGetRequiredDiskSpaceEstimate(ptr *C.etExportMail, outSpace *C.uint64_t) C.etExportMailStatus {
+	ce, ok := resolveExportMail(ptr)
+	if !ok {
+		return C.ET_EXPORT_MAIL_STATUS_INVALID
+	}
+
+	space, err := ce.exporter.GetRequiredDiskSpaceEstimate(ce.csession.ctx)
+	if err != nil {
+		ce.lastError.Set(internal.MapError(err))
+		return C.ET_EXPORT_MAIL_STATUS_ERROR
+	}
+
+	*outSpace = C.uint64_t(space)
+
+	return C.ET_EXPORT_MAIL_STATUS_OK
+}
+
 //export etExportMailGetExportPath
 func etExportMailGetExportPath(ptr *C.etExportMail, outPath **C.char) C.etExportMailStatus {
 	ce, ok := resolveExportMail(ptr)

@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -98,6 +99,15 @@ func (e *ExportTask) Cancel() {
 	e.group.Cancel()
 }
 
+func (e *ExportTask) GetRequiredDiskSpaceEstimate(ctx context.Context) (uint64, error) {
+	user, err := e.session.GetClient().GetUser(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load user info: %w", err)
+	}
+
+	return approximateDiskUsage(user.ProductUsedSpace.Mail), nil
+}
+
 func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	defer e.log.Info("Finished")
 	e.log.WithFields(logrus.Fields{"tmp-dir": e.tmpDir, "export-dir": e.exportDir}).Info("Starting")
@@ -121,6 +131,12 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	if err != nil {
 		return fmt.Errorf("failed to load user info: %w", err)
 	}
+
+	e.log.Infof(
+		"Reported space usage %v MB, estimated disk uage %v MB",
+		toMB(user.ProductUsedSpace.Mail),
+		toMB(approximateDiskUsage(user.ProductUsedSpace.Mail)),
+	)
 
 	salts, err := client.GetSalts(ctx)
 	if err != nil {
@@ -295,4 +311,13 @@ func (e *exportErrReporter) getErrors() []error {
 	defer e.lock.Unlock()
 
 	return e.errors
+}
+
+func approximateDiskUsage(v uint64) uint64 {
+	// add another 30% of to current usage estimate due to variance in the decrypted message sizes and metadata.
+	return uint64(math.Ceil(float64(v) * 1.3))
+}
+
+func toMB(v uint64) uint64 {
+	return v / 1024 / 1024
 }

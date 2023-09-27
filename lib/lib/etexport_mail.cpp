@@ -78,6 +78,13 @@ std::filesystem::path ExportMail::getExportPath() const {
     return result;
 }
 
+std::uint64_t ExportMail::getExpectedDiskUsage() const {
+    std::uint64_t usage = 0;
+    wrapCCall(
+        [&](etExportMail* ptr) { return etExportMailGetRequiredDiskSpaceEstimate(ptr, &usage); });
+    return usage;
+}
+
 template <class F>
 void ExportMail::wrapCCall(F func) {
     static_assert(std::is_invocable_r_v<etExportMailStatus, F, etExportMail*>,

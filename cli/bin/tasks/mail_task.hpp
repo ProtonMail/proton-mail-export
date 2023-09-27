@@ -44,6 +44,8 @@ class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback 
 
     inline std::filesystem::path getExportPath() const { return mExport.getExportPath(); }
 
+    inline uint64_t getExpectedDiskUsage() const { return mExport.getExpectedDiskUsage(); }
+
    private:
     void onProgress(float progress) override;
 };

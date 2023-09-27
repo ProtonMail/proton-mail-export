@@ -67,6 +67,8 @@ class ExportMail final {
 
     std::filesystem::path getExportPath() const;
 
+    std::uint64_t getExpectedDiskUsage() const;
+
    private:
     template <class F>
     void wrapCCall(F func);

@@ -34,6 +34,10 @@
 
 constexpr int kNumInputRetries = 3;
 
+inline uint64_t toMB(uint64_t value) {
+    return value / 1024 / 1024;
+}
+
 std::string readText(std::string_view label) {
     for (int i = 0; i < kNumInputRetries; i++) {
         std::string result;
@@ -106,6 +110,32 @@ std::string readSecret(std::string_view label) {
         }
 
         return result;
+    }
+
+    throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
+}
+
+bool readYesNo(std::string_view label) {
+    for (int i = 0; i < kNumInputRetries; i++) {
+        std::string result;
+        std::cout << label << ": " << std::flush;
+        std::getline(std::cin, result);
+
+        if (result.empty()) {
+            std::cerr << "Value can't be empty" << std::endl;
+            continue;
+        }
+
+        std::transform(result.begin(), result.end(), result.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+
+        if (result == "y" || result == "yes") {
+            return true;
+        } else if (result == "n" || result == "no") {
+            return false;
+        } else {
+            std::cerr << "Value must be one of: Y, y, Yes, yes, N, n, No, no" << std::endl;
+        }
     }
 
     throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
@@ -314,7 +344,43 @@ int main(int argc, const char** argv) {
             exportPath = execPath / exportPath;
         }
 
+        try {
+            std::filesystem::create_directories(exportPath);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to create export directory '" << exportPath << "': " << e.what()
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        std::filesystem::space_info spaceInfo;
+        try {
+            spaceInfo = std::filesystem::space(exportPath);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to get free space info: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+
         auto exportMail = MailTask(session, exportPath);
+
+        uint64_t expectedSpace = 0;
+        try {
+            expectedSpace = exportMail.getExpectedDiskUsage();
+        } catch (const etcpp::ExportMailException& e) {
+            std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (expectedSpace > spaceInfo.available) {
+            std::cout << "This operation requires at least " << toMB(expectedSpace)
+                      << " MB of free space, but the destination volume only has "
+                      << toMB(spaceInfo.available) << " MB available. " << std::endl
+                      << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+                      << std::endl;
+
+            if (!readYesNo("Do you wish to proceed")) {
+                return EXIT_SUCCESS;
+            }
+        }
 
         std::cout << "Starting Export - Path=" << exportMail.getExportPath() << std::endl;
         try {

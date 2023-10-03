@@ -1,5 +1,9 @@
 image: gitlab.protontech.ch:4567/go/bridge-internal:test-go1.21
 
+default:
+  tags:
+    - shared-small
+
 variables:
   GOPRIVATE: gitlab.protontech.ch
   GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
@@ -59,7 +63,7 @@ variables:
     - export GOPATH="$CI_PROJECT_DIR/.cache"
     - export PATH=$PATH:$QT6DIR/bin
   tags:
-    - large
+    - shared-large
 
 
 stages:
@@ -114,7 +118,7 @@ stages:
 
 lint:
   tags:
-    - medium
+    - shared-medium
   script:
     - !reference [.script-config-git, script]
     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2

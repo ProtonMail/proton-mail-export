@@ -18,3 +18,16 @@ execute_process(
     OUTPUT_VARIABLE ET_REVISION
 )
 string(REPLACE "\n" "" ET_REVISION "${ET_REVISION}")
+
+
+if (WIN32)
+    set(ET_APP_IDENTIFIER "windows-export")
+elseif(APPLE)
+    set(ET_APP_IDENTIFIER "macos-export")
+elseif(UNIX)
+    set(ET_APP_IDENTIFIER "linux-export")
+else()
+    message(FATAL_ERROR "Unknown platform")
+endif()
+
+set(ET_APP_IDENTIFIER "${ET_APP_IDENTIFIER}@${ET_VERSION_STR}")

@@ -27,4 +27,5 @@ const (
     ETDefaultAPIURL = "@ET_DEFAULT_API_URL@"
     ETBuildTime = "@ET_BUILD_TIME@"
     ETRevision = "@ET_REVISION@"
+    ETAppIdentifier = "@ET_APP_IDENTIFIER@"
 )

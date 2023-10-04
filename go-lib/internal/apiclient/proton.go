@@ -24,6 +24,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 
+	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
@@ -48,7 +49,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 	b := &ProtonAPIClientBuilder{
 		manager: proton.New(
 			proton.WithHostURL(apiURL),
-			proton.WithAppVersion("Other"),
+			proton.WithAppVersion(internal.ETAppIdentifier),
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
 			proton.WithCookieJar(cookieJar),

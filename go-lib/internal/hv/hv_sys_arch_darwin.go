@@ -15,25 +15,35 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package apiclient
+//go:build darwin
+// +build darwin
+
+package hv
 
 import (
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/ProtonMail/proton-bridge/v3/pkg/algo"
+	"github.com/elastic/go-sysinfo"
+	"golang.org/x/sys/unix"
 )
 
-func getProtectedHostname() string {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return "Unknown"
-	}
-	return algo.HashBase64SHA256(hostname)
-}
+const translatedProcDarwin = "sysctl.proc_translated"
 
-func getTimeZone() string {
-	zone, offset := time.Now().Zone()
-	return fmt.Sprintf("%s%+d", zone, offset/3600)
+func GetHostArch() string {
+	host, err := sysinfo.Host()
+	if err != nil {
+		return "not-detected"
+	}
+
+	// It is not possible to retrieve real hardware architecture once using
+	// rosetta. But it is possible to detect the process translation if
+	// rosetta is used.
+	res, err := unix.SysctlRaw(translatedProcDarwin)
+	if err != nil || len(res) > 4 {
+		return host.Info().Architecture + "_err"
+	}
+
+	if res[0] == 1 {
+		return host.Info().Architecture + "_rosetta"
+	}
+
+	return host.Info().Architecture
 }

@@ -15,18 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+package hv
 
-// NOTE: This file is auto generated do not touch!
+import (
+	"fmt"
+	"os"
+	"time"
 
-const (
-    ETVersionMajor = @ET_VERSION_MAJOR@
-    ETVersionMinor = @ET_VERSION_MINOR@
-    ETVersionPatch = @ET_VERSION_PATCH@
-    ETVersionString = "@ET_VERSION_STR@"
-    ETDefaultAPIURL = "@ET_DEFAULT_API_URL@"
-    ETBuildTime = "@ET_BUILD_TIME@"
-    ETRevision = "@ET_REVISION@"
-    ETAppIdentifier = "@ET_APP_IDENTIFIER@"
-    ETSentryDNS = "@ET_SENTRY_DNS@"
+	"github.com/ProtonMail/proton-bridge/v3/pkg/algo"
 )
+
+func GetProtectedHostname() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "Unknown"
+	}
+	return algo.HashBase64SHA256(hostname)
+}
+
+func GetTimeZone() string {
+	zone, offset := time.Now().Zone()
+	return fmt.Sprintf("%s%+d", zone, offset/3600)
+}

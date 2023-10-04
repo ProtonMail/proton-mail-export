@@ -43,24 +43,6 @@ std::string& getThreadLocalLogBuffer();
 
 constexpr const char* kLogTag = "etcpp";
 
-class LogException : public Exception {
-   public:
-    explicit LogException(std::string_view w) : Exception(w) {}
-};
-
-class LogScope final {
-   public:
-    explicit LogScope(const std::filesystem::path& p);
-    ~LogScope();
-
-    LogScope(const LogScope&) = delete;
-    LogScope(LogScope&&) = delete;
-    LogScope& operator=(const LogScope&) = delete;
-    LogScope operator=(LogScope&&) = delete;
-
-    std::optional<std::filesystem::path> getLogPath() const;
-};
-
 template <typename... T>
 inline void logInfo(fmt::format_string<T...> fmt, T&&... args) {
     auto& buffer = getThreadLocalLogBuffer();

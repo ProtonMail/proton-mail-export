@@ -25,6 +25,7 @@ import (
 	"net/url"
 
 	"github.com/ProtonMail/export-tool/internal"
+	"github.com/ProtonMail/export-tool/internal/hv"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
@@ -108,10 +109,10 @@ func newCookieJar(apiURL string) (*cookiejar.Jar, error) {
 	}
 
 	for name, value := range map[string]string{
-		"hhn":  getProtectedHostname(),
-		"tz":   getTimeZone(),
-		"lng":  getSystemLang(),
-		"arch": getHostArch(),
+		"hhn":  hv.GetProtectedHostname(),
+		"tz":   hv.GetTimeZone(),
+		"lng":  hv.GetSystemLang(),
+		"arch": hv.GetHostArch(),
 	} {
 		jar.SetCookies(url, []*http.Cookie{{Name: name, Value: value, Secure: true}})
 	}

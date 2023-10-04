@@ -15,18 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-package internal
+#pragma once
 
-// NOTE: This file is auto generated do not touch!
+#include <filesystem>
+#include <optional>
 
-const (
-    ETVersionMajor = @ET_VERSION_MAJOR@
-    ETVersionMinor = @ET_VERSION_MINOR@
-    ETVersionPatch = @ET_VERSION_PATCH@
-    ETVersionString = "@ET_VERSION_STR@"
-    ETDefaultAPIURL = "@ET_DEFAULT_API_URL@"
-    ETBuildTime = "@ET_BUILD_TIME@"
-    ETRevision = "@ET_REVISION@"
-    ETAppIdentifier = "@ET_APP_IDENTIFIER@"
-    ETSentryDNS = "@ET_SENTRY_DNS@"
-)
+namespace etcpp {
+
+class GlobalScope final {
+   public:
+    explicit GlobalScope(const std::filesystem::path& p, void (*onRecover)());
+    ~GlobalScope();
+
+    GlobalScope(const GlobalScope&) = delete;
+    GlobalScope(GlobalScope&&) = delete;
+    GlobalScope& operator=(const GlobalScope&) = delete;
+    GlobalScope operator=(GlobalScope&&) = delete;
+
+    std::optional<std::filesystem::path> getLogPath() const;
+};
+
+}    // namespace etcpp

@@ -31,9 +31,9 @@ import (
 
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/export-tool/internal/utils"
-	"github.com/ProtonMail/gluon/async"
 )
 
 type SessionHandle = internal.Handle[csession]
@@ -197,8 +197,10 @@ type csession struct {
 }
 
 func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
+	panicHandler := sentry.NewPanicHandler(etOnRecoverCB())
+
 	sessionCb := newCSessionCallback(cb)
-	builder, err := apiclient.NewProtonAPIClientBuilder(apiURL, &async.NoopPanicHandler{}, sessionCb)
+	builder, err := apiclient.NewProtonAPIClientBuilder(apiURL, panicHandler, sessionCb)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +213,7 @@ func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &csession{
-		s:         session.NewSession(clientBuilder, sessionCb),
+		s:         session.NewSession(clientBuilder, sessionCb, panicHandler),
 		ctx:       ctx,
 		ctxCancel: cancel,
 	}, nil

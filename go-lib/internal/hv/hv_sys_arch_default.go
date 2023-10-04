@@ -15,18 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-//go:build !windows
-// +build !windows
+//go:build !darwin
+// +build !darwin
 
-package apiclient
+package hv
 
-import "os"
+import "github.com/elastic/go-sysinfo"
 
-func getSystemLang() string {
-	lang := os.Getenv("LC_ALL")
-	if lang == "" {
-		lang = os.Getenv("LANG")
+func GetHostArch() string {
+	host, err := sysinfo.Host()
+	if err != nil {
+		return "not-detected"
 	}
-
-	return lang
+	return host.Info().Architecture
 }

@@ -23,76 +23,8 @@ package main
 */
 import "C"
 import (
-	"os"
-	"path/filepath"
-	"sync"
-	"unsafe"
-
-	"github.com/ProtonMail/export-tool/internal"
-	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/sirupsen/logrus"
 )
-
-//export etLogInit
-func etLogInit(filePath *C.cchar_t) C.int {
-	globalLogInstance.mutex.Lock()
-	defer globalLogInstance.mutex.Unlock()
-
-	if globalLogInstance.file != nil {
-		return -1
-	}
-
-	path := C.GoString(filePath)
-
-	if err := os.MkdirAll(path, 0o700); err != nil {
-		globalLogInstance.lastError.Set(err)
-		return -1
-	}
-
-	path = filepath.Join(path, internal.NewLogFileName())
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		globalLogInstance.lastError.Set(err)
-		return -1
-	}
-
-	globalLogInstance.clogPath = C.CString(path)
-
-	logrus.SetOutput(file)
-	logrus.SetFormatter(internal.NewLogFormatter())
-	internal.LogPrelude()
-
-	return 0
-}
-
-//export etLogClose
-func etLogClose() {
-	globalLogInstance.mutex.Lock()
-	defer globalLogInstance.mutex.Unlock()
-
-	if globalLogInstance.file != nil {
-		logrus.SetOutput(os.Stdout)
-		if err := globalLogInstance.file.Close(); err != nil {
-			logrus.WithError(err).Error("Failed to close log file")
-		} else {
-			globalLogInstance.file = nil
-		}
-	}
-
-	if globalLogInstance.clogPath != nil {
-		C.free(unsafe.Pointer(globalLogInstance.clogPath))
-	}
-
-	globalLogInstance.lastError.Close()
-}
-
-//export etLogGetLastError
-func etLogGetLastError() *C.cchar_t {
-	globalLogInstance.mutex.Lock()
-	defer globalLogInstance.mutex.Unlock()
-
-	return (*C.cchar_t)(globalLogInstance.lastError.GetErr())
-}
 
 //export etLogInfo
 func etLogInfo(tag *C.cchar_t, txt *C.cchar_t) {
@@ -116,18 +48,8 @@ func etLogError(tag *C.cchar_t, txt *C.cchar_t) {
 
 //export etLogGetPath
 func etLogGetPath() *C.cchar_t {
-	globalLogInstance.mutex.Lock()
-	defer globalLogInstance.mutex.Unlock()
+	etGlobalState.mutex.Lock()
+	defer etGlobalState.mutex.Unlock()
 
-	return globalLogInstance.clogPath
+	return etGlobalState.clogPath
 }
-
-type globalLog struct {
-	mutex     sync.Mutex
-	file      *os.File
-	lastError utils.CLastError
-	clogPath  *C.char
-}
-
-//nolint:gochecknoglobals
-var globalLogInstance globalLog

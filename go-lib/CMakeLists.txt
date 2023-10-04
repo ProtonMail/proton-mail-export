@@ -105,7 +105,7 @@ build_cgo_lib(
     TARGET etcore
     NAME etcore
     GO_SOURCES ${go_files}
-    GO_EXPORTS export.go export_log.go export_mail.go
+    GO_EXPORTS export.go export_log.go export_mail.go export_globals.go
 )
 
 build_cgo_lib(

@@ -10,6 +10,7 @@ variables:
   CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release
   CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
   CMAKE_BUILD_CONFIG: "Release"
+  CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
   # GIT_SUBMODULE_STRATEGY: recursive
 
 # ENV
@@ -19,7 +20,6 @@ variables:
   before_script:
     - New-Item -ItemType Directory -Path ${VCPKG_DEFAULT_BINARY_CACHE} -Force
     - $env:Path = "C:\\\\CMake\\bin;" + $env:Path
-  cache:
   cache:
     key: win-vcpkg
     paths:
@@ -89,18 +89,25 @@ stages:
        -DVCPKG_HOST_TRIPLET=x64-windows-static
        -DVCPKG_TARGET_TRIPLET=x64-windows-static
        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+       $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-unix:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-macos-arm64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" -DCMAKE_OSX_ARCHITECTURES=arm64
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" 
+        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+        -DCMAKE_OSX_ARCHITECTURES=arm64
+        $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-macos-x86_64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" -DCMAKE_OSX_ARCHITECTURES=x86_64
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" 
+        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" 
+        -DCMAKE_OSX_ARCHITECTURES=x86_64
+        $CMAKE_SENTRY_OPTION
 
 .script-install:
   script:

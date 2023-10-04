@@ -22,6 +22,7 @@
 #include <string>
 
 #include <cxxopts.hpp>
+#include <et.hpp>
 #include <etconfig.hpp>
 #include <etlog.hpp>
 #include <etsession.hpp>
@@ -206,7 +207,12 @@ int main(int argc, const char** argv) {
 
     try {
         auto logDir = execPath / "logs";
-        auto logScope = etcpp::LogScope(logDir);
+        auto globalScope = etcpp::GlobalScope(logDir, []() {
+            std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
+                         "log for more details."
+                      << std::endl;
+            exit(-1);
+        });
 
         const char* helpText = "Proton Data Exporter v{}";
 
@@ -231,7 +237,7 @@ int main(int argc, const char** argv) {
             return EXIT_SUCCESS;
         }
 
-        if (const auto& logPath = logScope.getLogPath(); logPath) {
+        if (const auto& logPath = globalScope.getLogPath(); logPath) {
             std::cout << "Session Log: " << *logPath << '\n' << std::endl;
         }
 

@@ -20,31 +20,6 @@
 
 namespace etcpp {
 
-LogScope::LogScope(const std::filesystem::path& path) {
-    auto cpath = path.u8string();
-    if (etLogInit(cpath.c_str()) != 0) {
-        const char* lastErr = etLogGetLastError();
-        if (lastErr == nullptr) {
-            lastErr = "unknown error";
-        }
-
-        throw LogException(lastErr);
-    }
-}
-
-LogScope::~LogScope() {
-    etLogClose();
-}
-
-std::optional<std::filesystem::path> LogScope::getLogPath() const {
-    const char* clogPath = etLogGetPath();
-    if (clogPath == nullptr) {
-        return {};
-    }
-
-    return std::filesystem::u8path(clogPath);
-}
-
 static thread_local std::string tlBuffer;
 std::string& getThreadLocalLogBuffer() {
     tlBuffer.clear();

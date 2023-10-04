@@ -31,3 +31,8 @@ else()
 endif()
 
 set(ET_APP_IDENTIFIER "${ET_APP_IDENTIFIER}@${ET_VERSION_STR}")
+set(ET_SENTRY_DNS "${SENTRY_DNS}")
+
+if (ET_SENTRY_DNS)
+    message(STATUS "Sentry Reporting is enabled for this build")
+endif()

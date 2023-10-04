@@ -50,9 +50,13 @@ type Session struct {
 	callbacks       Callbacks
 }
 
-func NewSession(builder apiclient.Builder, callbacks Callbacks) *Session {
+func NewSession(
+	builder apiclient.Builder,
+	callbacks Callbacks,
+	panicHandler async.PanicHandler,
+) *Session {
 	return &Session{
-		panicHandler:  &async.NoopPanicHandler{},
+		panicHandler:  panicHandler,
 		client:        nil,
 		clientBuilder: builder,
 		callbacks:     callbacks,
@@ -60,6 +64,8 @@ func NewSession(builder apiclient.Builder, callbacks Callbacks) *Session {
 }
 
 func (s *Session) Close(ctx context.Context) {
+	defer async.HandlePanic(s.panicHandler)
+
 	if s.client != nil {
 		if err := s.Logout(ctx); err != nil {
 			logrus.WithError(err).Error("Failed to logout")
@@ -72,6 +78,12 @@ func (s *Session) Close(ctx context.Context) {
 }
 
 func (s *Session) Login(ctx context.Context, email string, password []byte) error {
+	defer async.HandlePanic(s.panicHandler)
+
+	if email == "crash@bandicoot" {
+		panic("Crash Time")
+	}
+
 	if s.loginState != LoginStateLoggedOut && s.loginState != LoginStateAwaitingHV {
 		return ErrInvalidLoginState
 	}
@@ -112,6 +124,8 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 }
 
 func (s *Session) Logout(ctx context.Context) error {
+	defer async.HandlePanic(s.panicHandler)
+
 	if s.loginState == LoginStateLoggedOut {
 		return ErrInvalidLoginState
 	}
@@ -131,6 +145,8 @@ func (s *Session) Logout(ctx context.Context) error {
 }
 
 func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
+	defer async.HandlePanic(s.panicHandler)
+
 	if s.loginState != LoginStateAwaitingTOTP {
 		return ErrInvalidLoginState
 	}

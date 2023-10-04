@@ -18,7 +18,7 @@
 //go:build windows
 // +build windows
 
-package apiclient
+package hv
 
 import (
 	"syscall"
@@ -47,7 +47,7 @@ func getLocale(dll *syscall.DLL, procName string) (string, error) {
 	return syscall.UTF16ToString(b), nil
 }
 
-func getSystemLang() string {
+func GetSystemLang() string {
 	dll, err := syscall.LoadDLL("kernel32")
 	if err != nil {
 		return "errDll"

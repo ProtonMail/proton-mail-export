@@ -11,10 +11,12 @@ target_sources(etcpp PRIVATE
         include/etexport_mail.hpp
         include/etlog.hpp
         include/etutil.hpp
+        include/et.hpp
         lib/etsession.cpp
         lib/etexport_mail.cpp
         lib/etlog.cpp
         lib/etutil.cpp
+        lib/et.cpp
 )
 
 if (UNIX)

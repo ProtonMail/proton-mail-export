@@ -15,17 +15,35 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-//go:build !darwin
-// +build !darwin
+#include "et.hpp"
+#include "etexception.hpp"
 
-package apiclient
+#include <etcore.h>
 
-import "github.com/elastic/go-sysinfo"
+namespace etcpp {
+GlobalScope::GlobalScope(const std::filesystem::path& path, void (*onRecover)()) {
+    auto cpath = path.u8string();
+    if (etInit(cpath.c_str(), onRecover) != 0) {
+        const char* lastErr = etGetLastError();
+        if (lastErr == nullptr) {
+            lastErr = "unknown error";
+        }
 
-func getHostArch() string {
-	host, err := sysinfo.Host()
-	if err != nil {
-		return "not-detected"
-	}
-	return host.Info().Architecture
+        throw Exception(lastErr);
+    }
 }
+
+GlobalScope::~GlobalScope() {
+    etClose();
+}
+
+std::optional<std::filesystem::path> GlobalScope::getLogPath() const {
+    const char* clogPath = etLogGetPath();
+    if (clogPath == nullptr) {
+        return {};
+    }
+
+    return std::filesystem::u8path(clogPath);
+}
+
+}    // namespace etcpp

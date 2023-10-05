@@ -46,7 +46,8 @@ variables:
       - .cache
     when: 'always'
   tags:
-    - macos-m1-export
+    - bridge-tart
+  image: export-tool
 
 .env-linux-build:
   variables:

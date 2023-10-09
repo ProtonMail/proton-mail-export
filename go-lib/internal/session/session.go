@@ -22,6 +22,7 @@ import (
 	"errors"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
@@ -48,18 +49,21 @@ type Session struct {
 	email           string
 	mailboxPassword []byte
 	callbacks       Callbacks
+	reporter        reporter.Reporter
 }
 
 func NewSession(
 	builder apiclient.Builder,
 	callbacks Callbacks,
 	panicHandler async.PanicHandler,
+	reporter reporter.Reporter,
 ) *Session {
 	return &Session{
 		panicHandler:  panicHandler,
 		client:        nil,
 		clientBuilder: builder,
 		callbacks:     callbacks,
+		reporter:      reporter,
 	}
 }
 
@@ -197,6 +201,10 @@ func (s *Session) GetEmail() string {
 
 func (s *Session) GetPanicHandler() async.PanicHandler {
 	return s.panicHandler
+}
+
+func (s *Session) GetReporter() reporter.Reporter {
+	return s.reporter
 }
 
 func (s *Session) setMailboxPassword(p []byte) {

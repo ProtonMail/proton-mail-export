@@ -21,8 +21,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message"
@@ -40,6 +42,8 @@ type BuildStage struct {
 	outputCh         chan BuildStageOutput
 	parallelBuilders int
 	maxBuildMemMB    uint64
+	reporter         reporter.Reporter
+	userID           string
 }
 
 var ErrBuildNoAddrKey = errors.New("no key found for address")
@@ -49,6 +53,8 @@ func NewBuildStage(
 	log *logrus.Entry,
 	maxBuildMemMB uint64,
 	panicHandler async.PanicHandler,
+	reporter reporter.Reporter,
+	userID string,
 ) *BuildStage {
 	return &BuildStage{
 		panicHandler:     panicHandler,
@@ -56,6 +62,8 @@ func NewBuildStage(
 		outputCh:         make(chan BuildStageOutput),
 		parallelBuilders: parallelBuilders,
 		maxBuildMemMB:    maxBuildMemMB,
+		reporter:         reporter,
+		userID:           userID,
 	}
 }
 
@@ -94,6 +102,10 @@ func (b *BuildStage) Run(
 
 				if err := message.BuildRFC822Into(kr, &decrypted, defaultMessageJobOpts(), &buffer); err != nil {
 					b.log.WithError(err).WithField("addrID", addrID).Warn("Failed to build message")
+					b.reporter.ReportError(fmt.Errorf("failed to build message: %w", err), reporter.Context{
+						"msgID":  chunk[i].Message.ID,
+						"userID": b.userID,
+					})
 					results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}
 					return nil
 				}

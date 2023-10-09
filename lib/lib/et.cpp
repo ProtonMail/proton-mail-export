@@ -46,4 +46,12 @@ std::optional<std::filesystem::path> GlobalScope::getLogPath() const {
     return std::filesystem::u8path(clogPath);
 }
 
+void GlobalScope::reportMessage(const char* tag, const char* msg) {
+    etReportMessage(tag, msg);
+}
+
+void GlobalScope::reportError(const char* tag, const char* msg) {
+    etReportError(tag, msg);
+}
+
 }    // namespace etcpp

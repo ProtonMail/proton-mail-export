@@ -30,6 +30,7 @@ import (
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
+	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/sirupsen/logrus"
@@ -79,6 +80,8 @@ func etInit(filePath *C.cchar_t, onRecover C.etOnRecoverFn) C.int {
 		}
 	}
 
+	etGlobalState.reporter = sentry.NewReporter()
+
 	return 0
 }
 
@@ -88,6 +91,28 @@ func etGetLastError() *C.cchar_t {
 	defer etGlobalState.mutex.Unlock()
 
 	return (*C.cchar_t)(etGlobalState.lastError.GetErr())
+}
+
+//export etReportError
+func etReportError(tag *C.cchar_t, msg *C.cchar_t) {
+	if etGlobalState.reporter == nil {
+		return
+	}
+
+	etGlobalState.reporter.ReportError(C.GoString(msg), reporter.Context{
+		"origin": C.GoString(tag),
+	})
+}
+
+//export etReportMessage
+func etReportMessage(tag *C.cchar_t, msg *C.cchar_t) {
+	if etGlobalState.reporter == nil {
+		return
+	}
+
+	etGlobalState.reporter.ReportMessage(C.GoString(msg), reporter.Context{
+		"origin": C.GoString(tag),
+	})
 }
 
 //export etClose
@@ -117,11 +142,16 @@ type globalState struct {
 	lastError   utils.CLastError
 	clogPath    *C.char
 	onRecoverCB func()
+	reporter    reporter.Reporter
+}
+
+func GetGlobalReporter() reporter.Reporter {
+	return etGlobalState.reporter
 }
 
 //nolint:gochecknoglobals
 var etGlobalState globalState
 
-func etOnRecoverCB() func() {
+func GetGlobalOnRecoverCB() func() {
 	return etGlobalState.onRecoverCB
 }

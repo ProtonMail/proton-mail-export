@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/golang/mock/gomock"
@@ -49,7 +50,7 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -74,7 +75,7 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -103,7 +104,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -144,7 +145,7 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -182,7 +183,7 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	})).Return(nil)
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -216,7 +217,7 @@ func TestSessionLogin_Logout(t *testing.T) {
 	client.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
@@ -243,7 +244,7 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 
 	ctx := context.Background()
-	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{})
+	session := NewSession(clientBuilder, nil, &async.NoopPanicHandler{}, &reporter.NullReporter{})
 	defer session.Close(ctx)
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))

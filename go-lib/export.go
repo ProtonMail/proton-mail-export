@@ -197,7 +197,8 @@ type csession struct {
 }
 
 func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
-	panicHandler := sentry.NewPanicHandler(etOnRecoverCB())
+	panicHandler := sentry.NewPanicHandler(GetGlobalOnRecoverCB())
+	reporter := GetGlobalReporter()
 
 	sessionCb := newCSessionCallback(cb)
 	builder, err := apiclient.NewProtonAPIClientBuilder(apiURL, panicHandler, sessionCb)
@@ -213,7 +214,7 @@ func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &csession{
-		s:         session.NewSession(clientBuilder, sessionCb, panicHandler),
+		s:         session.NewSession(clientBuilder, sessionCb, panicHandler, reporter),
 		ctx:       ctx,
 		ctxCancel: cancel,
 	}, nil

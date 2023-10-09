@@ -33,6 +33,9 @@ class GlobalScope final {
     GlobalScope operator=(GlobalScope&&) = delete;
 
     std::optional<std::filesystem::path> getLogPath() const;
+
+    static void reportMessage(const char* tag, const char*);
+    static void reportError(const char* tag, const char*);
 };
 
 }    // namespace etcpp

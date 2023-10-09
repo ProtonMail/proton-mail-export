@@ -34,10 +34,16 @@
 #include "tui_util.hpp"
 
 constexpr int kNumInputRetries = 3;
+constexpr const char* kReportTag = "cli";
 
 inline uint64_t toMB(uint64_t value) {
     return value / 1024 / 1024;
 }
+
+class ReadInputException final : public etcpp::Exception {
+   public:
+    explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
+};
 
 std::string readText(std::string_view label) {
     for (int i = 0; i < kNumInputRetries; i++) {
@@ -53,7 +59,7 @@ std::string readText(std::string_view label) {
         return result;
     }
 
-    throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
+    throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
 std::filesystem::path readPath(std::string_view label) {
@@ -86,7 +92,7 @@ std::filesystem::path readPath(std::string_view label) {
         return expandedPath;
     }
 
-    throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
+    throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
 std::string readSecret(std::string_view label) {
@@ -113,7 +119,7 @@ std::string readSecret(std::string_view label) {
         return result;
     }
 
-    throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
+    throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
 bool readYesNo(std::string_view label) {
@@ -139,7 +145,7 @@ bool readYesNo(std::string_view label) {
         }
     }
 
-    throw std::runtime_error(fmt::format("Failed read value for '{}'", label));
+    throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
 template <class F>
@@ -399,7 +405,11 @@ int main(int argc, const char** argv) {
 
     } catch (const etcpp::CancelledException&) {
         return EXIT_SUCCESS;
+    } catch (const ReadInputException& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
     } catch (const std::exception& e) {
+        etcpp::GlobalScope::reportError(kReportTag, e.what());
         std::cerr << "Encountered unexpected error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }

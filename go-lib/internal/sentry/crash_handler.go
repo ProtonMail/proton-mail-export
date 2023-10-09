@@ -19,12 +19,8 @@ package sentry
 
 import (
 	"fmt"
-	"runtime"
 	"runtime/pprof"
-	"time"
 
-	"github.com/ProtonMail/export-tool/internal"
-	"github.com/ProtonMail/export-tool/internal/hv"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
@@ -36,14 +32,13 @@ func NewPanicHandler(onRecover func()) async.PanicHandler {
 	}
 
 	return &sentryPanicHandler{
-		arch:      hv.GetHostArch(),
 		onRecover: onRecover,
 	}
 }
 
 type sentryPanicHandler struct {
-	arch      string
 	onRecover func()
+	reporter  *sentryReporter
 }
 
 func (s *sentryPanicHandler) HandlePanic(r interface{}) {
@@ -52,7 +47,7 @@ func (s *sentryPanicHandler) HandlePanic(r interface{}) {
 	}
 
 	recoverErr := fmt.Errorf("recover: %v", r)
-	if err := s.scopedSentryReport(nil, func() {
+	if err := s.reporter.scopedSentryReport(nil, func() {
 		if eventID := sentry.CaptureException(recoverErr); eventID != nil {
 			logrus.WithError(recoverErr).WithField("reportID", eventID).Warn("Captured exception")
 		}
@@ -65,39 +60,4 @@ func (s *sentryPanicHandler) HandlePanic(r interface{}) {
 	}
 
 	s.onRecover()
-}
-
-func (s *sentryPanicHandler) scopedSentryReport(context map[string]any, do func()) error {
-	tags := map[string]string{
-		"OS":       runtime.GOOS,
-		"Version":  internal.ETVersionString,
-		"HostArch": s.arch,
-	}
-
-	sentry.WithScope(func(scope *sentry.Scope) {
-		scope.SetTags(tags)
-		if len(context) != 0 {
-			scope.SetContexts(
-				map[string]sentry.Context{"go-export": contextToString(context)},
-			)
-		}
-
-		do()
-	})
-
-	if !sentry.Flush(time.Second * 10) {
-		return fmt.Errorf("failed to report sentry error")
-	}
-
-	return nil
-}
-
-func contextToString(context sentry.Context) sentry.Context {
-	res := make(sentry.Context)
-
-	for k, v := range context {
-		res[k] = fmt.Sprintf("%v", v)
-	}
-
-	return res
 }

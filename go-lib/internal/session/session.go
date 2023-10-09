@@ -82,8 +82,6 @@ func (s *Session) Close(ctx context.Context) {
 }
 
 func (s *Session) Login(ctx context.Context, email string, password []byte) error {
-	defer async.HandlePanic(s.panicHandler)
-
 	if email == "crash@bandicoot" {
 		panic("Crash Time")
 	}
@@ -128,8 +126,6 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 }
 
 func (s *Session) Logout(ctx context.Context) error {
-	defer async.HandlePanic(s.panicHandler)
-
 	if s.loginState == LoginStateLoggedOut {
 		return ErrInvalidLoginState
 	}
@@ -149,8 +145,6 @@ func (s *Session) Logout(ctx context.Context) error {
 }
 
 func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
-	defer async.HandlePanic(s.panicHandler)
-
 	if s.loginState != LoginStateAwaitingTOTP {
 		return ErrInvalidLoginState
 	}

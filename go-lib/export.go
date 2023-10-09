@@ -34,6 +34,7 @@ import (
 	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/export-tool/internal/utils"
+	"github.com/ProtonMail/gluon/async"
 )
 
 type SessionHandle = internal.Handle[csession]
@@ -175,6 +176,8 @@ func withSession(ptr *C.etSession, f func(ctx context.Context, session *session.
 		return C.ET_SESSION_STATUS_INVALID
 	}
 
+	defer async.HandlePanic(session.s.GetPanicHandler())
+
 	err := f(session.ctx, session.s)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -200,6 +203,8 @@ func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 	panicHandler := sentry.NewPanicHandler(GetGlobalOnRecoverCB())
 	reporter := GetGlobalReporter()
 
+	defer async.HandlePanic(panicHandler)
+
 	sessionCb := newCSessionCallback(cb)
 	builder, err := apiclient.NewProtonAPIClientBuilder(apiURL, panicHandler, sessionCb)
 	if err != nil {
@@ -221,12 +226,15 @@ func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 }
 
 func (c *csession) close() {
+	defer async.HandlePanic(c.s.GetPanicHandler())
+
 	c.s.Close(c.ctx)
 	c.cancel()
 	c.lastError.Close()
 }
 
 func (c *csession) cancel() {
+	defer async.HandlePanic(c.s.GetPanicHandler())
 	c.cancelOnce.Do(c.ctxCancel)
 }
 

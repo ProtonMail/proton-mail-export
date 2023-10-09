@@ -33,6 +33,7 @@ import (
 	"github.com/ProtonMail/export-tool/internal/mail"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/export-tool/internal/utils"
+	"github.com/ProtonMail/gluon/async"
 )
 
 //export etSessionNewExportMail
@@ -41,6 +42,8 @@ func etSessionNewExportMail(sessionPtr *C.etSession, cExportPath *C.cchar_t, out
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
 	}
+
+	defer async.HandlePanic(csession.s.GetPanicHandler())
 
 	if csession.s.LoginState() != session.LoginStateLoggedIn {
 		csession.setLastError(session.ErrInvalidLoginState)
@@ -72,6 +75,8 @@ func etExportMailDelete(ptr *C.etExportMail) C.etExportMailStatus {
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
 
+	defer async.HandlePanic(s.csession.s.GetPanicHandler())
+
 	s.exporter.Close()
 	s.lastError.Close()
 
@@ -86,6 +91,8 @@ func etExportMailStart(ptr *C.etExportMail, callbacks *C.etExportMailCallbacks) 
 	if !ok {
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	reporter := &mailExportReporter{
 		exporter:            ce.exporter,
@@ -113,6 +120,8 @@ func etExportMailCancel(ptr *C.etExportMail) C.etExportMailStatus {
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
 
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
 	ce.exporter.Cancel()
 
 	return C.ET_EXPORT_MAIL_STATUS_OK
@@ -135,6 +144,8 @@ func etExportMailGetRequiredDiskSpaceEstimate(ptr *C.etExportMail, outSpace *C.u
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
 
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
 	space, err := ce.exporter.GetRequiredDiskSpaceEstimate(ce.csession.ctx)
 	if err != nil {
 		ce.lastError.Set(internal.MapError(err))
@@ -152,6 +163,8 @@ func etExportMailGetExportPath(ptr *C.etExportMail, outPath **C.char) C.etExport
 	if !ok {
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	*outPath = C.CString(ce.exporter.GetExportPath())
 

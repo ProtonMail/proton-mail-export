@@ -207,3 +207,172 @@ func TestAssembleFailedMessageWriter_AllDecrypted(t *testing.T) {
 		require.Equal(t, msgBodyDecrypted, data)
 	}
 }
+
+func TestFileMetadataFileChecker_HasMessage_MetadataMissing(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.False(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithoutEMLOrDir(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, MessageMetadata{}, metadataPath)
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.False(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithEML(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, MessageMetadata{}, metadataPath)
+
+	emlFile := filepath.Join(dir, getEMLFileName(messageID))
+	require.NoError(t, os.WriteFile(emlFile, []byte{0, 1}, 0o600))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.True(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithDirButNoFiles(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, MessageMetadata{}, metadataPath)
+
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, metadataPath), 0o700))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.False(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithDirButMissingFiles(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadata := getTestMessageMetadata()
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, metadata, metadataPath)
+
+	msgDir := filepath.Join(dir, metadataPath)
+	require.NoError(t, os.MkdirAll(msgDir, 0o700))
+
+	// write only body
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, bodyFileName()), []byte{0, 1}, 0o600))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.False(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithDirAndAllFiles(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadata := getTestMessageMetadata()
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, metadata, metadataPath)
+
+	msgDir := filepath.Join(dir, messageID)
+	require.NoError(t, os.MkdirAll(msgDir, 0o700))
+
+	// write message parts.
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, bodyFileName()), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileName(metadata.Attachments[0].ID, metadata.Attachments[0].Name)), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileName(metadata.Attachments[1].ID, metadata.Attachments[1].Name)), []byte{0, 1}, 0o600))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.True(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithDirAndAllFilesNotDecrypted(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadata := getTestMessageMetadata()
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, metadata, metadataPath)
+
+	msgDir := filepath.Join(dir, messageID)
+	require.NoError(t, os.MkdirAll(msgDir, 0o700))
+
+	// write message parts.
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, bodyFileNameEncrypted()), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileNameEncrypted(metadata.Attachments[0].ID, metadata.Attachments[0].Name)), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileNameEncrypted(metadata.Attachments[1].ID, metadata.Attachments[1].Name)), []byte{0, 1}, 0o600))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.True(t, hasMessage)
+}
+
+func TestFileMetadataFileChecker_HasMessage_MetadataWithDirAndAllFilesEncryptionMix(t *testing.T) {
+	const messageID = "msg-1"
+	dir := t.TempDir()
+	checker := NewFileMetadataFileChecker(dir)
+
+	metadata := getTestMessageMetadata()
+
+	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
+	writeTestMetadata(t, metadata, metadataPath)
+
+	msgDir := filepath.Join(dir, messageID)
+	require.NoError(t, os.MkdirAll(msgDir, 0o700))
+
+	// write message parts.
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, bodyFileName()), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileNameEncrypted(metadata.Attachments[0].ID, metadata.Attachments[0].Name)), []byte{0, 1}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(msgDir, attachmentFileName(metadata.Attachments[1].ID, metadata.Attachments[1].Name)), []byte{0, 1}, 0o600))
+
+	hasMessage, err := checker.HasMessage(messageID)
+	require.NoError(t, err)
+	require.True(t, hasMessage)
+}
+
+func writeTestMetadata(t *testing.T, metadata MessageMetadata, path string) {
+	b, err := utils.GenerateVersionedJSON(MessageMetadataVersion, metadata)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, b, 0o600))
+}
+
+func getTestMessageMetadata() MessageMetadata {
+	return MessageMetadata{
+		MessageMetadata: proton.MessageMetadata{},
+		Attachments: []proton.Attachment{
+			{
+				ID:   "attachment1",
+				Name: "foo.png",
+			},
+			{
+				ID:   "attachment2",
+				Name: "bar.pdf",
+			},
+		},
+		MIMEType:   "",
+		Headers:    "",
+		WriterType: 0,
+	}
+}

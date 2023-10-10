@@ -20,6 +20,7 @@ package mail
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -71,7 +72,7 @@ func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, er
 
 		if err := parallel.DoContext(ctx, w.parallelWriters, len(input.messages), func(ctx context.Context, i int) error {
 			metadata := input.messages[i].GetMetadata()
-			metadataPath := filepath.Join(w.dirPath, metadata.ID+".metadata.json")
+			metadataPath := filepath.Join(w.dirPath, getMetadataFileName(metadata.ID))
 
 			integrityChecker := &utils.Sha256IntegrityChecker{}
 
@@ -260,4 +261,126 @@ func bodyFileName() string {
 
 func bodyFileNameEncrypted() string {
 	return "body.pgp"
+}
+
+func getMetadataFileName(id string) string {
+	return id + ".metadata.json"
+}
+
+func getEMLFileName(id string) string {
+	return id + ".eml"
+}
+
+type FileMetadataFileChecker struct {
+	exportDir string
+}
+
+func NewFileMetadataFileChecker(exportDir string) *FileMetadataFileChecker {
+	return &FileMetadataFileChecker{exportDir: exportDir}
+}
+
+func loadMetadataFile(metadataFilePath string) (MessageMetadata, error) {
+	b, err := os.ReadFile(metadataFilePath) //nolint:gosec
+	if err != nil {
+		return MessageMetadata{}, fmt.Errorf("failed to read metada file: %w", err)
+	}
+
+	m, err := utils.NewVersionedJSON[MessageMetadata](MessageMetadataVersion, b)
+	if err != nil {
+		return MessageMetadata{}, fmt.Errorf("failed to parse metadata file: %w", err)
+	}
+
+	return m.Payload, nil
+}
+
+func fileExists(path string) (bool, error) {
+	s, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	if s.IsDir() {
+		return true, os.ErrInvalid
+	}
+
+	return true, nil
+}
+
+func dirExists(path string) (bool, error) {
+	s, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	if !s.IsDir() {
+		return true, os.ErrInvalid
+	}
+
+	return true, nil
+}
+
+func (f FileMetadataFileChecker) HasMessage(msgID string) (bool, error) {
+	metadataPath := filepath.Join(f.exportDir, getMetadataFileName(msgID))
+	messagePath := filepath.Join(f.exportDir, getEMLFileName(msgID))
+	dirPath := filepath.Join(f.exportDir, msgID)
+
+	// check if metadata file exists.
+	metadata, err := loadMetadataFile(metadataPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+
+		if errors.Is(err, utils.ErrVersionDoesNotMatch) {
+			// Version doesn't match, need to re-fetch.
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	// Either the message was successfully built or it's spit into separate parts.
+	if emlExists, err := fileExists(messagePath); err != nil {
+		return false, err
+	} else if emlExists {
+		return true, nil
+	}
+
+	// Message was not assembled, check individual parts.
+	if dirExists, err := dirExists(dirPath); err != nil {
+		return false, err
+	} else if !dirExists {
+		return false, nil
+	}
+
+	// Check individual message parts.
+	totalMessageParts := 1 + len(metadata.Attachments)
+	presentPartCount := 0
+
+	pathsToCheck := make([]string, 0, totalMessageParts*2)
+
+	pathsToCheck = append(pathsToCheck, filepath.Join(dirPath, bodyFileName()), filepath.Join(dirPath, bodyFileNameEncrypted()))
+
+	for _, a := range metadata.Attachments {
+		pathsToCheck = append(pathsToCheck, filepath.Join(dirPath, attachmentFileName(a.ID, a.Name)),
+			filepath.Join(dirPath, attachmentFileNameEncrypted(a.ID, a.Name)))
+	}
+
+	for _, p := range pathsToCheck {
+		if exists, err := fileExists(p); err != nil {
+			return false, err
+		} else if exists {
+			presentPartCount++
+		}
+	}
+
+	return presentPartCount == totalMessageParts, nil
 }

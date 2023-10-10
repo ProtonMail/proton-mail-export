@@ -26,6 +26,7 @@ type NullErrorReporter struct{}
 func (n NullErrorReporter) ReportStageError(_ error) {}
 
 type StageProgressReporter interface {
+	SetMessageDownloaded(total uint64)
 	SetMessageTotal(total uint64)
 	OnProgress(delta int)
 }
@@ -33,5 +34,7 @@ type StageProgressReporter interface {
 type NullProgressReporter struct{}
 
 func (n NullProgressReporter) SetMessageTotal(_ uint64) {}
+
+func (n NullProgressReporter) SetMessageDownloaded(_ uint64) {}
 
 func (n NullProgressReporter) OnProgress(_ int) {}

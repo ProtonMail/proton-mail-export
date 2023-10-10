@@ -22,8 +22,13 @@ import (
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/go-proton-api"
+	"github.com/bradenaw/juniper/xslices"
 	"github.com/sirupsen/logrus"
 )
+
+type MetadataFileChecker interface {
+	HasMessage(msgID string) (bool, error)
+}
 
 type MetadataStage struct {
 	client   apiclient.Client
@@ -32,7 +37,11 @@ type MetadataStage struct {
 	pageSize int
 }
 
-func NewMetadataStage(client apiclient.Client, entry *logrus.Entry, pageSize int) *MetadataStage {
+func NewMetadataStage(
+	client apiclient.Client,
+	entry *logrus.Entry,
+	pageSize int,
+) *MetadataStage {
 	return &MetadataStage{
 		client:   client,
 		log:      entry.WithField("stage", "metadata"),
@@ -41,14 +50,19 @@ func NewMetadataStage(client apiclient.Client, entry *logrus.Entry, pageSize int
 	}
 }
 
-func (m *MetadataStage) Run(ctx context.Context, errReporter StageErrorReporter) {
+func (m *MetadataStage) Run(
+	ctx context.Context,
+	errReporter StageErrorReporter,
+	mfc MetadataFileChecker,
+	reporter Reporter,
+) {
 	m.log.Debug("Starting")
 	defer m.log.Debug("Exiting")
 	defer close(m.outputCh)
 
-	var lastMessageID string
-
 	client := m.client
+
+	var lastMessageID string
 
 	for {
 		if ctx.Err() != nil {
@@ -91,6 +105,25 @@ func (m *MetadataStage) Run(ctx context.Context, errReporter StageErrorReporter)
 		}
 
 		lastMessageID = metadata[len(metadata)-1].ID
+
+		initialLen := len(metadata)
+		metadata = xslices.Filter(metadata, func(t proton.MessageMetadata) bool {
+			isPresent, err := mfc.HasMessage(t.ID)
+			if err != nil {
+				errReporter.ReportStageError(err)
+				return false
+			}
+
+			return !isPresent
+		})
+
+		if len(metadata) != initialLen {
+			reporter.OnProgress(initialLen - len(metadata))
+		}
+
+		if len(metadata) == 0 {
+			continue
+		}
 
 		select {
 		case <-ctx.Done():

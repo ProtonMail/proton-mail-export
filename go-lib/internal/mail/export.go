@@ -55,6 +55,8 @@ const MaxBuildMemMB = 512 * MB
 //      |- msg-id.meta.json
 
 type ExportTask struct {
+	ctx       context.Context
+	ctxCancel func()
 	group     *async.Group
 	tmpDir    string
 	exportDir string
@@ -72,7 +74,11 @@ func NewExportTask(
 	// Tmp dir needs to be next to export path to as os.rename doesn't work if export path is on a different volume.
 	tmpDir := filepath.Join(exportPath, "temp")
 
+	ctx, cancel := context.WithCancel(ctx)
+
 	return &ExportTask{
+		ctx:       ctx,
+		ctxCancel: cancel,
 		group:     async.NewGroup(ctx, session.GetPanicHandler()),
 		tmpDir:    tmpDir,
 		exportDir: exportPath,
@@ -96,7 +102,7 @@ func (e *ExportTask) Close() {
 }
 
 func (e *ExportTask) Cancel() {
-	e.group.Cancel()
+	e.ctxCancel()
 }
 
 func (e *ExportTask) GetRequiredDiskSpaceEstimate(ctx context.Context) (uint64, error) {
@@ -112,8 +118,6 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	defer e.log.Info("Finished")
 	e.log.WithFields(logrus.Fields{"tmp-dir": e.tmpDir, "export-dir": e.exportDir}).Info("Starting")
 
-	reporter.OnProgress(0)
-
 	e.log.Debug("Preparing export dir")
 
 	if err := os.MkdirAll(e.exportDir, 0o700); err != nil {
@@ -123,6 +127,8 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	if err := os.MkdirAll(e.tmpDir, 0o700); err != nil {
 		return fmt.Errorf("failed to create export tmp directory: %w", err)
 	}
+
+	reporter.OnProgress(0)
 
 	e.log.Debug("Getting user info")
 	client := e.session.GetClient()
@@ -174,7 +180,6 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		return err
 	}
 
-	// get message count
 	msgCountPerLabel, err := client.GetGroupedMessageCount(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get message count: %w", err)
@@ -191,13 +196,13 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		}
 	}
 
-	reporter.SetMessageTotal(totalMessageCount)
-
-	e.log.Infof("Found %v Messages for download", totalMessageCount)
-
 	if !foundAllMailLabel {
 		return fmt.Errorf("failed to determine total message count")
 	}
+
+	e.log.Infof("Found %v Messages for download", totalMessageCount)
+
+	reporter.SetMessageTotal(totalMessageCount)
 
 	totalMemory := memory.TotalMemory()
 
@@ -229,7 +234,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	// start pipeline.
 	e.group.Once(func(ctx context.Context) {
-		metaStage.Run(ctx, errReporter)
+		metaStage.Run(ctx, errReporter, NewFileMetadataFileChecker(e.exportDir), reporter)
 	})
 	e.group.Once(func(ctx context.Context) {
 		downloadStage.Run(ctx, metaStage.outputCh, errReporter)
@@ -249,7 +254,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	// collect errors.
 	exportError := errReporter.getErrors()
 	if len(exportError) == 0 {
-		return nil
+		return e.ctx.Err()
 	}
 
 	e.log.Error("Export task ran into the following errors")

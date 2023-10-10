@@ -27,6 +27,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
@@ -95,10 +96,8 @@ func etExportMailStart(ptr *C.etExportMail, callbacks *C.etExportMailCallbacks) 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	reporter := &mailExportReporter{
-		exporter:            ce.exporter,
-		totalMessageCount:   0,
-		currentMessageCount: 0,
-		callbacks:           callbacks,
+		exporter:  ce.exporter,
+		callbacks: callbacks,
 	}
 
 	if err := ce.exporter.Run(ce.csession.ctx, reporter); err != nil {
@@ -193,22 +192,27 @@ func resolveExportMail(ptr *C.etExportMail) (*cExportMail, bool) {
 }
 
 type mailExportReporter struct {
-	totalMessageCount   uint64
-	currentMessageCount uint64
+	totalMessageCount   atomic.Uint64
+	currentMessageCount atomic.Uint64
 	callbacks           *C.etExportMailCallbacks
 	exporter            *mail.ExportTask
 }
 
 func (m *mailExportReporter) SetMessageTotal(total uint64) {
-	m.totalMessageCount = total
+	m.totalMessageCount.Store(total)
+}
+
+func (m *mailExportReporter) SetMessageDownloaded(total uint64) {
+	m.currentMessageCount.Store(total)
 }
 
 func (m *mailExportReporter) OnProgress(delta int) {
-	m.currentMessageCount += uint64(delta)
+	newMessageCount := m.currentMessageCount.Add(uint64(delta))
 
 	var progress float32
-	if m.totalMessageCount != 0 {
-		progress = float32(float64(m.currentMessageCount) / float64(m.totalMessageCount) * 100.0)
+	totalMessageCount := m.totalMessageCount.Load()
+	if totalMessageCount != 0 {
+		progress = float32(float64(newMessageCount) / float64(totalMessageCount) * 100.0)
 	} else {
 		progress = float32(0.0)
 	}

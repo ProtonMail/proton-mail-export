@@ -27,6 +27,24 @@ class NullCallback final : public etcpp::ExportMailCallback {
     void onProgress(float) override {}
 };
 
+class ProgressCancelCallback final : public etcpp::ExportMailCallback {
+   private:
+    etcpp::ExportMail& mE;
+    float mCancelPercentage;
+    bool mCancelled = false;
+
+   public:
+    explicit ProgressCancelCallback(etcpp::ExportMail& e, float cancelPercentage)
+        : etcpp::ExportMailCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
+
+    void onProgress(float p) override {
+        if (p > mCancelPercentage && !mCancelled) {
+            mCancelled = true;
+            mE.cancel();
+        }
+    }
+};
+
 TEST_CASE("MailExport") {
     GPAServer server;
 
@@ -70,4 +88,75 @@ TEST_CASE("MailExport") {
         auto metadataPath = exportDir / (msgID + ".metadata.json");
         REQUIRE(std::filesystem::is_regular_file(msgPath));
     }
+
+    REQUIRE_FALSE(std::filesystem::exists(exportDir / "exportProgress.json"));
+}
+
+TEST_CASE("MailExportWithResume") {
+    GPAServer server;
+
+    const char* userEmail = "hello@bar.com";
+    const char* userPassword = "12345";
+
+    std::string addrID;
+    const auto userID = server.createUser(userEmail, userPassword, addrID);
+    const auto url = server.url();
+
+    auto session = etcpp::Session(url.c_str());
+    {
+        auto loginState = session.getLoginState();
+        REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+    }
+
+    auto loginState = session.login(userEmail, userPassword);
+    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+
+    std::vector<std::string> messageIDs;
+    REQUIRE_NOTHROW(messageIDs = server.createTestMessages(userID.c_str(), addrID.c_str(),
+                                                           userEmail, userPassword, 500));
+
+    time_t t = time(nullptr);
+
+    auto tmpDir = std::filesystem::temp_directory_path();
+
+    // Japanese text below to test unicode path handling on Win32.
+    tmpDir /= std::filesystem::u8path("ことわざ") / std::to_string(t);
+
+    // Start one export and cancel at 20%
+    {
+        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto callback = ProgressCancelCallback(exporter, 20.0f);
+        REQUIRE_THROWS_AS(exporter.start(callback), etcpp::CancelledException);
+    }
+
+    // Start one export and cancel at 40%
+    {
+        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto callback = ProgressCancelCallback(exporter, 40.0f);
+        REQUIRE_THROWS_AS(exporter.start(callback), etcpp::CancelledException);
+    }
+
+    // Start one export and cancel at 67%
+    {
+        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto callback = ProgressCancelCallback(exporter, 67.0f);
+        REQUIRE_THROWS_AS(exporter.start(callback), etcpp::CancelledException);
+    }
+
+    // Run until completion
+    {
+        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto callback = NullCallback();
+        REQUIRE_NOTHROW(exporter.start(callback));
+    }
+
+    auto exportDir = tmpDir / userEmail / "mail";
+
+    for (const auto& msgID : messageIDs) {
+        auto msgPath = exportDir / (msgID + ".eml");
+        auto metadataPath = exportDir / (msgID + ".metadata.json");
+        REQUIRE(std::filesystem::is_regular_file(msgPath));
+    }
+
+    REQUIRE_FALSE(std::filesystem::exists(exportDir / "exportProgress.json"));
 }

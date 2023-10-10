@@ -33,7 +33,8 @@ import (
 )
 
 type BuildStageOutput struct {
-	messages []MessageWriter
+	lastMessageID string
+	messages      []MessageWriter
 }
 
 type BuildStage struct {
@@ -125,7 +126,8 @@ func (b *BuildStage) Run(
 			case <-ctx.Done():
 				return
 			case b.outputCh <- BuildStageOutput{
-				messages: results,
+				lastMessageID: chunk[len(chunk)-1].ID,
+				messages:      results,
 			}:
 			}
 		}

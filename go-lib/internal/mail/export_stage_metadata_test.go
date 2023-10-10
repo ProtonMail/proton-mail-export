@@ -7,6 +7,8 @@ import (
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/go-proton-api"
+	"github.com/bradenaw/juniper/xmaps"
+	"github.com/bradenaw/juniper/xslices"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -16,16 +18,19 @@ func TestMetadataStage_Run(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	client := apiclient.NewMockClient(mockCtrl)
 	errReporter := NewMockStageErrorReporter(mockCtrl)
+	fileChecker := NewMockMetadataFileChecker(mockCtrl)
+	reporter := NewMockReporter(mockCtrl)
 
 	const pageSize = 2
 
 	expected := testMetadata(20)
 	encodeMetadataExpectations(client, expected, pageSize)
+	fileChecker.EXPECT().HasMessage(gomock.Any()).AnyTimes().Return(false, nil)
 
 	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize)
 
 	go func() {
-		metadata.Run(context.Background(), errReporter)
+		metadata.Run(context.Background(), errReporter, fileChecker, reporter)
 	}()
 
 	result := make([]proton.MessageMetadata, 0, 20)
@@ -34,6 +39,50 @@ func TestMetadataStage_Run(t *testing.T) {
 	}
 
 	require.Equal(t, expected, result)
+}
+
+func TestMetadataStage_RunWithCached(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	client := apiclient.NewMockClient(mockCtrl)
+	errReporter := NewMockStageErrorReporter(mockCtrl)
+	fileChecker := NewMockMetadataFileChecker(mockCtrl)
+	reporter := NewMockReporter(mockCtrl)
+
+	const pageSize = 2
+
+	expected := testMetadata(20)
+	encodeMetadataExpectations(client, expected, pageSize)
+
+	reporter.EXPECT().OnProgress(1).MinTimes(20 / 3)
+
+	filteredIDS := make(xmaps.Set[string])
+
+	for idx, m := range expected {
+		if idx%3 == 0 {
+			fileChecker.EXPECT().HasMessage(gomock.Eq(m.ID)).Return(true, nil)
+			filteredIDS.Add(m.ID)
+		} else {
+			fileChecker.EXPECT().HasMessage(gomock.Eq(m.ID)).Return(false, nil)
+		}
+	}
+
+	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize)
+
+	go func() {
+		metadata.Run(context.Background(), errReporter, fileChecker, reporter)
+	}()
+
+	result := make([]proton.MessageMetadata, 0, 20)
+	for out := range metadata.outputCh {
+		result = append(result, out...)
+	}
+
+	expectedFiltered := xslices.Filter(expected, func(t proton.MessageMetadata) bool {
+		return !filteredIDS.Contains(t.ID)
+	})
+
+	require.Equal(t, len(expected)-len(filteredIDS), len(expectedFiltered))
+	require.Equal(t, expectedFiltered, result)
 }
 
 func testMetadata(count int) []proton.MessageMetadata {

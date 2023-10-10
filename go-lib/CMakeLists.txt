@@ -141,7 +141,7 @@ add_custom_target(go-lib-mockgen
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/mocks_test.go" "${CMAKE_CURRENT_SOURCE_DIR}/internal/apiclient/mocks.go"
     COMMAND mockgen
         -self_package "github.com/ProtonMail/export-tool/internal/mail"
-        -package mail github.com/ProtonMail/export-tool/internal/mail StageErrorReporter > "${CMAKE_BINARY_DIR}/mocks_mail_test.go"
+        -package mail github.com/ProtonMail/export-tool/internal/mail StageErrorReporter,MetadataFileChecker,Reporter > "${CMAKE_BINARY_DIR}/mocks_mail_test.go"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/mocks_mail_test.go" "${CMAKE_CURRENT_SOURCE_DIR}/internal/mail/mocks_test.go"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

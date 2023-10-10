@@ -383,7 +383,7 @@ int main(int argc, const char** argv) {
         }
 
         if (expectedSpace > spaceInfo.available) {
-            std::cout << "This operation requires at least " << toMB(expectedSpace)
+            std::cout << "\nThis operation requires at least " << toMB(expectedSpace)
                       << " MB of free space, but the destination volume only has "
                       << toMB(spaceInfo.available) << " MB available. " << std::endl
                       << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"

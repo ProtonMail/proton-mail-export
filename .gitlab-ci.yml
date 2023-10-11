@@ -16,17 +16,21 @@ variables:
 # ENV
 .env-windows:
   variables:
-    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+    VCPKG_DEFAULT_BINARY_CACHE: /c/${CI_PROJECT_DIR}/.cache
+    https_proxy: proxy.plabs.ch:3128
+    http_proxy: proxy.plabs.ch:3128
+    no_proxy: localhost,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,127.0.0.0/8,172.16.0.0/12,10.0.0.0/8
   before_script:
-    - New-Item -ItemType Directory -Path ${VCPKG_DEFAULT_BINARY_CACHE} -Force
-    - $env:Path = "C:\\\\CMake\\bin;" + $env:Path
+    - mkdir -p ${VCPKG_DEFAULT_BINARY_CACHE}
   cache:
     key: win-vcpkg
     paths:
       - .cache
     when: 'always'
+  image: windows-2022-export-tool
   tags:
-    - windows-export
+    - bridge-vbox-windows
+
 
 .env-darwin:
   variables:
@@ -78,7 +82,6 @@ stages:
 
 .script-config-cmake-win:
   script:
-    - $(Get-Command cmake).Source
     - cmake
        -S . -B "$CMAKE_BUILD_DIR"
        -G "Visual Studio 17 2022"
@@ -182,17 +185,13 @@ build-darwin-x86_64:
       - $CMAKE_INSTALL_DIR/bin
     when: always
 
-
-#build-windows:
-#  stage: build
-#  extends:
-#    - .env-windows
-#  script:
-#    - !reference [.script-config-git, script]
-#    - !reference [.script-config-cmake-win, script]
-#    - !reference [.script-test, script]
-#    - !reference [.script-install, script]
-#  artifacts:
-#    paths:
-#      - $CMAKE_INSTALL_DIR/bin
-#    when: always
+build-windows:
+  stage: build
+  extends:
+    - .env-windows
+  script:
+    - pwsh ./build.ps1
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR/bin
+    when: always

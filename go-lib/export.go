@@ -148,6 +148,32 @@ func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passw
 	})
 }
 
+//export etSessionGetHVSolveURL
+func etSessionGetHVSolveURL(ptr *C.etSession, outURL **C.char) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+		hvURL, err := session.GetHVSolveURL()
+		if err != nil {
+			return err
+		}
+
+		*outURL = C.CString(hvURL)
+
+		return nil
+	})
+}
+
+//export etSessionMarkHVSolved
+func etSessionMarkHVSolved(ptr *C.etSession, outLoginState *C.etSessionLoginState) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+		if err := session.MarkHVSolved(ctx); err != nil {
+			return err
+		}
+
+		*outLoginState = mapLoginState(session.LoginState())
+		return nil
+	})
+}
+
 //export etFree
 func etFree(ptr *C.void) {
 	C.free(unsafe.Pointer(ptr))

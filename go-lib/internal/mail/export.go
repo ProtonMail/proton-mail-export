@@ -83,7 +83,7 @@ func NewExportTask(
 		tmpDir:    tmpDir,
 		exportDir: exportPath,
 		session:   session,
-		log:       logrus.WithField("export", "mail").WithField("email", session.GetEmail()),
+		log:       logrus.WithField("export", "mail").WithField("userID", session.GetUser().ID),
 	}
 }
 
@@ -105,13 +105,8 @@ func (e *ExportTask) Cancel() {
 	e.ctxCancel()
 }
 
-func (e *ExportTask) GetRequiredDiskSpaceEstimate(ctx context.Context) (uint64, error) {
-	user, err := e.session.GetClient().GetUser(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to load user info: %w", err)
-	}
-
-	return approximateDiskUsage(user.ProductUsedSpace.Mail), nil
+func (e *ExportTask) GetRequiredDiskSpaceEstimate(_ context.Context) (uint64, error) {
+	return approximateDiskUsage(e.session.GetUser().ProductUsedSpace.Mail), nil
 }
 
 func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
@@ -130,13 +125,9 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	reporter.OnProgress(0)
 
-	e.log.Debug("Getting user info")
 	client := e.session.GetClient()
-	// Get user info
-	user, err := client.GetUser(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to load user info: %w", err)
-	}
+
+	user := e.session.GetUser()
 
 	e.log.Infof(
 		"Reported space usage %v MB, estimated disk uage %v MB",
@@ -169,7 +160,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	}
 
 	e.log.Debug("Unlocking address keys")
-	keyRing, err := apiclient.NewUnlockedKeyRing(&user, addresses, saltedKeyPass)
+	keyRing, err := apiclient.NewUnlockedKeyRing(user, addresses, saltedKeyPass)
 	if err != nil {
 		return fmt.Errorf("failed to unlock user keyring:%w", err)
 	}

@@ -148,6 +148,12 @@ bool readYesNo(std::string_view label) {
     throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
+void waitForEnter(std::string_view label) {
+    std::string result;
+    std::cout << label << ": " << std::flush;
+    std::getline(std::cin, result);
+}
+
 template <class F>
 std::string getCLIValue(cxxopts::ParseResult& parseResult,
                         const char* argKey,
@@ -254,6 +260,9 @@ int main(int argc, const char** argv) {
         constexpr int kMaxNumLoginAttempts = 3;
         int numLoginAttempts = 0;
 
+        std::string loginUsername;
+        std::string loginPassword;
+
         while (loginState != etcpp::Session::LoginState::LoggedIn) {
             if (gShouldQuit) {
                 return EXIT_SUCCESS;
@@ -266,15 +275,14 @@ int main(int argc, const char** argv) {
 
             switch (loginState) {
                 case etcpp::Session::LoginState::LoggedOut: {
-                    const auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL",
-                                                      []() { return readText("Username"); });
+                    auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL",
+                                                []() { return readText("Username"); });
                     if (gShouldQuit) {
                         return EXIT_SUCCESS;
                     }
 
-                    const auto password =
-                        getCLIValue(argParseResult, "password", "ET_USER_PASSWORD",
-                                    []() { return readSecret("Password"); });
+                    auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD",
+                                                []() { return readSecret("Password"); });
 
                     try {
                         auto task =
@@ -283,6 +291,8 @@ int main(int argc, const char** argv) {
                                                  return s.login(username.c_str(), password);
                                              });
                         loginState = runTask(appState, task);
+                        loginUsername = std::move(username);
+                        loginPassword = std::move(password);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to login: " << e.what() << std::endl;
                         numLoginAttempts += 1;
@@ -312,8 +322,39 @@ int main(int argc, const char** argv) {
                     break;
                 }
                 case etcpp::Session::LoginState::AwaitingHV: {
-                    std::cerr << "HV: Not yet implemented" << std::endl;
-                    return EXIT_FAILURE;
+                    const auto hvUrl = session.getHVSolveURL();
+
+                    std::cout << "\nHuman Verification requested. Please open the URL below in a "
+                                 "browser and"
+                              << " press ENTER when the challenge has been completed.\n\n"
+                              << hvUrl << '\n'
+                              << std::endl;
+
+                    waitForEnter("Press ENTER to continue");
+                    try {
+                        loginState = session.markHVSolved();
+                        // Auto-retry login with existing information if the HV was triggered during
+                        // login.
+                        if (loginState == etcpp::Session::LoginState::LoggedOut) {
+                            auto task = LoginSessionTask(
+                                session, "Retrying login after Human Verification request",
+                                [&](etcpp::Session& s) -> etcpp::Session::LoginState {
+                                    return s.login(loginUsername.c_str(), loginPassword);
+                                });
+                            loginState = runTask(appState, task);
+                        }
+                        if (loginState == etcpp::Session::LoginState::AwaitingHV) {
+                            numLoginAttempts += 1;
+                            continue;
+                        }
+                    } catch (const etcpp::SessionException& e) {
+                        std::cerr << "Failed to login: " << e.what() << std::endl;
+                        numLoginAttempts += 1;
+                        continue;
+                    }
+
+                    numLoginAttempts = 0;
+                    break;
                 }
                 case etcpp::Session::LoginState::AwaitingMailboxPassword: {
                     const auto mboxPassword =

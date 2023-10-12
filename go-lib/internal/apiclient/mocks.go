@@ -49,9 +49,9 @@ func (mr *MockBuilderMockRecorder) Close() *gomock.Call {
 }
 
 // NewClient mocks base method.
-func (m *MockBuilder) NewClient(arg0 context.Context, arg1 string, arg2 []byte) (Client, proton.Auth, error) {
+func (m *MockBuilder) NewClient(arg0 context.Context, arg1 string, arg2 []byte, arg3 *proton.APIHVDetails) (Client, proton.Auth, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewClient", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "NewClient", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(Client)
 	ret1, _ := ret[1].(proton.Auth)
 	ret2, _ := ret[2].(error)
@@ -59,9 +59,9 @@ func (m *MockBuilder) NewClient(arg0 context.Context, arg1 string, arg2 []byte) 
 }
 
 // NewClient indicates an expected call of NewClient.
-func (mr *MockBuilderMockRecorder) NewClient(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockBuilderMockRecorder) NewClient(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockBuilder)(nil).NewClient), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockBuilder)(nil).NewClient), arg0, arg1, arg2, arg3)
 }
 
 // MockClient is a mock of Client interface.
@@ -236,19 +236,19 @@ func (mr *MockClientMockRecorder) GetSalts(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSalts", reflect.TypeOf((*MockClient)(nil).GetSalts), arg0)
 }
 
-// GetUser mocks base method.
-func (m *MockClient) GetUser(arg0 context.Context) (proton.User, error) {
+// GetUserWithHV mocks base method.
+func (m *MockClient) GetUserWithHV(arg0 context.Context, arg1 *proton.APIHVDetails) (proton.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUser", arg0)
+	ret := m.ctrl.Call(m, "GetUserWithHV", arg0, arg1)
 	ret0, _ := ret[0].(proton.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUser indicates an expected call of GetUser.
-func (mr *MockClientMockRecorder) GetUser(arg0 interface{}) *gomock.Call {
+// GetUserWithHV indicates an expected call of GetUserWithHV.
+func (mr *MockClientMockRecorder) GetUserWithHV(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockClient)(nil).GetUser), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserWithHV", reflect.TypeOf((*MockClient)(nil).GetUserWithHV), arg0, arg1)
 }
 
 // MockRetryStrategy is a mock of RetryStrategy interface.

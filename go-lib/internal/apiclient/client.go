@@ -25,14 +25,14 @@ import (
 )
 
 type Builder interface {
-	NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error)
+	NewClient(ctx context.Context, username string, password []byte, hvToken *proton.APIHVDetails) (Client, proton.Auth, error)
 	Close()
 }
 
 type Client interface {
 	Auth2FA(ctx context.Context, req proton.Auth2FAReq) error
 	AuthDelete(ctx context.Context) error
-	GetUser(ctx context.Context) (proton.User, error)
+	GetUserWithHV(ctx context.Context, hv *proton.APIHVDetails) (proton.User, error)
 	GetSalts(ctx context.Context) (proton.Salts, error)
 	Close()
 

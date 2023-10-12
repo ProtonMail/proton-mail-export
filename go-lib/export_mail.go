@@ -52,7 +52,7 @@ func etSessionNewExportMail(sessionPtr *C.etSession, cExportPath *C.cchar_t, out
 	}
 
 	exportPath := C.GoString(cExportPath)
-	exportPath = filepath.Join(exportPath, csession.s.GetEmail())
+	exportPath = filepath.Join(exportPath, csession.s.GetUser().Email)
 
 	mailExport := mail.NewExportTask(csession.ctx, exportPath, csession.s)
 

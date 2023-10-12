@@ -41,10 +41,10 @@ func NewAutoRetryClientBuilder(builder Builder, retryBuilder RetryStrategyBuilde
 	}
 }
 
-func (a *AutoRetryClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {
+func (a *AutoRetryClientBuilder) NewClient(ctx context.Context, username string, password []byte, hvToken *proton.APIHVDetails) (Client, proton.Auth, error) {
 	retryStrategy := a.retryStrategyBuilder.NewRetryStrategy()
 	for {
-		client, auth, err := a.builder.NewClient(ctx, username, password)
+		client, auth, err := a.builder.NewClient(ctx, username, password, hvToken)
 		if err != nil {
 			if !isRetrieableError(err) {
 				return nil, proton.Auth{}, err
@@ -83,9 +83,9 @@ func (arc *AutoRetryClient) AuthDelete(ctx context.Context) error {
 	})
 }
 
-func (arc *AutoRetryClient) GetUser(ctx context.Context) (proton.User, error) {
+func (arc *AutoRetryClient) GetUserWithHV(ctx context.Context, hv *proton.APIHVDetails) (proton.User, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (proton.User, error) {
-		return client.GetUser(ctx)
+		return client.GetUserWithHV(ctx, hv)
 	})
 }
 

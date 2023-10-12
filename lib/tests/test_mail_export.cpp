@@ -17,6 +17,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <fmt/format.h>
 #include <etsession.hpp>
 #include <filesystem>
 
@@ -48,7 +49,7 @@ class ProgressCancelCallback final : public etcpp::ExportMailCallback {
 TEST_CASE("MailExport") {
     GPAServer server;
 
-    const char* userEmail = "hello@bar.com";
+    const char* userEmail = "hello";
     const char* userPassword = "12345";
 
     std::string addrID;
@@ -81,12 +82,13 @@ TEST_CASE("MailExport") {
         REQUIRE_NOTHROW(exporter.start(nullCallback));
     }
 
-    auto exportDir = tmpDir / userEmail / "mail";
+    auto exportDir = tmpDir / fmt::format("{}@proton.local", userEmail) / "mail";
 
     for (const auto& msgID : messageIDs) {
         auto msgPath = exportDir / (msgID + ".eml");
         auto metadataPath = exportDir / (msgID + ".metadata.json");
         REQUIRE(std::filesystem::is_regular_file(msgPath));
+        REQUIRE(std::filesystem::is_regular_file(metadataPath));
     }
 
     REQUIRE_FALSE(std::filesystem::exists(exportDir / "exportProgress.json"));
@@ -150,12 +152,13 @@ TEST_CASE("MailExportWithResume") {
         REQUIRE_NOTHROW(exporter.start(callback));
     }
 
-    auto exportDir = tmpDir / userEmail / "mail";
+    auto exportDir = tmpDir / fmt::format("{}@proton.local", userEmail) / "mail";
 
     for (const auto& msgID : messageIDs) {
         auto msgPath = exportDir / (msgID + ".eml");
         auto metadataPath = exportDir / (msgID + ".metadata.json");
         REQUIRE(std::filesystem::is_regular_file(msgPath));
+        REQUIRE(std::filesystem::is_regular_file(metadataPath));
     }
 
     REQUIRE_FALSE(std::filesystem::exists(exportDir / "exportProgress.json"));

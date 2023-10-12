@@ -40,13 +40,14 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -65,13 +66,14 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -94,7 +96,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 		PasswordMode: proton.TwoPasswordMode,
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
@@ -129,12 +131,13 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 		},
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 
 	const totpCode = "01245"
 
@@ -167,12 +170,13 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 		PasswordMode: proton.TwoPasswordMode,
 	}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 
 	const totpCode = "01245"
 
@@ -207,13 +211,14 @@ func TestSessionLogin_Logout(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		client,
 		clientAuth,
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil).Times(1)
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -233,12 +238,13 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 	clientBuilder := apiclient.NewMockBuilder(mockCtrl)
 	clientAuth := proton.Auth{}
 
-	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword)).Return(
+	clientBuilder.EXPECT().NewClient(gomock.Any(), gomock.Eq(TestUserEmail), gomock.Eq(TestUserPassword), gomock.Any()).Return(
 		nil,
 		clientAuth,
 		&proton.APIError{
-			Status: 421,
-			Code:   9001,
+			Status:  422,
+			Code:    9001,
+			Details: []byte(`{"Methods": ["captcha"],"Token":"token"}`),
 		},
 	)
 	clientBuilder.EXPECT().Close()

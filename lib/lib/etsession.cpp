@@ -162,6 +162,31 @@ void Session::cancel() {
     wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }
 
+std::string Session::getHVSolveURL() const {
+    char* outURL = nullptr;
+    wrapCCall(
+        [&](etSession* ptr) -> etSessionStatus { return etSessionGetHVSolveURL(ptr, &outURL); });
+
+    auto result = std::string(outURL);
+    etFree(outURL);
+
+    return result;
+}
+
+Session::LoginState Session::markHVSolved() {
+    LoginState ls = LoginState::LoggedOut;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus {
+        etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
+        auto status = etSessionMarkHVSolved(ptr, &els);
+        if (status == ET_SESSION_STATUS_OK) {
+            ls = mapLoginState(els);
+        }
+        return status;
+    });
+
+    return ls;
+}
+
 template <class F>
 void Session::wrapCCall(F func) {
     static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,

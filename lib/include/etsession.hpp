@@ -68,6 +68,8 @@ class Session final {
     [[nodiscard]] LoginState loginMailboxPassword(std::string_view password);
 
     [[nodiscard]] LoginState getLoginState() const;
+    [[nodiscard]] std::string getHVSolveURL() const;
+    [[nodiscard]] LoginState markHVSolved();
 
     [[nodiscard]] ExportMail newExportMail(const char* exportPath) const;
 

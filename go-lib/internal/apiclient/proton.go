@@ -54,6 +54,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
 			proton.WithCookieJar(cookieJar),
+			proton.WithDebug(true),
 		),
 		callback: callbacks,
 	}
@@ -75,26 +76,35 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 	return b, nil
 }
 
-func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte) (Client, proton.Auth, error) {
-	return p.manager.NewClientWithLogin(ctx, username, password)
+func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string, password []byte, hvToken *proton.APIHVDetails) (Client, proton.Auth, error) {
+	return p.manager.NewClientWithLoginWithHVToken(ctx, username, password, hvToken)
 }
 
 func (p *ProtonAPIClientBuilder) Close() {
 	p.manager.Close()
 }
 
-func IsHVRequestedError(err error) bool {
+func GetHVData(err error) *proton.APIHVDetails {
 	if err == nil {
-		return false
+		return nil
 	}
 
 	var protonErr *proton.APIError
 
 	if !errors.As(err, &protonErr) {
-		return false
+		return nil
 	}
 
-	return protonErr.Code == 9001
+	if !protonErr.IsHVError() {
+		return nil
+	}
+
+	hvDetails, err := protonErr.GetHVDetails()
+	if err != nil {
+		logrus.WithError(err).Error("Received HV error, but can't decode HV details")
+	}
+
+	return hvDetails
 }
 
 func newCookieJar(apiURL string) (*cookiejar.Jar, error) {

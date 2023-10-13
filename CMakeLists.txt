@@ -1,3 +1,4 @@
+include(cmake/mingw.cmake)
 include(cmake/vcpkg_setup.cmake)
 cmake_minimum_required(VERSION 3.23)
 project(ExportTool CXX C)
@@ -14,7 +15,6 @@ include(compile_options)
 include(clang_tidy)
 include(clang_format)
 include(shared_lib_copy)
-include(mingw)
 
 add_subdirectory(go-lib)
 add_subdirectory(lib)

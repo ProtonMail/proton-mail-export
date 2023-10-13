@@ -2,6 +2,8 @@
 # CLI Executable
 #
 
+
+
 add_executable(cli)
 
 find_package(cxxopts CONFIG REQUIRED)
@@ -22,8 +24,26 @@ target_sources(cli PRIVATE
         bin/tasks/session_task.hpp
 )
 
+
 apply_cpp_flags(cli)
 
 copy_shared_libraries(cli etcore)
+
+if (WIN32)
+    # For Win32 RC file
+    set(ET_CLI_FULL_NAME "Proton Export CLI")
+    set(ET_CLI_NAME "Proton Export")
+
+    set(CLI_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/resources.rc")
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/resources.rc.cmake
+        ${CLI_RC_FILE}
+        @ONLY
+    )
+
+    target_sources(cli PRIVATE ${CLI_RC_FILE})
+
+endif()
 
 install(TARGETS cli)

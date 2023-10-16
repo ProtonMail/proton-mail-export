@@ -255,7 +255,8 @@ func TestFileMetadataFileChecker_HasMessage_MetadataWithDirButNoFiles(t *testing
 	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
 	writeTestMetadata(t, MessageMetadata{}, metadataPath)
 
-	require.NoError(t, os.MkdirAll(filepath.Join(dir, metadataPath), 0o700))
+	msgDir := filepath.Join(dir, messageID)
+	require.NoError(t, os.MkdirAll(msgDir, 0o700))
 
 	hasMessage, err := checker.HasMessage(messageID)
 	require.NoError(t, err)
@@ -272,7 +273,7 @@ func TestFileMetadataFileChecker_HasMessage_MetadataWithDirButMissingFiles(t *te
 	metadataPath := filepath.Join(dir, getMetadataFileName(messageID))
 	writeTestMetadata(t, metadata, metadataPath)
 
-	msgDir := filepath.Join(dir, metadataPath)
+	msgDir := filepath.Join(dir, messageID)
 	require.NoError(t, os.MkdirAll(msgDir, 0o700))
 
 	// write only body

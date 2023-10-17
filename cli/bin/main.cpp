@@ -228,7 +228,7 @@ int main(int argc, const char** argv) {
 
         const char* helpText = "Proton Data Exporter v{}";
 
-        cxxopts::Options options("proton-export", fmt::format(helpText, et::VERSION_STR));
+        cxxopts::Options options("proton-export-cli", fmt::format(helpText, et::VERSION_STR));
 
         options.add_options()("e,export-dir", "Export directory", cxxopts::value<std::string>())(
             "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)",

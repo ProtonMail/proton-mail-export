@@ -2,18 +2,16 @@
 # CLI Executable
 #
 
-
-
-add_executable(cli)
+add_executable(proton-export-cli)
 
 find_package(cxxopts CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
-target_link_libraries(cli PRIVATE etcpp cxxopts::cxxopts)
+target_link_libraries(proton-export-cli PRIVATE etcpp cxxopts::cxxopts)
 
-target_include_directories(cli PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+target_include_directories(proton-export-cli PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-target_sources(cli PRIVATE
+target_sources(proton-export-cli PRIVATE
         bin/main.cpp
         bin/tui_util.cpp
         bin/tui_util.hpp
@@ -25,9 +23,9 @@ target_sources(cli PRIVATE
 )
 
 
-apply_cpp_flags(cli)
+apply_cpp_flags(proton-export-cli)
 
-copy_shared_libraries(cli etcore)
+copy_shared_libraries(proton-export-cli etcore)
 
 if (WIN32)
     # For Win32 RC file
@@ -42,8 +40,8 @@ if (WIN32)
         @ONLY
     )
 
-    target_sources(cli PRIVATE ${CLI_RC_FILE})
+    target_sources(proton-export-cli PRIVATE ${CLI_RC_FILE})
 
 endif()
 
-install(TARGETS cli)
+install(TARGETS proton-export-cli)

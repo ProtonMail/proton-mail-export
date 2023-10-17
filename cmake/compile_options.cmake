@@ -27,6 +27,7 @@ function(apply_cpp_flags target)
         target_compile_definitions(${target} PUBLIC
                 /WX
                 /permissive-
+                /EHsc
         )
     endif()
 

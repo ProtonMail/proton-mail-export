@@ -31,9 +31,9 @@ class Exception : public std::exception {
     inline explicit Exception(std::string_view what) : mWhat(what) {}
     ~Exception() override = default;
 
-    Exception(const Exception&) = delete;
+    Exception(const Exception&) = default;
     Exception(Exception&&) = default;
-    Exception& operator=(const Exception&) = delete;
+    Exception& operator=(const Exception&) = default;
     Exception& operator=(Exception&&) = default;
 
     [[nodiscard]] const char* what() const noexcept override { return mWhat.c_str(); }

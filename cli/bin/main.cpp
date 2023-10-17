@@ -21,6 +21,12 @@
 #include <optional>
 #include <string>
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>
+#endif
+
 #include <cxxopts.hpp>
 #include <et.hpp>
 #include <etconfig.hpp>
@@ -62,20 +68,40 @@ std::string readText(std::string_view label) {
     throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
+#if defined(_WIN32)
+struct Win32UTF16InputScope {
+    int prevMode;
+    Win32UTF16InputScope() { prevMode = _setmode(_fileno(stdin), _O_U16TEXT); }
+    ~Win32UTF16InputScope() { _setmode(_fileno(stdin), prevMode); }
+};
+
+#endif
+
 std::filesystem::path readPath(std::string_view label) {
+#if defined(_WIN32)
+    std::wstring result;
+    // We need to force the Win32 Console to read the input as Utf16, otherwise it will
+    // ignore the remaing code points and we get garbage data.
+    Win32UTF16InputScope modeScope;
+#define _CIN std::wcin
+#define mkpath(S) std::filesystem::path(S)
+#else
+#define _CIN std::cin
     std::string result;
+#define mkpath(S) std::filesystem::u8path(S)
+#endif
 
     for (int i = 0; i < kNumInputRetries; i++) {
         result.clear();
         std::cout << label << ": " << std::flush;
-        std::getline(std::cin, result);
+        std::getline(_CIN, result);
 
         if (result.empty()) {
             std::cerr << "Value can't be empty" << std::endl;
             continue;
         }
 
-        auto utf8path = std::filesystem::u8path(result);
+        auto utf8path = mkpath(result);
         auto expandedPath = etcpp::expandCLIPath(utf8path);
 
         try {
@@ -93,6 +119,8 @@ std::filesystem::path readPath(std::string_view label) {
     }
 
     throw ReadInputException(fmt::format("Failed read value for '{}'", label));
+#undef _CIN
+#undef mkpath
 }
 
 std::string readSecret(std::string_view label) {
@@ -196,6 +224,12 @@ class CLIAppState final : public TaskAppState {
 };
 
 int main(int argc, const char** argv) {
+#if defined(_WIN32)
+    // Ensure Win32 Console correctly processes utf8 characters.
+    setlocale(LC_ALL, "en_US.UTF-8");
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     auto appState = CLIAppState();
     std::cout << "Proton Export (" << et::VERSION_STR << ")\n" << std::endl;
     std::filesystem::path execPath;
@@ -400,6 +434,8 @@ int main(int argc, const char** argv) {
         try {
             std::filesystem::create_directories(exportPath);
         } catch (const std::exception& e) {
+            etcpp::logError("Failed to create export directory '{}': {}", exportPath.u8string(),
+                            e.what());
             std::cerr << "Failed to create export directory '" << exportPath << "': " << e.what()
                       << std::endl;
             return EXIT_FAILURE;
@@ -409,6 +445,7 @@ int main(int argc, const char** argv) {
         try {
             spaceInfo = std::filesystem::space(exportPath);
         } catch (const std::exception& e) {
+            etcpp::logError("Failed to get free space info: {}", e.what());
             std::cerr << "Failed to get free space info: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
@@ -439,6 +476,7 @@ int main(int argc, const char** argv) {
         try {
             runTaskWithProgress(appState, exportMail);
         } catch (const etcpp::ExportMailException& e) {
+            etcpp::logError("Failed to export : {}", e.what());
             std::cerr << "Failed to export: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
@@ -450,6 +488,7 @@ int main(int argc, const char** argv) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     } catch (const std::exception& e) {
+        etcpp::logError("Encountered unexpected error: {}", e.what());
         etcpp::GlobalScope::reportError(kReportTag, e.what());
         std::cerr << "Encountered unexpected error: " << e.what() << std::endl;
         return EXIT_FAILURE;

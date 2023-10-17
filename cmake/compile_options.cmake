@@ -28,7 +28,10 @@ function(apply_cpp_flags target)
                 /WX
                 /permissive-
                 /EHsc
+                /utf8
         )
+
+        target_compile_definitions(${target} PUBLIC _UNICODE UNICODE)
     endif()
 
 endfunction()

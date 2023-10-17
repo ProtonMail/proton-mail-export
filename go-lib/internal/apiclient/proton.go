@@ -54,7 +54,6 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 			proton.WithLogger(logrus.StandardLogger()),
 			proton.WithPanicHandler(panicHandler),
 			proton.WithCookieJar(cookieJar),
-			proton.WithDebug(true),
 		),
 		callback: callbacks,
 	}

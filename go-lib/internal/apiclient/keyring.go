@@ -31,8 +31,8 @@ type UnlockedKeyRing struct {
 	user    *proton.User
 }
 
-func NewUnlockedKeyRing(user *proton.User, addresses []proton.Address, keyPass []byte) (*UnlockedKeyRing, error) {
-	userKR, err := user.Keys.Unlock(keyPass, nil)
+func NewUnlockedKeyRing(user *proton.User, addresses []proton.Address, saltedKeyPass []byte) (*UnlockedKeyRing, error) {
+	userKR, err := user.Keys.Unlock(saltedKeyPass, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unlock user keys: %w", err)
 	}
@@ -44,7 +44,7 @@ func NewUnlockedKeyRing(user *proton.User, addresses []proton.Address, keyPass [
 	}
 
 	for _, addr := range addresses {
-		addrKR, err := addr.Keys.Unlock(keyPass, userKR)
+		addrKR, err := addr.Keys.Unlock(saltedKeyPass, userKR)
 		if err != nil {
 			logrus.WithField("addressID", addr.ID).WithError(err).Warn("Failed to unlock address keys")
 			continue
@@ -78,4 +78,33 @@ func (u *UnlockedKeyRing) GetAddrKeyRing(addrID string) (*crypto.KeyRing, bool) 
 
 func (u *UnlockedKeyRing) GetAddrKeyRingMap() map[string]*crypto.KeyRing {
 	return u.addrMap
+}
+
+type MailboxPasswordValidator interface {
+	IsValid([]byte) bool
+}
+
+type ProtonMailboxPasswordValidator struct {
+	user  *proton.User
+	salts *proton.Salts
+}
+
+func NewProtonMailboxPasswordValidator(user *proton.User, salts *proton.Salts) *ProtonMailboxPasswordValidator {
+	return &ProtonMailboxPasswordValidator{user: user, salts: salts}
+}
+
+func (p ProtonMailboxPasswordValidator) IsValid(keyPass []byte) bool {
+	saltedKeyPass, err := p.salts.SaltForKey(keyPass, p.user.Keys.Primary().ID)
+	if err != nil {
+		return false
+	}
+
+	userKR, err := p.user.Keys.Unlock(saltedKeyPass, nil)
+	if err != nil {
+		return false
+	}
+
+	userKR.ClearPrivateParams()
+
+	return true
 }

@@ -139,7 +139,8 @@ func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessi
 //export etSessionSubmitMailboxPassword
 func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
 	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
-		if err := session.SubmitMailboxPassword(C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
+		validator := apiclient.NewProtonMailboxPasswordValidator(session.GetUser(), session.GetUserSalts())
+		if err := session.SubmitMailboxPassword(validator, C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
 		}
 

@@ -54,6 +54,7 @@ type Session struct {
 	reporter        reporter.Reporter
 	hvDetails       *proton.APIHVDetails
 	user            proton.User
+	userSalts       proton.Salts
 }
 
 func NewSession(
@@ -120,10 +121,9 @@ func (s *Session) Login(ctx context.Context, email string, password []byte) erro
 
 	if auth.PasswordMode == proton.TwoPasswordMode {
 		s.loginState = LoginStateAwaitingMailboxPassword
-		return nil
+	} else {
+		s.loginState = LoginStateLoggedIn
 	}
-
-	s.loginState = LoginStateLoggedIn
 
 	// We can now get the user.
 	if err := s.loadUser(ctx); err != nil {
@@ -188,12 +188,16 @@ func (s *Session) SubmitTOTP(ctx context.Context, totp string) error {
 	return nil
 }
 
-func (s *Session) SubmitMailboxPassword(password []byte) error {
+func (s *Session) SubmitMailboxPassword(validator apiclient.MailboxPasswordValidator, password []byte) error {
 	if s.loginState != LoginStateAwaitingMailboxPassword {
 		return ErrInvalidLoginState
 	}
-
 	logrus.Debugf("Submitting Mailbox Password")
+
+	logrus.WithField("user", s.user).WithField("salts", s.userSalts).Info("...")
+	if !validator.IsValid(password) {
+		return fmt.Errorf("invalid mailbox password")
+	}
 
 	s.setMailboxPassword(password)
 	s.loginState = LoginStateLoggedIn
@@ -249,6 +253,10 @@ func (s *Session) GetUser() *proton.User {
 	return &s.user
 }
 
+func (s *Session) GetUserSalts() *proton.Salts {
+	return &s.userSalts
+}
+
 func (s *Session) checkHVRequest(err error) bool {
 	if details := apiclient.GetHVData(err); details != nil {
 		s.prevLoginState = s.loginState
@@ -279,7 +287,13 @@ func (s *Session) loadUser(ctx context.Context) error {
 		return err
 	}
 
+	salts, err := s.client.GetSalts(ctx)
+	if err != nil {
+		return err
+	}
+
 	s.user = u
+	s.userSalts = salts
 	return nil
 }
 

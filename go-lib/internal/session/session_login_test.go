@@ -48,6 +48,7 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -74,6 +75,7 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -103,6 +105,8 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	)
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -114,7 +118,7 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 
 	mailboxPassword := []byte("some password")
 
-	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
+	require.NoError(t, session.SubmitMailboxPassword(&AlwaysValidMailboxPasswordValidator{}, mailboxPassword))
 	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	require.Equal(t, mailboxPassword, session.mailboxPassword)
@@ -138,6 +142,7 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	)
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 
 	const totpCode = "01245"
 
@@ -176,11 +181,11 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 		nil,
 	)
 	clientBuilder.EXPECT().Close()
-	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
-
 	const totpCode = "01245"
 
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
+	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 	client.EXPECT().Close()
 	client.EXPECT().Auth2FA(gomock.Any(), gomock.Eq(proton.Auth2FAReq{
 		TwoFactorCode: totpCode,
@@ -198,7 +203,7 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 
 	mailboxPassword := []byte("some password")
 
-	require.NoError(t, session.SubmitMailboxPassword(mailboxPassword))
+	require.NoError(t, session.SubmitMailboxPassword(&AlwaysValidMailboxPasswordValidator{}, mailboxPassword))
 	require.Equal(t, LoginStateLoggedIn, session.LoginState())
 
 	require.Equal(t, mailboxPassword, session.mailboxPassword)
@@ -219,6 +224,7 @@ func TestSessionLogin_Logout(t *testing.T) {
 	clientBuilder.EXPECT().Close()
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil).Times(1)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
+	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -255,4 +261,10 @@ func TestSessionLogin_CatchHVError(t *testing.T) {
 
 	require.NoError(t, session.Login(ctx, TestUserEmail, TestUserPassword))
 	require.Equal(t, LoginStateAwaitingHV, session.LoginState())
+}
+
+type AlwaysValidMailboxPasswordValidator struct{}
+
+func (a AlwaysValidMailboxPasswordValidator) IsValid(_ []byte) bool {
+	return true
 }

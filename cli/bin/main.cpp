@@ -303,7 +303,7 @@ int main(int argc, const char** argv) {
             }
 
             if (numLoginAttempts >= kMaxNumLoginAttempts) {
-                std::cerr << "Failed to login: Max attempts reached";
+                std::cerr << "Failed to login: Max attempts reached" << std::endl;
                 return EXIT_FAILURE;
             }
 
@@ -402,8 +402,11 @@ int main(int argc, const char** argv) {
                         loginState = session.loginMailboxPassword(mboxPassword);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
-                        return EXIT_FAILURE;
+                        numLoginAttempts += 1;
+                        continue;
                     }
+
+                    numLoginAttempts = 0;
                     break;
                 }
                 default:

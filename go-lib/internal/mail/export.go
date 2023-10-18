@@ -135,10 +135,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		toMB(approximateDiskUsage(user.ProductUsedSpace.Mail)),
 	)
 
-	salts, err := client.GetSalts(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get key salts: %w", err)
-	}
+	salts := e.session.GetUserSalts()
 
 	saltedKeyPass, err := salts.SaltForKey(e.session.GetMailboxPassword(), user.Keys.Primary().ID)
 	if err != nil {

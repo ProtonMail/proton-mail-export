@@ -45,7 +45,7 @@ void setStdinEcho(bool enable) {
 
     SetConsoleMode(hStdin, mode);
 #else
-    struct termios tty;
+    termios tty;
     tcgetattr(STDIN_FILENO, &tty);
     if (!enable)
         tty.c_lflag &= ~ECHO;

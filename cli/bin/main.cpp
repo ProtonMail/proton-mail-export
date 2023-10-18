@@ -20,6 +20,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #if defined(_WIN32)
 #include <fcntl.h>
@@ -41,6 +42,8 @@
 
 constexpr int kNumInputRetries = 3;
 constexpr const char* kReportTag = "cli";
+static std::atomic_bool gShouldQuit = std::atomic_bool(false);
+static std::atomic_bool gConnectionActive = std::atomic_bool(true);
 
 inline uint64_t toMB(uint64_t value) {
     return value / 1024 / 1024;
@@ -51,12 +54,32 @@ class ReadInputException final : public etcpp::Exception {
     explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
 };
 
+template <class C>
+inline auto readLine(C& stream, std::string_view label) {
+    std::conditional_t<std::is_same_v<C, decltype(std::cin)>, std::string, std::wstring> result;
+    std::cout << label << ": " << std::flush;
+    std::getline(stream, result);
+    if (stream.eof()) {
+#if defined(_WIN32)
+        // On win32 console, Ctrl+C will close the input stream before the signal
+        // handler is run. To avoid always seeing the ReadInputException, just
+        // throw cancel all the time.
+        throw etcpp::CancelledException();
+#else
+        if (gShouldQuit) {
+            throw etcpp::CancelledException();
+        } else {
+            throw ReadInputException(fmt::format("Failed read value for '{}'", label));
+        }
+#endif
+    }
+
+    return result;
+}
+
 std::string readText(std::string_view label) {
     for (int i = 0; i < kNumInputRetries; i++) {
-        std::string result;
-        std::cout << label << ": " << std::flush;
-        std::getline(std::cin, result);
-
+        std::string result = readLine(std::cin, label);
         if (result.empty()) {
             std::cerr << "Value can't be empty" << std::endl;
             continue;
@@ -79,23 +102,18 @@ struct Win32UTF16InputScope {
 
 std::filesystem::path readPath(std::string_view label) {
 #if defined(_WIN32)
-    std::wstring result;
     // We need to force the Win32 Console to read the input as Utf16, otherwise it will
     // ignore the remaing code points and we get garbage data.
     Win32UTF16InputScope modeScope;
-#define _CIN std::wcin
+#define stdindef std::wcin
 #define mkpath(S) std::filesystem::path(S)
 #else
-#define _CIN std::cin
-    std::string result;
+#define stdindef std::cin
 #define mkpath(S) std::filesystem::u8path(S)
 #endif
 
     for (int i = 0; i < kNumInputRetries; i++) {
-        result.clear();
-        std::cout << label << ": " << std::flush;
-        std::getline(_CIN, result);
-
+        auto result = readLine(stdindef, label);
         if (result.empty()) {
             std::cerr << "Value can't be empty" << std::endl;
             continue;
@@ -119,7 +137,7 @@ std::filesystem::path readPath(std::string_view label) {
     }
 
     throw ReadInputException(fmt::format("Failed read value for '{}'", label));
-#undef _CIN
+#undef stdindef
 #undef mkpath
 }
 
@@ -135,10 +153,7 @@ std::string readSecret(std::string_view label) {
     PasswordScope pscope;
 
     for (int i = 0; i < kNumInputRetries; i++) {
-        std::string result;
-        std::cout << label << ": " << std::flush;
-        std::getline(std::cin, result);
-
+        std::string result = readLine(std::cin, label);
         if (result.empty()) {
             std::cerr << "Value can't be empty" << std::endl;
             continue;
@@ -152,9 +167,7 @@ std::string readSecret(std::string_view label) {
 
 bool readYesNo(std::string_view label) {
     for (int i = 0; i < kNumInputRetries; i++) {
-        std::string result;
-        std::cout << label << ": " << std::flush;
-        std::getline(std::cin, result);
+        std::string result = readLine(std::cin, label);
 
         if (result.empty()) {
             std::cerr << "Value can't be empty" << std::endl;
@@ -207,9 +220,6 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
     return fallback();
 }
 
-static std::atomic_bool gShouldQuit = std::atomic_bool(false);
-static std::atomic_bool gConnectionActive = std::atomic_bool(true);
-
 class SessionCallback final : public etcpp::SessionCallback {
    public:
     void onNetworkLost() override { gConnectionActive.store(false); }
@@ -245,6 +255,12 @@ int main(int argc, const char** argv) {
                 std::cout << std::endl
                           << "Received Ctrl+C, exiting as soon as possible" << std::endl;
                 gShouldQuit.store(true);
+#if !defined(_WIN32)
+                // We need to reset the printing of chars by stdin here. As soon as we close stdin
+                // to force the input reading to exit, we can't apply any more changes.
+                setStdinEcho(true);
+#endif
+                fclose(stdin);
             }
         })) {
         std::cerr << "Failed to register signal handler";

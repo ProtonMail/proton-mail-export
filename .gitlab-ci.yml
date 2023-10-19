@@ -103,15 +103,15 @@ stages:
 
 .script-config-cmake-macos-arm64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" 
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
         -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
         -DCMAKE_OSX_ARCHITECTURES=arm64
         $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-macos-x86_64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" 
-        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" 
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
         -DCMAKE_OSX_ARCHITECTURES=x86_64
         $CMAKE_SENTRY_OPTION
 
@@ -153,6 +153,7 @@ build-linux:
     paths:
       - $CMAKE_INSTALL_DIR/bin
     when: always
+    expire_in: 4 hrs
 
 build-darwin-arm64:
   variables:
@@ -170,6 +171,7 @@ build-darwin-arm64:
     paths:
       - $CMAKE_INSTALL_DIR/bin
     when: always
+    expire_in: 4 hrs
 
 build-darwin-x86_64:
   variables:
@@ -187,6 +189,7 @@ build-darwin-x86_64:
     paths:
       - $CMAKE_INSTALL_DIR/bin
     when: always
+    expire_in: 4 hrs
 
 build-windows:
   stage: build
@@ -201,3 +204,4 @@ build-windows:
     paths:
       - $CMAKE_INSTALL_DIR/bin
     when: always
+    expire_in: 4 hrs

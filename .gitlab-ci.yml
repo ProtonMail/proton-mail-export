@@ -205,3 +205,23 @@ build-windows:
       - $CMAKE_INSTALL_DIR/bin
     when: always
     expire_in: 4 hrs
+
+build-darwin-universal:
+  stage: build
+  needs: ["build-darwin-x86_64", "build-darwin-arm64"]
+  extends:
+    - .env-darwin
+  variables:
+    CMAKE_INSTALL_DIR_ARM64: $CI_PROJECT_DIR/cmake-install-release-arm64
+    CMAKE_INSTALL_DIR_X64: $CI_PROJECT_DIR/cmake-install-release-x86_64
+    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-universal
+  script:
+    - mkdir $CMAKE_INSTALL_DIR
+    - lipo -create -output $CMAKE_INSTALL_DIR/etcore.dylib $CMAKE_INSTALL_DIR_ARM64/bin/etcore.dylib $CMAKE_INSTALL_DIR_X64/bin/etcore.dylib
+    - lipo -create -output $CMAKE_INSTALL_DIR/proton-mail-export-cli $CMAKE_INSTALL_DIR_ARM64/bin/proton-mail-export-cli $CMAKE_INSTALL_DIR_X64/bin/proton-mail-export-cli
+  artifacts:
+    paths:
+      - $CMAKE_INSTALL_DIR
+    when: always
+    expire_in: 4 hrs
+

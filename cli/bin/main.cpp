@@ -352,20 +352,21 @@ int main(int argc, const char** argv) {
                     break;
                 }
                 case etcpp::Session::LoginState::AwaitingTOTP: {
-                    const auto totp = getCLIValue(argParseResult, "totp", "ET_TOTP_CODE",
-                                                  []() { return readSecret("TOTP Code"); });
+                    const auto totp = getCLIValue(argParseResult, "totp", "ET_TOTP_CODE", []() {
+                        return readSecret("Enter the code from your authenticator app");
+                    });
                     if (gShouldQuit) {
                         return EXIT_SUCCESS;
                     }
                     try {
                         auto task =
-                            LoginSessionTask(session, "Submitting TOTP",
+                            LoginSessionTask(session, "Submitting 2FA Code",
                                              [&](etcpp::Session& s) -> etcpp::Session::LoginState {
                                                  return s.loginTOTP(totp.c_str());
                                              });
                         loginState = runTask(appState, task);
                     } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to submit totp code: " << e.what() << std::endl;
+                        std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
                         return EXIT_FAILURE;
                     }
                     break;

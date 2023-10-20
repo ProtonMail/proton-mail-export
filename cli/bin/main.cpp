@@ -242,7 +242,7 @@ int main(int argc, const char** argv) {
 #endif
     auto appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ")  by Proton AG, Switzerland\n"
-              << "Get support on https://proton.me/support/proton-mail-export-tool" << std::endl;
+              << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path execPath;
     try {
         execPath = etcpp::getExecutableDir();

@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
@@ -48,8 +49,7 @@ const MaxBuildMemMB = 512 * MB
 
 // Mail Exports will be created in the given directory and will be structured:
 // <email>
-//  |- mail
-//	    |- export.log
+//  |- mail_yyyy_mm_dd_hh:mm:ss
 //      |- labels.json
 //      |- msg-id.eml
 //      |- msg-id.meta.json
@@ -69,7 +69,7 @@ func NewExportTask(
 	exportPath string,
 	session *session.Session,
 ) *ExportTask {
-	exportPath = filepath.Join(exportPath, "mail")
+	exportPath = filepath.Join(exportPath, generateUniqueExportDir())
 
 	// Tmp dir needs to be next to export path to as os.rename doesn't work if export path is on a different volume.
 	tmpDir := filepath.Join(exportPath, "temp")
@@ -222,7 +222,9 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	// start pipeline.
 	e.group.Once(func(ctx context.Context) {
-		metaStage.Run(ctx, errReporter, NewFileMetadataFileChecker(e.exportDir), reporter)
+		// To enable resume features use re-enable this line and delete the one below.
+		// metaStage.Run(ctx, errReporter, NewFileMetadataFileChecker(e.exportDir), reporter)
+		metaStage.Run(ctx, errReporter, &alwaysMissingMetadataFileChecker{}, reporter)
 	})
 	e.group.Once(func(ctx context.Context) {
 		downloadStage.Run(ctx, metaStage.outputCh, errReporter)
@@ -313,4 +315,9 @@ func approximateDiskUsage(v uint64) uint64 {
 
 func toMB(v uint64) uint64 {
 	return v / 1024 / 1024
+}
+
+func generateUniqueExportDir() string {
+	const format = "20060102_150405"
+	return "mail_" + time.Now().Format(format)
 }

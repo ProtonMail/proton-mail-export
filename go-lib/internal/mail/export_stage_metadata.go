@@ -132,3 +132,9 @@ func (m *MetadataStage) Run(
 		}
 	}
 }
+
+type alwaysMissingMetadataFileChecker struct{}
+
+func (a alwaysMissingMetadataFileChecker) HasMessage(string) (bool, error) {
+	return false, nil
+}

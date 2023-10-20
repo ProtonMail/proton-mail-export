@@ -452,7 +452,7 @@ int main(int argc, const char** argv) {
                 std::cout << "Please input desired export path. E.g.: " << exampleDir << std::endl;
                 exportPath = readPath("Export Path");
             } else {
-                exportPath = defaultPath;
+                exportPath = execPath;
             }
         }
 

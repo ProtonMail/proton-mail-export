@@ -241,7 +241,8 @@ int main(int argc, const char** argv) {
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto appState = CLIAppState();
-    std::cout << "Proton Export (" << et::VERSION_STR << ")\n" << std::endl;
+    std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ")  by Proton AG, Switzerland\n"
+              << "Get support on https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path execPath;
     try {
         execPath = etcpp::getExecutableDir();
@@ -276,9 +277,7 @@ int main(int argc, const char** argv) {
             exit(-1);
         });
 
-        const char* helpText = "Proton Data Exporter v{}";
-
-        cxxopts::Options options("proton-export-cli", fmt::format(helpText, et::VERSION_STR));
+        cxxopts::Options options("proton-mail-export-cli");
 
         options.add_options()("e,export-dir", "Export directory", cxxopts::value<std::string>())(
             "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)",
@@ -300,7 +299,7 @@ int main(int argc, const char** argv) {
         }
 
         if (const auto& logPath = globalScope.getLogPath(); logPath) {
-            std::cout << "Session Log: " << *logPath << '\n' << std::endl;
+            std::cout << "\nSession Log: " << *logPath << '\n' << std::endl;
         }
 
         auto session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());

@@ -161,6 +161,15 @@ ExportMail Session::newExportMail(const char* exportPath) const {
 void Session::cancel() {
     wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }
+std::string Session::getEmail() const {
+    char* outEmail = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionGetEmail(ptr, &outEmail); });
+
+    auto result = std::string(outEmail);
+    etFree(outEmail);
+
+    return result;
+}
 
 std::string Session::getHVSolveURL() const {
     char* outURL = nullptr;

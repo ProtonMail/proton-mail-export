@@ -175,6 +175,14 @@ func etSessionMarkHVSolved(ptr *C.etSession, outLoginState *C.etSessionLoginStat
 	})
 }
 
+//export etSessionGetEmail
+func etSessionGetEmail(ptr *C.etSession, outEmail **C.char) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+		*outEmail = C.CString(session.GetUser().Email)
+		return nil
+	})
+}
+
 //export etFree
 func etFree(ptr *C.void) {
 	C.free(unsafe.Pointer(ptr))

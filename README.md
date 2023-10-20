@@ -12,6 +12,12 @@ New export tool according to [GODT-2804 RFC](https://confluence.protontech.ch/di
 
 # Building
 
+## Fetch submodules
+
+```
+git submodule update --init --recursive
+```
+
 ## Linux/Mac
 
 ```

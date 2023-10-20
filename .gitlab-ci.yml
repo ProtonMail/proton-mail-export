@@ -11,6 +11,8 @@ variables:
   CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
   CMAKE_BUILD_CONFIG: "Release"
   CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
+  ET_BIN_NAME: proton-mail-export-cli
+  ET_DLL_NAME: etcore
   # GIT_SUBMODULE_STRATEGY: recursive
 
 # ENV
@@ -142,6 +144,8 @@ lint:
 
 build-linux:
   stage: build
+  variables:
+    ARCHIVE_NAME: linux_x86_64.tar.gz
   extends:
     - .env-linux-build
   script:
@@ -149,9 +153,11 @@ build-linux:
     - !reference [.script-config-cmake-unix, script]
     - !reference [.script-test, script]
     - !reference [.script-install, script]
+    - tar -czf $CMAKE_INSTALL_DIR/$ARCHIVE_NAME -C $CMAKE_INSTALL_DIR/bin $ET_BIN_NAME $ET_DLL_NAME.so
   artifacts:
+    name: linux_x86_64
     paths:
-      - $CMAKE_INSTALL_DIR/bin
+      - $CMAKE_INSTALL_DIR/$ARCHIVE_NAME
     when: always
     expire_in: 4 hrs
 
@@ -193,6 +199,8 @@ build-darwin-x86_64:
 
 build-windows:
   stage: build
+  variables:
+    ARCHIVE_NAME: windows_x86_64.zip
   extends:
     - .env-windows
   script:
@@ -200,9 +208,13 @@ build-windows:
     - !reference [.script-config-cmake-win, script]
     - !reference [.script-test, script]
     - !reference [.script-install, script]
+    - Push-Location "$CMAKE_INSTALL_DIR/bin"
+    - Compress-Archive -DestinationPath "$ARCHIVE_NAME" -Path "$ET_BIN_NAME.exe","$ET_DLL_NAME.dll"
+    - Pop-Location
   artifacts:
+    name: windows_x86_64
     paths:
-      - $CMAKE_INSTALL_DIR/bin
+      - $CMAKE_INSTALL_DIR/bin/$ARCHIVE_NAME
     when: always
     expire_in: 4 hrs
 
@@ -215,13 +227,18 @@ build-darwin-universal:
     CMAKE_INSTALL_DIR_ARM64: $CI_PROJECT_DIR/cmake-install-release-arm64
     CMAKE_INSTALL_DIR_X64: $CI_PROJECT_DIR/cmake-install-release-x86_64
     CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-universal
+    ARCHIVE_NAME: macos_universal.zip
   script:
     - mkdir $CMAKE_INSTALL_DIR
-    - lipo -create -output $CMAKE_INSTALL_DIR/etcore.dylib $CMAKE_INSTALL_DIR_ARM64/bin/etcore.dylib $CMAKE_INSTALL_DIR_X64/bin/etcore.dylib
-    - lipo -create -output $CMAKE_INSTALL_DIR/proton-mail-export-cli $CMAKE_INSTALL_DIR_ARM64/bin/proton-mail-export-cli $CMAKE_INSTALL_DIR_X64/bin/proton-mail-export-cli
+    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_ARM64/bin/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_X64/bin/$ET_DLL_NAME.dylib
+    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_BIN_NAME $CMAKE_INSTALL_DIR_ARM64/bin/$ET_BIN_NAME $CMAKE_INSTALL_DIR_X64/bin/$ET_BIN_NAME
+    - pushd $CMAKE_INSTALL_DIR
+    - zip $ARCHIVE_NAME $ET_DLL_NAME.dylib $ET_BIN_NAME
+    - popd
   artifacts:
+    name: mac_universal
     paths:
-      - $CMAKE_INSTALL_DIR
+      - $CMAKE_INSTALL_DIR/$ARCHIVE_NAME
     when: always
     expire_in: 4 hrs
 

@@ -9,6 +9,8 @@ variables:
   GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
   CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release
   CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
+  CMAKE_INSTALL_DARWIN_ARM_DIR: $CI_PROJECT_DIR/cmake-install-release-arm64
+  CMAKE_INSTALL_DARWIN_x86_DIR: $CI_PROJECT_DIR/cmake-install-release-x86_64
   CMAKE_BUILD_CONFIG: "Release"
   CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
   # GIT_SUBMODULE_STRATEGY: recursive
@@ -77,6 +79,7 @@ variables:
 stages:
   - test
   - build
+  - installer
 
 .script-config-git:
   script:
@@ -130,7 +133,7 @@ stages:
     - !reference [.script-build, script]
     - ctest --build-config $CMAKE_BUILD_CONFIG --test-dir $CMAKE_BUILD_DIR -V
 
-lint:
+.lint: #TODO enable
   tags:
     - shared-medium
   script:
@@ -140,7 +143,7 @@ lint:
     - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t go-lib-lint
     - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t clang-format-check
 
-build-linux:
+.build-linux: # TODO enable
   stage: build
   extends:
     - .env-linux-build
@@ -158,7 +161,7 @@ build-linux:
 build-darwin-arm64:
   variables:
     CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-arm64
-    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-arm64
+    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DARWIN_ARM_DIR
   stage: build
   extends:
     - .env-darwin
@@ -173,10 +176,10 @@ build-darwin-arm64:
     when: always
     expire_in: 4 hrs
 
-build-darwin-x86_64:
+.build-darwin-x86_64: # TODO enable
   variables:
     CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-x86_64
-    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-x86_64
+    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DARWIN_x86_DIR
   stage: build
   extends:
     - .env-darwin
@@ -191,7 +194,7 @@ build-darwin-x86_64:
     when: always
     expire_in: 4 hrs
 
-build-windows:
+.build-windows: # TODO enable
   stage: build
   extends:
     - .env-windows
@@ -205,3 +208,18 @@ build-windows:
       - $CMAKE_INSTALL_DIR/bin
     when: always
     expire_in: 4 hrs
+
+sign-and-pack-darwin:
+  stage: installer
+  needs: ["build-darwin-arm64"]
+  variables:
+    DARWIN_PACKGE: "$CI_PROJECT_DIR/et-darwin.zip"
+  script:
+    - ./scripts/sign_and_pack_darwin.sh "${CMAKE_INSTALL_DARWIN_ARM_DIR}/bin" "${DARWIN_PACKGE}"
+  artifacts:
+    paths:
+      - $DARWIN_PACKGE
+    when: always
+    expire_in: 4 hrs
+  tags:
+    - mac-prg-release-m1

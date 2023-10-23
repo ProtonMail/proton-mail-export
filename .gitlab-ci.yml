@@ -9,12 +9,15 @@ variables:
   GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
   CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release
   CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
-  CMAKE_INSTALL_DARWIN_ARM_DIR: $CI_PROJECT_DIR/cmake-install-release-arm64
-  CMAKE_INSTALL_DARWIN_x86_DIR: $CI_PROJECT_DIR/cmake-install-release-x86_64
+  CMAKE_INSTALL_DIR_ARM64: $CI_PROJECT_DIR/cmake-install-release-arm64
+  CMAKE_INSTALL_DIR_X64: $CI_PROJECT_DIR/cmake-install-release-x86_64
+  CMAKE_INSTALL_DIR_UNIVERSAL: $CI_PROJECT_DIR/cmake-install-release-universal
+  ARCHIVE_NAME_MACOS: macos_universal.zip
   CMAKE_BUILD_CONFIG: "Release"
   CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
   ET_BIN_NAME: proton-mail-export-cli
   ET_DLL_NAME: proton-mail-export
+  DEPLOY_DIR: $CI_PROJECT_DIR/deploy
   # GIT_SUBMODULE_STRATEGY: recursive
 
 # ENV
@@ -166,8 +169,7 @@ stages:
 
 build-darwin-arm64:
   variables:
-    CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-arm64
-    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DARWIN_ARM_DIR
+    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DIR_ARM64
   stage: build
   extends:
     - .env-darwin
@@ -182,10 +184,9 @@ build-darwin-arm64:
     when: always
     expire_in: 4 hrs
 
-.build-darwin-x86_64: # TODO enable
+build-darwin-x86_64:
   variables:
-    CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release-x86_64
-    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DARWIN_x86_DIR
+    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DIR_X64
   stage: build
   extends:
     - .env-darwin
@@ -197,6 +198,28 @@ build-darwin-arm64:
   artifacts:
     paths:
       - $CMAKE_INSTALL_DIR/bin
+    when: always
+    expire_in: 4 hrs
+
+build-darwin-universal:
+  stage: build
+  needs: ["build-darwin-x86_64", "build-darwin-arm64"]
+  extends:
+    - .env-darwin
+  variables:
+    CMAKE_INSTALL_DIR: $CMAKE_INSTALL_DIR_UNIVERSAL
+    ARCHIVE_NAME: $ARCHIVE_NAME_MACOS
+  script:
+    - mkdir -p $CMAKE_INSTALL_DIR
+    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_ARM64/bin/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_X64/bin/$ET_DLL_NAME.dylib
+    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_BIN_NAME $CMAKE_INSTALL_DIR_ARM64/bin/$ET_BIN_NAME $CMAKE_INSTALL_DIR_X64/bin/$ET_BIN_NAME
+    - pushd $CMAKE_INSTALL_DIR
+    - zip $ARCHIVE_NAME $ET_DLL_NAME.dylib $ET_BIN_NAME
+    - popd
+  artifacts:
+    name: mac_universal
+    paths:
+      - $CMAKE_INSTALL_DIR/$ARCHIVE_NAME
     when: always
     expire_in: 4 hrs
 
@@ -221,49 +244,31 @@ build-darwin-arm64:
     when: always
     expire_in: 4 hrs
 
-build-darwin-universal:
-  stage: build
-  needs: ["build-darwin-x86_64", "build-darwin-arm64"]
-  extends:
-    - .env-darwin
-  variables:
-    CMAKE_INSTALL_DIR_ARM64: $CI_PROJECT_DIR/cmake-install-release-arm64
-    CMAKE_INSTALL_DIR_X64: $CI_PROJECT_DIR/cmake-install-release-x86_64
-    CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release-universal
-    ARCHIVE_NAME: macos_universal.zip
-  script:
-    - mkdir $CMAKE_INSTALL_DIR
-    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_ARM64/bin/$ET_DLL_NAME.dylib $CMAKE_INSTALL_DIR_X64/bin/$ET_DLL_NAME.dylib
-    - lipo -create -output $CMAKE_INSTALL_DIR/$ET_BIN_NAME $CMAKE_INSTALL_DIR_ARM64/bin/$ET_BIN_NAME $CMAKE_INSTALL_DIR_X64/bin/$ET_BIN_NAME
-    - pushd $CMAKE_INSTALL_DIR
-    - zip $ARCHIVE_NAME $ET_DLL_NAME.dylib $ET_BIN_NAME
-    - popd
-  artifacts:
-    name: mac_universal
-    paths:
-      - $CMAKE_INSTALL_DIR/$ARCHIVE_NAME
-    when: always
-    expire_in: 4 hrs
+.rules-only-et-tag:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^et-\d+/'
 
 .nexus-stage:
   after_script:
-    - './scripts/nexus_push.sh cp --recursive deploy :bridge:/export-tool/${CI_COMMIT_TAG}/'
+    - './scripts/nexus_push.sh cp --recursive $DEPLOY_DIR :bridge:/export-tool/${CI_COMMIT_TAG}/'
 
 sign-and-pack-darwin:
   stage: installer
-  needs: ["build-darwin-arm64"]
+  needs: ["build-darwin-universal"]
   extends:
+    - .rules-only-et-tag
     - .nexus-stage
   variables:
-    DARWIN_PACKGE: "$CI_PROJECT_DIR/deploy/pmec_mac_universal.zip"
+    SIGN_DIR: "$CI_PROJECT_DIR/signdir"
+    ARCHIVE_PATH: "$CMAKE_INSTALL_DIR_UNIVERSAL/$ARCHIVE_NAME_MACOS"
+    PACKGE_PATH: "${DEPLOY_DIR}/${ET_BIN_NAME}-${ARCHIVE_NAME_MACOS}"
   script:
-    - ./scripts/sign_and_pack_darwin.sh "${CMAKE_INSTALL_DARWIN_ARM_DIR}/bin" "${DARWIN_PACKGE}"
+    - mkdir "$SIGN_DIR" && unzip "$ARCHIVE_PATH" -d "$SIGN_DIR"
+    - ./scripts/sign_and_pack_darwin.sh "$SIGN_DIR" "${PACKGE_PATH}"
   artifacts:
     paths:
-      - $DARWIN_PACKGE
+      - $PACKGE_PATH
     when: always
     expire_in: 4 hrs
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^et-\d+/'
   tags:
     - mac-prg-release-m1

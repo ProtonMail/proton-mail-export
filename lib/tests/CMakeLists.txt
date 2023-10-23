@@ -14,7 +14,7 @@ target_sources(etcpp_test PRIVATE
     test_mail_export.cpp
 )
 
-target_link_libraries(etcpp_test PRIVATE etcpp etcore etgpa Catch2::Catch2 Catch2::Catch2WithMain)
+target_link_libraries(etcpp_test PRIVATE etcpp etgpa Catch2::Catch2 Catch2::Catch2WithMain)
 
 add_test(NAME etcpp-test
     COMMAND etcpp_test

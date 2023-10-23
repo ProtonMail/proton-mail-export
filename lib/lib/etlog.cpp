@@ -16,7 +16,7 @@
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "etlog.hpp"
-#include <etcore.h>
+#include <proton-mail-export.h>
 
 namespace etcpp {
 

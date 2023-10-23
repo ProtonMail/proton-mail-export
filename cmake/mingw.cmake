@@ -64,8 +64,8 @@ else()
 	message(STATUS "dlltool-bin=${dlltool-bin}")
 endif()
 
-function(win32_gen_implib target bin_dir go_build_target shared_lib lib_file)
-	set(def_file "${bin_dir}/${target}.def")
+function(win32_gen_implib target name bin_dir go_build_target shared_lib lib_file)
+	set(def_file "${bin_dir}/${name}.def")
 
 	add_custom_target("${target}-gendef"
 		DEPENDS ${shared_lib}

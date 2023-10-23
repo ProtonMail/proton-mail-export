@@ -10,8 +10,8 @@ endif()
 
 set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
-set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/etcore${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set(GO_LIB_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore.lib")
+set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/proton-mail-export${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(GO_LIB_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/proton-mail-export.lib")
 set(GO_LIB_TEST "${CMAKE_CURRENT_BINARY_DIR}/etcore-test${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(GO_LIB_TEST_WIN32_IMPL "${CMAKE_CURRENT_BINARY_DIR}/etcore-test.lib")
 
@@ -87,7 +87,7 @@ function(build_cgo_lib)
 
 
     if (WIN32)
-        win32_gen_implib(${target} "${CMAKE_CURRENT_BINARY_DIR}" "${target}-go-lib-build" ${lib} ${win32_imp_lib})
+        win32_gen_implib(${target} "${name}" "${CMAKE_CURRENT_BINARY_DIR}" "${target}-go-lib-build" ${lib} ${win32_imp_lib})
 	else()
         add_dependencies(${target} "${target}-go-lib-build")
     endif()
@@ -103,7 +103,7 @@ endfunction()
 
 build_cgo_lib(
     TARGET etcore
-    NAME etcore
+    NAME proton-mail-export
     GO_SOURCES ${go_files}
     GO_EXPORTS export.go export_log.go export_mail.go export_globals.go
 )

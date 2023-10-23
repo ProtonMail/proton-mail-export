@@ -18,7 +18,7 @@
 #include "et.hpp"
 #include "etexception.hpp"
 
-#include <etcore.h>
+#include <proton-mail-export.h>
 
 namespace etcpp {
 GlobalScope::GlobalScope(const std::filesystem::path& path, void (*onRecover)()) {

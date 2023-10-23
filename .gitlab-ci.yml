@@ -12,7 +12,7 @@ variables:
   CMAKE_BUILD_CONFIG: "Release"
   CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
   ET_BIN_NAME: proton-mail-export-cli
-  ET_DLL_NAME: etcore
+  ET_DLL_NAME: proton-mail-export
   # GIT_SUBMODULE_STRATEGY: recursive
 
 # ENV

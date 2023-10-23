@@ -17,7 +17,7 @@
 
 #include "etexport_mail.hpp"
 
-#include <etcore.h>
+#include <proton-mail-export.h>
 #include "etsession.hpp"
 
 namespace etcpp {

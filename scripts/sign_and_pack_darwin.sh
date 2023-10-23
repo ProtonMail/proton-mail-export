@@ -6,8 +6,17 @@ main(){
     SRC_DIR=$1
     TARGET_ZIP=$2
 
-    FILE_TO_NOTARIZE="$(readlink -e "$SRC_DIR/../to_notarize.zip")"
-    NOTARIZED_FILE="$(readlink -e "$SRC_DIR/../notarized.zip")"
+    if [ -z "${SRC_DIR}" ]; then
+        echo "ERROR: missing first argument: SRC_DIR"
+	exit 1
+    fi;
+
+    if [ -z "${TARGET_ZIP}" ]; then
+        echo "ERROR: missing second argument: TARGET_ZIP"
+	exit 1
+    fi;
+
+    FILE_TO_NOTARIZE="$(realpath "$SRC_DIR/../to_notarize.zip")"
 
     if [ -z "${APPLEUID}" ] || [ -z "${APPLEPASSW}" ]; then
         echo "ERROR: missing apple UID or password"
@@ -16,17 +25,21 @@ main(){
 
     sign
     notarize
-    staple
+    # No staple when there is no .app bundle
     target
 }
 
 sign(){
-    SIGNACCOUNT="Developer ID Application: Proton Technologies AG (6UN54H93QT)"
+    TEAMID="6UN54H93QT"
+    SIGNACCOUNT="Developer ID Application: Proton Technologies AG ($TEAMID)"
     CODESIGN="codesign --force --verbose --deep --options runtime --timestamp --sign"
-    echo "Signing ${SRC_DIR}..."
-    $CODESIGN "${SIGNACCOUNT}" "${SRC_DIR}"
+    find "${SRC_DIR}" -type f | while read -r i; do
+        echo "Signing ${i}..."
+        $CODESIGN "${SIGNACCOUNT}" "${i}"
 
-    codesign --verify "${SRC_DIR}"
+        echo "Verifying signature ${i}..."
+	codesign --verbose --verify "${i}"
+    done
 }
 
 notarize() {
@@ -35,31 +48,37 @@ notarize() {
     echo "Submiting notarization ${FILE_TO_NOTARIZE}..."
     xcrun notarytool submit \
         "${FILE_TO_NOTARIZE}" \
-        --apple-id "${APPLEUID}" --password "${APPLEPASSW}" \
-        --wait
+        --apple-id "${APPLEUID}" --team-id "$TEAMID" --password "${APPLEPASSW}" \
+        --wait | tee submit.log
 
-    # TODO check
-}
+    STATUS=$(cat submit.log | grep status: | tail -1 | cut -d: -f2 | xargs)
+    if [ "$STATUS" != "Accepted" ]; then
+	    echo "ERROR during notarization submit"
+	    exit 1
+    fi;
 
-
-staple(){
-    # While you can notarize a ZIP archive, you can’t staple to it directly.
-    # Instead, run stapler against each item that you added to the archive. Then
-    # create a new ZIP file containing the stapled items for distribution. Although
-    # tickets are created for standalone binaries, it’s not currently possible to
-    # staple tickets to them.
+    # Always check the log file, even if notarization succeeds, because it
+    # might contain warnings that you can fix prior to your next submission.
     #
-    # https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow#3087720
-    find "${SRC_DIR}" -type f | while read -r i; do
-        xcrun stapler staple "$i"
-    done
-    ditto -ck "${SRC_DIR}" "${NOTARIZED_FILE}"
-}
+    # https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow#3087732
+    NOTARIZATIONID=$(cat submit.log | grep id: | head -1 | cut -d: -f2 | xargs)
+    xcrun notarytool log "${NOTARIZATIONID}" \
+        --apple-id "${APPLEUID}" --team-id "$TEAMID" --password "${APPLEPASSW}" \
+        notarization.json
 
+    ISSUES=$(jq -r ".issues" < notarization.json)
+    if [ "$ISSUES" != "null" ]; then
+	    jq < notarization.json
+	    echo "ERROR notarization found issues"
+	    exit 1
+    fi;
+
+    echo "Notarization OK, no issues found"
+}
 
 target(){
     mkdir -P "$(dirname "$TARGET_ZIP")"
-    cp "${NOTARIZED_FILE}" "${TARGET_ZIP}"
+    cp "${FILE_TO_NOTARIZE}" "${TARGET_ZIP}"
 }
 
 

@@ -3,10 +3,10 @@ module github.com/ProtonMail/export-tool
 go 1.20
 
 require (
-	github.com/ProtonMail/gluon v0.17.1-0.20230911134257-5eb2eeebbef5
+	github.com/ProtonMail/gluon v0.17.1-0.20231009084701-3af0474b0b3c
 	github.com/ProtonMail/go-proton-api v0.4.1-0.20231017083718-9ec88bde75d7
 	github.com/ProtonMail/gopenpgp/v2 v2.7.3-proton
-	github.com/ProtonMail/proton-bridge/v3 v3.5.0
+	github.com/ProtonMail/proton-bridge/v3 v3.6.1
 	github.com/bradenaw/juniper v0.12.0
 	github.com/elastic/go-sysinfo v1.8.1
 	github.com/getsentry/sentry-go v0.24.1
@@ -74,7 +74,6 @@ require (
 )
 
 replace (
-	github.com/ProtonMail/proton-bridge/v3 => ../bridge
 	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.13.1-0.20230526094639-b62c999c85b7
 	github.com/keybase/go-keychain => github.com/cuthix/go-keychain v0.0.0-20230517073537-fc1740a83768
 )

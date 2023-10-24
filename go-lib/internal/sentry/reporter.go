@@ -71,7 +71,7 @@ func newReporter() *sentryReporter {
 func (r *sentryReporter) scopedSentryReport(context reporter.Context, do func()) error {
 	tags := map[string]string{
 		"OS":       runtime.GOOS,
-		"Version":  internal.ETVersionString,
+		"String":   internal.ETVersionString,
 		"HostArch": r.arch,
 	}
 

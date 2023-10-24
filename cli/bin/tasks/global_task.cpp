@@ -15,29 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#include "tasks/global_task.hpp"
 
-#include <filesystem>
-#include <optional>
-
-namespace etcpp {
-
-class GlobalScope final {
-   public:
-    explicit GlobalScope(const std::filesystem::path& p, void (*onRecover)());
-    ~GlobalScope();
-
-    GlobalScope(const GlobalScope&) = delete;
-    GlobalScope(GlobalScope&&) = delete;
-    GlobalScope& operator=(const GlobalScope&) = delete;
-    GlobalScope operator=(GlobalScope&&) = delete;
-
-    std::optional<std::filesystem::path> getLogPath() const;
-
-    static void reportMessage(const char* tag, const char*);
-    static void reportError(const char* tag, const char*);
-
-    bool newVersionAvailable() const;
-};
-
-}    // namespace etcpp
+bool NewVersionCheckTask::run() {
+    return mScope.newVersionAvailable();
+}

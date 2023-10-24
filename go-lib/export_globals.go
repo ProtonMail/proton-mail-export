@@ -115,6 +115,15 @@ func etReportMessage(tag *C.cchar_t, msg *C.cchar_t) {
 	})
 }
 
+//export etNewVersionAvailable
+func etNewVersionAvailable() int {
+	if internal.HasNewVersion() {
+		return 1
+	}
+
+	return 0
+}
+
 //export etClose
 func etClose() {
 	etGlobalState.mutex.Lock()

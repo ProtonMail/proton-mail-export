@@ -36,6 +36,7 @@
 #include <etutil.hpp>
 
 #include "task_runner.hpp"
+#include "tasks/global_task.hpp"
 #include "tasks/mail_task.hpp"
 #include "tasks/session_task.hpp"
 #include "tui_util.hpp"
@@ -296,6 +297,17 @@ int main(int argc, const char** argv) {
         if (argParseResult.count("help")) {
             std::cout << options.help() << std::endl;
             return EXIT_SUCCESS;
+        }
+
+        try {
+            std::cout << '\n';
+            auto task = NewVersionCheckTask(globalScope, "Checking for new version");
+            if (runTask(appState, task)) {
+                std::cout << "A new version is available at: "
+                             "https://proton.me/support/proton-mail-export-tool"
+                          << std::endl;
+            }
+        } catch (const std::exception&) {
         }
 
         if (const auto& logPath = globalScope.getLogPath(); logPath) {

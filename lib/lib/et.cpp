@@ -54,4 +54,8 @@ void GlobalScope::reportError(const char* tag, const char* msg) {
     etReportError(tag, msg);
 }
 
+bool GlobalScope::newVersionAvailable() const {
+    return etNewVersionAvailable() == 1;
+}
+
 }    // namespace etcpp

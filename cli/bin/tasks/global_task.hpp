@@ -17,27 +17,35 @@
 
 #pragma once
 
-#include <filesystem>
-#include <optional>
+#include <et.hpp>
+#include <string>
+#include <type_traits>
 
-namespace etcpp {
+#include "tasks/task.hpp"
 
-class GlobalScope final {
+template <class R>
+class GlobalTask : public Task<R> {
+   protected:
+    std::string mDesc;
+    etcpp::GlobalScope& mScope;
+
+   protected:
+    GlobalTask(etcpp::GlobalScope& scope, std::string_view desc) : mDesc(desc), mScope(scope) {}
+
    public:
-    explicit GlobalScope(const std::filesystem::path& p, void (*onRecover)());
-    ~GlobalScope();
+    virtual ~GlobalTask() override = default;
 
-    GlobalScope(const GlobalScope&) = delete;
-    GlobalScope(GlobalScope&&) = delete;
-    GlobalScope& operator=(const GlobalScope&) = delete;
-    GlobalScope operator=(GlobalScope&&) = delete;
+    void cancel() override {}
 
-    std::optional<std::filesystem::path> getLogPath() const;
-
-    static void reportMessage(const char* tag, const char*);
-    static void reportError(const char* tag, const char*);
-
-    bool newVersionAvailable() const;
+    std::string_view description() const override { return mDesc; }
 };
 
-}    // namespace etcpp
+class NewVersionCheckTask final : public GlobalTask<bool> {
+   public:
+    NewVersionCheckTask(etcpp::GlobalScope& scope, std::string_view desc)
+        : GlobalTask<bool>(scope, desc) {}
+
+    ~NewVersionCheckTask() override = default;
+
+    bool run() override;
+};

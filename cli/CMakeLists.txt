@@ -20,6 +20,8 @@ target_sources(proton-mail-export-cli PRIVATE
         bin/tasks/mail_task.cpp
         bin/tasks/mail_task.hpp
         bin/tasks/session_task.hpp
+        bin/tasks/global_task.cpp
+        bin/tasks/global_task.hpp
 )
 
 

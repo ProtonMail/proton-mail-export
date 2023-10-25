@@ -14,6 +14,7 @@ variables:
   CMAKE_INSTALL_DIR_MACOS_UNIVERSAL: $CI_PROJECT_DIR/cmake-install-release-universal
   ARCHIVE_NAME_MACOS: macos_universal.zip
   ARCHIVE_NAME_WINDOWS: windows_x86_64.zip
+  ARCHIVE_NAME_LINUX: linux_x86_64.tar.gz
   CMAKE_BUILD_CONFIG: "Release"
   CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
   ET_BIN_NAME: proton-mail-export-cli
@@ -41,7 +42,6 @@ variables:
   image: windows-2022-export-tool
   tags:
     - bridge-vbox-windows
-
 
 .env-darwin:
   variables:
@@ -152,7 +152,7 @@ lint:
 build-linux:
   stage: build
   variables:
-    ARCHIVE_NAME: linux_x86_64.tar.gz
+    ARCHIVE_NAME: $ARCHIVE_NAME_LINUX
   extends:
     - .env-linux-build
   script:
@@ -258,12 +258,27 @@ build-windows:
   after_script:
     - './scripts/nexus_push.sh cp --recursive $DEPLOY_DIR :bridge:/export-tool/${CI_COMMIT_TAG}/'
 
+.nexus-cache-darwin:
+  cache:
+    key: nexus-darwin
+    paths:
+      - nexus-client
+    when: 'always'
+
+.nexus-cache-linux:
+  cache:
+    key: nexus-linux
+    paths:
+      - nexus-client
+    when: 'always'
+
 sign-and-pack-darwin:
   stage: installer
   needs: ["build-darwin-universal"]
   extends:
     - .rules-only-et-tag
     - .nexus-stage
+    - .nexus-cache-darwin
   variables:
     SIGN_DIR: "$CI_PROJECT_DIR/signdir"
     ARCHIVE_PATH: "$CMAKE_INSTALL_DIR_MACOS_UNIVERSAL/$ARCHIVE_NAME_MACOS"
@@ -304,12 +319,28 @@ sign-and-pack-windows:
   tags:
     - windows-bridge-signing
 
+# Need to sing split the job because windows signing machine is protected to
+# upload files only via artifacts. This (linux docker) job is created just to
+# upload signed files.
 stage-windows:
   stage: installer
   needs: ["sign-and-pack-windows"]
-  variables:
   extends:
     - .rules-only-et-tag
     - .nexus-stage
+    - .nexus-cache-linux
   script:
     - echo "Just upload artifact to nexus"
+
+stage-linux:
+  stage: installer
+  needs: ["build-linux"]
+  extends:
+    - .rules-only-et-tag
+    - .nexus-stage
+    - .nexus-cache-linux
+  script:
+    - mkdir -p $DEPLOY_DIR
+    - cp $CMAKE_INSTALL_DIR/$ARCHIVE_NAME_LINUX $DEPLOY_DIR/${ET_BIN_NAME}-${ARCHIVE_NAME_LINUX}
+    - cp $CMAKE_INSTALL_DIR/meta/version.json $DEPLOY_DIR/version.json
+

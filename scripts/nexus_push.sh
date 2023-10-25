@@ -20,11 +20,7 @@ download_client() {
     esac
 
     if ! [ -f ./nexus-client ]; then
-        wget \
-            --user "$(jq -r .bridge.Login < ~/.nexus-client.json)" \
-            --password "$(jq -r .bridge.Password < ~/.nexus-client.json)" \
-            "https://nexus.protontech.ch/repository/bridge-devel-builds/util/$DEFAULT_OS/nexus-client"
-
+        wget "https://nexus.protontech.ch/repository/bridge-devel-builds/util/$DEFAULT_OS/nexus-client"
         chmod +x ./nexus-client
     fi
 }

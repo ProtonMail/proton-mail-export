@@ -242,7 +242,8 @@ int main(int argc, const char** argv) {
     SetConsoleOutputCP(CP_UTF8);
 #endif
     auto appState = CLIAppState();
-    std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ")  by Proton AG, Switzerland\n"
+    std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
+              << "This program is licensed under the GNU General Public License v3\n"
               << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path execPath;
     try {

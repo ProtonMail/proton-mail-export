@@ -40,3 +40,13 @@ set(ET_SENTRY_DNS "${SENTRY_DNS}")
 if (ET_SENTRY_DNS)
     message(STATUS "Sentry Reporting is enabled for this build")
 endif()
+
+if (UNIX AND NOT APPLE)
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/cmake/version.json.in"
+        "${PROJECT_BINARY_DIR}/version.json"
+        @ONLY
+    )
+
+    install(FILES "${PROJECT_BINARY_DIR}/version.json" DESTINATION "meta")
+endif()

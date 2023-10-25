@@ -1,0 +1,6 @@
+{
+    "version_major": @ET_VERSION_MAJOR@,
+    "version_minor": @ET_VERSION_MINOR@,
+    "version_patch": @ET_VERSION_PATCH@,
+    "version" : "@ET_VERSION_STR@"
+}

@@ -380,8 +380,11 @@ int main(int argc, const char** argv) {
                         loginState = runTask(appState, task);
                     } catch (const etcpp::SessionException& e) {
                         std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
-                        return EXIT_FAILURE;
+                        numLoginAttempts += 1;
+                        continue;
                     }
+
+                    numLoginAttempts = 0;
                     break;
                 }
                 case etcpp::Session::LoginState::AwaitingHV: {
@@ -394,6 +397,10 @@ int main(int argc, const char** argv) {
                               << std::endl;
 
                     waitForEnter("Press ENTER to continue");
+                    if (gShouldQuit) {
+                        return EXIT_SUCCESS;
+                    }
+
                     try {
                         loginState = session.markHVSolved();
                         // Auto-retry login with existing information if the HV was triggered during

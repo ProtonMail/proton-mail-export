@@ -4,6 +4,8 @@
 
 find_package(fmt CONFIG REQUIRED)
 
+find_package(Threads REQUIRED)
+
 add_library(etcpp STATIC include/etsession.hpp)
 
 target_sources(etcpp PRIVATE
@@ -41,7 +43,7 @@ configure_file("${config_file_in}" "${config_file}" @ONLY)
 
 target_link_libraries(etcpp
         PRIVATE etcore
-        PUBLIC fmt::fmt
+        PUBLIC fmt::fmt Threads::Threads
 )
 
 if (WIN32)

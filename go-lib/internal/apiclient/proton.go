@@ -28,6 +28,7 @@ import (
 	"github.com/ProtonMail/export-tool/internal/hv"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
+	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -70,6 +71,16 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 				callbacks.OnNetworkRestored()
 			}
 		}
+	})
+
+	b.manager.AddPostRequestHook(func(client *resty.Client, r *resty.Response) error {
+		if _, ok := proton.ClientIDFromContext(r.Request.Context()); !ok {
+			if r.StatusCode() >= 400 {
+				logrus.Debugf("[MANAGER] %v: %v %v", r.Status(), r.Request.Method, r.Request.URL)
+			}
+		}
+
+		return nil
 	})
 
 	return b, nil

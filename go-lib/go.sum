@@ -3,8 +3,8 @@ github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYr
 github.com/ProtonMail/bcrypt v0.0.0-20210511135022-227b4adcab57/go.mod h1:HecWFHognK8GfRDGnFQbW/LiV7A3MX3gZVs45vk5h8I=
 github.com/ProtonMail/bcrypt v0.0.0-20211005172633-e235017c1baf h1:yc9daCCYUefEs69zUkSzubzjBbL+cmOXgnmt9Fyd9ug=
 github.com/ProtonMail/bcrypt v0.0.0-20211005172633-e235017c1baf/go.mod h1:o0ESU9p83twszAU8LBeJKFAAMX14tISa0yk4Oo5TOqo=
-github.com/ProtonMail/gluon v0.17.1-0.20231009084701-3af0474b0b3c h1:gUDu4pOswgbou0QczfreNiXQFrmvVlpSh8Q+vft/JvI=
-github.com/ProtonMail/gluon v0.17.1-0.20231009084701-3af0474b0b3c/go.mod h1:Og5/Dz1MiGpCJn51XujZwxiLG7WzvvjE5PRpZBQmAHo=
+github.com/ProtonMail/gluon v0.17.1-0.20231025125916-5c7941465df8 h1:sG0o5pEoS2z2jNR9zK7Juq5Tr3X+GfHmQ8L99RPowaE=
+github.com/ProtonMail/gluon v0.17.1-0.20231025125916-5c7941465df8/go.mod h1:Og5/Dz1MiGpCJn51XujZwxiLG7WzvvjE5PRpZBQmAHo=
 github.com/ProtonMail/go-crypto v0.0.0-20230321155629-9a39f2531310/go.mod h1:8TI4H3IbrackdNgv+92dI+rhpCaLqM0IfpgCgenFvRE=
 github.com/ProtonMail/go-crypto v0.0.0-20230717121622-edf196117233 h1:bdoKdh0f66/lrgVfYlxw0aqISY/KOqXmFJyGt7rGmnc=
 github.com/ProtonMail/go-crypto v0.0.0-20230717121622-edf196117233/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
@@ -18,8 +18,8 @@ github.com/ProtonMail/go-srp v0.0.7 h1:Sos3Qk+th4tQR64vsxGIxYpN3rdnG9Wf9K4ZloC1J
 github.com/ProtonMail/go-srp v0.0.7/go.mod h1:giCp+7qRnMIcCvI6V6U3S1lDDXDQYx2ewJ6F/9wdlJk=
 github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton h1:8tqHYM6IGsdEc6Vxf1TWiwpHNj8yIEQNACPhxsDagrk=
 github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton/go.mod h1:omVkSsfPAhmptzPF/piMXb16wKIWUvVhZbVW7sJKh0A=
-github.com/ProtonMail/proton-bridge/v3 v3.6.1 h1:v6lRzWnIyQM5T2Lb5DnyDV+Jhdemb2XdJd3zAluGFGA=
-github.com/ProtonMail/proton-bridge/v3 v3.6.1/go.mod h1:QQXM+rHHfYkr7FlAt+4zTSyHWyl1L3iS9N4SqlciSs4=
+github.com/ProtonMail/proton-bridge/v3 v3.4.2-0.20231030091452-d29571fb01a0 h1:bxlXklymwODomS5p3Wv50PDtAQ0eBWn7FsU+Bd76SuI=
+github.com/ProtonMail/proton-bridge/v3 v3.4.2-0.20231030091452-d29571fb01a0/go.mod h1:z7N+HMBK+5k5AdKlmwOxqgSyFrZuyu6cQm5pV+MeqcY=
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=
 github.com/PuerkitoBio/goquery v1.8.1/go.mod h1:Q8ICL1kNUJ2sXGoAhPGUdYDJvgQgHzJsnnd3H7Ho5jQ=
 github.com/andybalholm/cascadia v1.3.1/go.mod h1:R4bJ1UQfqADjvDa4P6HZHLh/3OxWWEqc0Sk8XGwHqvA=

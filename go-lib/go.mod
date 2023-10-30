@@ -4,10 +4,10 @@ go 1.20
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/ProtonMail/gluon v0.17.1-0.20231009084701-3af0474b0b3c
+	github.com/ProtonMail/gluon v0.17.1-0.20231025125916-5c7941465df8
 	github.com/ProtonMail/go-proton-api v0.4.1-0.20231030091225-8fc2478b27f4
 	github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton
-	github.com/ProtonMail/proton-bridge/v3 v3.6.1
+	github.com/ProtonMail/proton-bridge/v3 v3.4.2-0.20231030091452-d29571fb01a0
 	github.com/bradenaw/juniper v0.12.0
 	github.com/elastic/go-sysinfo v1.8.1
 	github.com/getsentry/sentry-go v0.24.1

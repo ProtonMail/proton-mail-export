@@ -45,7 +45,7 @@ func HasNewVersion() bool {
 
 	logrus.Debugf("Remote version: %v", version.String)
 
-	versionRemote := semver.New(version.Minor, version.Minor, version.Patch, "", "")
+	versionRemote := semver.New(version.Major, version.Minor, version.Patch, "", "")
 	versionLocal := semver.New(ETVersionMajor, ETVersionMinor, ETVersionPatch, "", "")
 
 	return versionLocal.Compare(versionRemote) < 0

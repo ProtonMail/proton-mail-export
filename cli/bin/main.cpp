@@ -445,9 +445,13 @@ int main(int argc, const char** argv) {
                     numLoginAttempts = 0;
                     break;
                 }
-                default:
-                    std::cerr << "Unknown login state" << std::endl;
+                default: {
+                    const auto msg = fmt::format("Encountered unexpected login state: {:x}",
+                                                 uint32_t(loginState));
+                    etcpp::GlobalScope::reportError(kReportTag, msg.c_str());
+                    std::cerr << msg << std::endl;
                     return EXIT_FAILURE;
+                }
             }
         }
 
@@ -490,7 +494,7 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        std::filesystem::space_info spaceInfo;
+        std::filesystem::space_info spaceInfo{};
         try {
             spaceInfo = std::filesystem::space(exportPath);
         } catch (const std::exception& e) {
@@ -499,11 +503,18 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        auto exportMail = MailTask(session, exportPath);
+        std::unique_ptr<MailTask> exportMail;
+        try {
+            exportMail = std::make_unique<MailTask>(session, exportPath);
+        } catch (const etcpp::SessionException& e) {
+            etLogError("Failed to create export task: {}", e.what());
+            std::cerr << "Failed to create export task: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
 
         uint64_t expectedSpace = 0;
         try {
-            expectedSpace = exportMail.getExpectedDiskUsage();
+            expectedSpace = exportMail->getExpectedDiskUsage();
         } catch (const etcpp::ExportMailException& e) {
             std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
             return EXIT_FAILURE;
@@ -521,9 +532,9 @@ int main(int argc, const char** argv) {
             }
         }
 
-        std::cout << "Starting Export - Path=" << exportMail.getExportPath() << std::endl;
+        std::cout << "Starting Export - Path=" << exportMail->getExportPath() << std::endl;
         try {
-            runTaskWithProgress(appState, exportMail);
+            runTaskWithProgress(appState, *exportMail);
         } catch (const etcpp::ExportMailException& e) {
             etcpp::logError("Failed to export : {}", e.what());
             std::cerr << "Failed to export: " << e.what() << std::endl;
@@ -537,9 +548,10 @@ int main(int argc, const char** argv) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     } catch (const std::exception& e) {
+        const auto str = fmt::format("Encountered unexpected error: {}", e.what());
         etcpp::logError("Encountered unexpected error: {}", e.what());
-        etcpp::GlobalScope::reportError(kReportTag, e.what());
-        std::cerr << "Encountered unexpected error: " << e.what() << std::endl;
+        etcpp::GlobalScope::reportError(kReportTag, str.c_str());
+        std::cerr << str << std::endl;
         return EXIT_FAILURE;
     }
 

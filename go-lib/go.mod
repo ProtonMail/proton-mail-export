@@ -3,23 +3,24 @@ module github.com/ProtonMail/export-tool
 go 1.20
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/ProtonMail/gluon v0.17.1-0.20231009084701-3af0474b0b3c
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20231017083718-9ec88bde75d7
-	github.com/ProtonMail/gopenpgp/v2 v2.7.3-proton
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20231030091225-8fc2478b27f4
+	github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton
 	github.com/ProtonMail/proton-bridge/v3 v3.6.1
 	github.com/bradenaw/juniper v0.12.0
 	github.com/elastic/go-sysinfo v1.8.1
 	github.com/getsentry/sentry-go v0.24.1
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/golang/mock v1.6.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
-	golang.org/x/sys v0.8.0
+	golang.org/x/sys v0.13.0
 )
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/ProtonMail/bcrypt v0.0.0-20211005172633-e235017c1baf // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230717121622-edf196117233 // indirect
 	github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f // indirect
@@ -41,7 +42,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
-	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
@@ -64,10 +64,10 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	gitlab.com/c0b/go-ordered-json v0.0.0-20201030195603-febf46534d5a // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v1.0.0 // indirect

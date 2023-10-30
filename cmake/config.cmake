@@ -2,8 +2,8 @@
 # Configuration options.
 #
 
-set(ET_VERSION_MAJOR 0)
-set(ET_VERSION_MINOR 1)
+set(ET_VERSION_MAJOR 1)
+set(ET_VERSION_MINOR 0)
 set(ET_VERSION_PATCH 0)
 set(ET_VENDOR "Proton AG")
 set(ET_BUILD_YEAR "2023")

@@ -282,10 +282,10 @@ sign-and-pack-darwin:
   variables:
     SIGN_DIR: "$CI_PROJECT_DIR/signdir"
     ARCHIVE_PATH: "$CMAKE_INSTALL_DIR_MACOS_UNIVERSAL/$ARCHIVE_NAME_MACOS"
-    PACKGE_PATH: "${DEPLOY_DIR}/${ET_BIN_NAME}_macos.pkg"
+    PACKGE_PATH: "${DEPLOY_DIR}/${ET_BIN_NAME}_${ARCHIVE_NAME_MACOS}"
   script:
     - mkdir "$SIGN_DIR" && unzip "$ARCHIVE_PATH" -d "$SIGN_DIR"
-    - ./scripts/sign_and_pack_darwin.sh "$SIGN_DIR" "${PACKGE_PATH}"
+    - ./scripts/sign_and_pack_darwin.sh "$SIGN_DIR" "$PACKGE_PATH" "$ET_BIN_NAME" "${ET_BIN_NAME}.app"
   artifacts:
     paths:
       - $PACKGE_PATH

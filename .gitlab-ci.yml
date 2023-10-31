@@ -139,7 +139,7 @@ stages:
     - !reference [.script-build, script]
     - ctest --build-config $CMAKE_BUILD_CONFIG --test-dir $CMAKE_BUILD_DIR -V
 
-lint:
+.lint: # TODO remove before merge
   tags:
     - shared-medium
   script:
@@ -149,7 +149,7 @@ lint:
     - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t go-lib-lint
     - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t clang-format-check
 
-build-linux:
+.build-linux: # TODO remove before merge
   stage: build
   variables:
     ARCHIVE_NAME: $ARCHIVE_NAME_LINUX
@@ -225,7 +225,7 @@ build-darwin-universal:
     when: always
     expire_in: 4 hrs
 
-build-windows:
+.build-windows: # TODO remove before merge
   stage: build
   variables:
     ARCHIVE_NAME: $ARCHIVE_NAME_WINDOWS
@@ -276,13 +276,13 @@ sign-and-pack-darwin:
   stage: installer
   needs: ["build-darwin-universal"]
   extends:
-    - .rules-only-et-tag
+    #- .rules-only-et-tag
     - .nexus-stage
     - .nexus-cache-darwin
   variables:
     SIGN_DIR: "$CI_PROJECT_DIR/signdir"
     ARCHIVE_PATH: "$CMAKE_INSTALL_DIR_MACOS_UNIVERSAL/$ARCHIVE_NAME_MACOS"
-    PACKGE_PATH: "${DEPLOY_DIR}/${ET_BIN_NAME}-${ARCHIVE_NAME_MACOS}"
+    PACKGE_PATH: "${DEPLOY_DIR}/${ET_BIN_NAME}_macos.pkg"
   script:
     - mkdir "$SIGN_DIR" && unzip "$ARCHIVE_PATH" -d "$SIGN_DIR"
     - ./scripts/sign_and_pack_darwin.sh "$SIGN_DIR" "${PACKGE_PATH}"
@@ -294,7 +294,7 @@ sign-and-pack-darwin:
   tags:
     - mac-prg-release-m1
 
-sign-and-pack-windows:
+.sign-and-pack-windows: # TODO remove before merge
   stage: installer
   needs: ["build-windows"]
   extends:
@@ -322,7 +322,7 @@ sign-and-pack-windows:
 # Need to sing split the job because windows signing machine is protected to
 # upload files only via artifacts. This (linux docker) job is created just to
 # upload signed files.
-stage-windows:
+.stage-windows: # TODO remove before merge
   stage: installer
   needs: ["sign-and-pack-windows"]
   extends:
@@ -332,7 +332,7 @@ stage-windows:
   script:
     - echo "Just upload artifact to nexus"
 
-stage-linux:
+.stage-linux: # TODO remove before merge
   stage: installer
   needs: ["build-linux"]
   extends:

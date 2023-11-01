@@ -56,3 +56,43 @@ if (WIN32)
 endif()
 
 install(TARGETS proton-mail-export-cli)
+
+function(gen_meta_file input output)
+    configure_file(
+        "${input}"
+        "${output}.gen"
+        @ONLY
+    )
+
+    file(GENERATE
+        OUTPUT "${output}"
+        INPUT "${output}.gen"
+    )
+
+    install(FILES ${output} DESTINATION "meta")
+endfunction()
+
+if (APPLE)
+    set(BUNDLE_APP_NAME "$<TARGET_FILE_NAME:proton-mail-export-cli>")
+    set(EXE_TO_LAUNCH "${BUNDLE_APP_NAME}")
+    set(SCRIPT_TO_LAUNCH "${BUNDLE_APP_NAME}.sh")
+    set(BUNDLE_IDENTIFIER "ch.protonmail.export-cli")
+    set(BUNDLE_EXEC "launcher.sh")
+
+    gen_meta_file(
+        "${PROJECT_SOURCE_DIR}/cli/cmake/Info.plist.in"
+        "${PROJECT_BINARY_DIR}/Info.plist"
+    )
+
+    gen_meta_file(
+        "${PROJECT_SOURCE_DIR}/cli/cmake/${BUNDLE_EXEC}.in"
+        "${PROJECT_BINARY_DIR}/${BUNDLE_EXEC}"
+    )
+
+    gen_meta_file(
+        "${PROJECT_SOURCE_DIR}/cli/cmake/run.sh.in"
+        "${PROJECT_BINARY_DIR}/${SCRIPT_TO_LAUNCH}"
+    )
+
+    install(FILES ${PROJECT_SOURCE_DIR}/res/icon.icns DESTINATION "meta")
+endif()

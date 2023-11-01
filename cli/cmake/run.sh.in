@@ -1,0 +1,8 @@
+#!/bin/sh
+
+clear
+"$(dirname "$0")/@EXE_TO_LAUNCH@"
+read -n 1 -s -r -p "Press any key to continue..." # N.B: 'read -n' is not defined in POSIX sh but on mac it works
+
+
+

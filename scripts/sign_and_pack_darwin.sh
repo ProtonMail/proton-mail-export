@@ -5,34 +5,18 @@ set -eo pipefail
 main(){
     SRC_DIR=$1
     TARGET_ZIP=$2
-    PROGRAM_NAME=$3
-    BUNDLE_NAME=$4
 
     if [ -z "${SRC_DIR}" ]; then
         echo "ERROR: missing first argument: SRC_DIR"
-	exit 1
+        exit 1
     fi;
 
     if [ -z "${TARGET_ZIP}" ]; then
         echo "ERROR: missing second argument: TARGET_ZIP"
-	exit 1
+        exit 1
     fi;
 
-    if [ -z "${PROGRAM_NAME}" ]; then
-        echo "ERROR: missing second argument: PROGRAM_NAME"
-	exit 1
-    fi;
-
-    if [ -z "${BUNDLE_NAME}" ]; then
-        echo "ERROR: missing second argument: BUNDLE_NAME"
-	exit 1
-    fi;
-
-
-    tmproot="$(realpath "./tmp_pkg/")"
-    APP_PATH="$tmproot/${BUNDLE_NAME}"
-    VERSION="$(get_version)"
-
+    APP_PATH="$(eval realpath "$SRC_DIR/*.app")"
     FILE_TO_NOTARIZE="$(realpath "$SRC_DIR/../to_notarize.zip")"
 
     if [ -z "${APPLEUID}" ] || [ -z "${APPLEPASSW}" ]; then
@@ -40,88 +24,10 @@ main(){
         exit 1
     fi
 
-    make_app
     sign
     notarize
     staple
     target
-
-    rm -rf "$tmproot"
-}
-
-get_version(){
-    major="$(grep "ET_VERSION_MAJOR " < cmake/config.cmake | cut -d")" -f1 | cut -d" " -f2)"
-    minor="$(grep "ET_VERSION_MINOR " < cmake/config.cmake | cut -d")" -f1 | cut -d" " -f2)"
-    patch="$(grep "ET_VERSION_PATCH " < cmake/config.cmake | cut -d")" -f1 | cut -d" " -f2)"
-    echo -n "$major.$minor.$patch"
-}
-
-make_app(){
-    rm -rf "$tmproot"
-
-    bindir="$APP_PATH/Contents/MacOS"
-    mkdir -p "$bindir"
-
-    # EXES
-    cp "$SRC_DIR"/* "$bindir/"
-    launch_script > "$bindir/launcher.sh"
-    chmod +x "$bindir/launcher.sh"
-
-    # Info.plist
-    info_plist > "$APP_PATH/Contents/Info.plist"
-}
-
-launch_script(){
-    cat << EOF
-#!/bin/sh
-open -a "Terminal" "\$(dirname \$0)/${PROGRAM_NAME}"
-EOF
-}
-
-info_plist(){
-    APP_NAME="$(basename "${BUNDLE_NAME}" .app)"
-    IDENTIFIER="ch.protonmail.export-tool"
-    EXECUTABLE="launcher.sh"
-    YEAR="$(date +%Y)"
-    COPYRIGHT="Copyright Proton AG $YEAR"
-    VENDOR="Proton AG, © $YEAR"
-
-    cat << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-<key>CFBundleName</key>
-<string>${APP_NAME}</string>
-<key>CFBundleIdentifier</key>
-<string>${IDENTIFIER}</string>
-<key>CFBundleVersion</key>
-<string>${VERSION}</string>
-<key>CFBundleExecutable</key>
-<string>${EXECUTABLE}</string>
-<key>CFBundleShortVersionString</key>
-<string>${VERSION}</string>
-<key>CFBundleAllowMixedLocalizations</key>
-<string>true</string>
-<key>CFBundleDevelopmentRegion</key>
-<string>English</string>
-<key>CFBundlePackageType</key>
-<string>APPL</string>
-<key>CFBundleInfoDictionaryVersion</key>
-<string>6.0</string>
-<key>NSHumanReadableCopyright</key>
-<string>${COPYRIGHT}</string>
-<key>CFBundleGetInfoString</key>
-<string>${VENDOR}</string>
-<key>CFBundleDisplayName</key>
-<string>${APP_NAME}</string>
-<key>NSHighResolutionCapable</key>
-<true/>
-<key>NSPrincipalClass</key>
-<string>NSApplication</string>
-</dict>
-</plist>
-EOF
 }
 
 sign(){

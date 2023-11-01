@@ -456,42 +456,56 @@ int main(int argc, const char** argv) {
         }
 
         std::filesystem::path exportPath;
-        if (argParseResult.count("export-dir")) {
-            exportPath = etcpp::expandCLIPath(
-                std::filesystem::u8path(argParseResult["export-dir"].as<std::string>()));
-        }
-        if (exportPath.empty()) {
-            const auto defaultPath = execPath / session.getEmail();
-            std::cout << "\nBy default, the export will be made in:\n\n"
-                      << defaultPath
-                      << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
-                      << std::endl;
 
-            if (!readYesNo("Do you wish to proceed?")) {
-#if defined(_WIN32)
-                const std::string_view exampleDir = "%USERPROFILE%\\Documents";
-#else
-                const std::string_view exampleDir = "~/Documents";
-#endif
-                std::cout << "Please input desired export path. E.g.: " << exampleDir << std::endl;
-                exportPath = readPath("Export Path");
-            } else {
-                exportPath = execPath;
+        {
+            bool pathCameFromArg = false;
+            bool promptEntry = false;
+            if (argParseResult.count("export-dir")) {
+                exportPath = etcpp::expandCLIPath(
+                    std::filesystem::u8path(argParseResult["export-dir"].as<std::string>()));
+                pathCameFromArg = true;
             }
-        }
+            if (exportPath.empty()) {
+                const auto defaultPath = execPath / session.getEmail();
+                std::cout << "\nBy default, the export will be made in:\n\n"
+                          << defaultPath
+                          << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
+                          << std::endl;
 
-        if (exportPath.is_relative()) {
-            exportPath = execPath / exportPath;
-        }
+                promptEntry = !readYesNo("Do you wish to proceed?");
+            }
 
-        try {
-            std::filesystem::create_directories(exportPath);
-        } catch (const std::exception& e) {
-            etcpp::logError("Failed to create export directory '{}': {}", exportPath.u8string(),
-                            e.what());
-            std::cerr << "Failed to create export directory '" << exportPath << "': " << e.what()
-                      << std::endl;
-            return EXIT_FAILURE;
+            while (true) {
+                if (promptEntry) {
+#if defined(_WIN32)
+                    const std::string_view exampleDir = "%USERPROFILE%\\Documents";
+#else
+                    const std::string_view exampleDir = "~/Documents";
+#endif
+                    std::cout << "Please input desired export path. E.g.: " << exampleDir
+                              << std::endl;
+                    exportPath = readPath("Export Path");
+                } else {
+                    exportPath = execPath;
+                }
+
+                if (exportPath.is_relative()) {
+                    exportPath = execPath / exportPath;
+                }
+
+                try {
+                    std::filesystem::create_directories(exportPath);
+                    break;
+                } catch (const std::exception& e) {
+                    etcpp::logError("Failed to create export directory '{}': {}",
+                                    exportPath.u8string(), e.what());
+                    std::cerr << "Failed to create export directory '" << exportPath
+                              << "': " << e.what() << std::endl;
+                    if (pathCameFromArg) {
+                        return EXIT_FAILURE;
+                    }
+                }
+            }
         }
 
         std::filesystem::space_info spaceInfo{};

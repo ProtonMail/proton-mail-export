@@ -31,22 +31,25 @@ type MetadataFileChecker interface {
 }
 
 type MetadataStage struct {
-	client   apiclient.Client
-	log      *logrus.Entry
-	outputCh chan []proton.MessageMetadata
-	pageSize int
+	client    apiclient.Client
+	log       *logrus.Entry
+	outputCh  chan []proton.MessageMetadata
+	pageSize  int
+	splitSize int
 }
 
 func NewMetadataStage(
 	client apiclient.Client,
 	entry *logrus.Entry,
 	pageSize int,
+	splitSize int,
 ) *MetadataStage {
 	return &MetadataStage{
-		client:   client,
-		log:      entry.WithField("stage", "metadata"),
-		outputCh: make(chan []proton.MessageMetadata),
-		pageSize: pageSize,
+		client:    client,
+		log:       entry.WithField("stage", "metadata"),
+		outputCh:  make(chan []proton.MessageMetadata),
+		pageSize:  pageSize,
+		splitSize: splitSize,
 	}
 }
 
@@ -125,10 +128,12 @@ func (m *MetadataStage) Run(
 			continue
 		}
 
-		select {
-		case <-ctx.Done():
-			return
-		case m.outputCh <- metadata:
+		for _, chunk := range xslices.Chunk(metadata, m.splitSize) {
+			select {
+			case <-ctx.Done():
+				return
+			case m.outputCh <- chunk:
+			}
 		}
 	}
 }

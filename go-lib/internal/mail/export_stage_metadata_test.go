@@ -27,7 +27,7 @@ func TestMetadataStage_Run(t *testing.T) {
 	encodeMetadataExpectations(client, expected, pageSize)
 	fileChecker.EXPECT().HasMessage(gomock.Any()).AnyTimes().Return(false, nil)
 
-	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize)
+	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize, 1)
 
 	go func() {
 		metadata.Run(context.Background(), errReporter, fileChecker, reporter)
@@ -66,7 +66,7 @@ func TestMetadataStage_RunWithCached(t *testing.T) {
 		}
 	}
 
-	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize)
+	metadata := NewMetadataStage(client, logrus.WithField("test", "test"), pageSize, 1)
 
 	go func() {
 		metadata.Run(context.Background(), errReporter, fileChecker, reporter)

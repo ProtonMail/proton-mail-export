@@ -208,7 +208,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 	}
 
 	// Build stages
-	metaStage := NewMetadataStage(client, e.log, MetadataPageSize)
+	metaStage := NewMetadataStage(client, e.log, MetadataPageSize, NumParallelDownloads)
 	downloadStage := NewDownloadStage(client, NumParallelDownloads, e.log, downloadMemMb, e.session.GetPanicHandler())
 	buildStage := NewBuildStage(NumParallelBuilders, e.log, buildMemMB, e.session.GetPanicHandler(), e.session.GetReporter(), user.ID)
 	writeStage := NewWriteStage(e.tmpDir, e.exportDir, NumParallelWriters, e.log, reporter, e.session.GetPanicHandler())

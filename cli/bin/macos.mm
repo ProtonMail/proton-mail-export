@@ -15,14 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#include "macos.hpp"
 
-#include <etutil.hpp>
+#import <Foundation/Foundation.h>
 
-TEST_CASE("getOutputPath") {
-    REQUIRE_NOTHROW(etcpp::getExecutablePath());
-}
+std::filesystem::path getMacOSDownloadsDir() {
+    @autoreleasepool{
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDownloadsDirectory, NSUserDomainMask, YES);
+        NSString *path = [paths objectAtIndex:0];
 
-TEST_CASE("getExecutableDir") {
-    REQUIRE_NOTHROW(etcpp::getExecutableDir());
+        return std::filesystem::path(path.UTF8String);
+    }
 }

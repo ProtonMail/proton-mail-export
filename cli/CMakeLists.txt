@@ -24,6 +24,15 @@ target_sources(proton-mail-export-cli PRIVATE
         bin/tasks/global_task.hpp
 )
 
+if (APPLE)
+    target_sources(proton-mail-export-cli PRIVATE
+        bin/macos.hpp
+        bin/macos.mm
+    )
+
+    target_link_libraries(proton-mail-export-cli PRIVATE "-framework Foundation")
+endif()
+
 
 apply_cpp_flags(proton-mail-export-cli)
 

@@ -15,14 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <catch2/catch_test_macros.hpp>
+#pragma once
 
-#include <etutil.hpp>
+#include <filesystem>
 
-TEST_CASE("getOutputPath") {
-    REQUIRE_NOTHROW(etcpp::getExecutablePath());
-}
-
-TEST_CASE("getExecutableDir") {
-    REQUIRE_NOTHROW(etcpp::getExecutableDir());
-}
+std::filesystem::path getMacOSDownloadsDir();

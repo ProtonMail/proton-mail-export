@@ -41,6 +41,10 @@
 #include "tasks/session_task.hpp"
 #include "tui_util.hpp"
 
+#if defined(__APPLE__)
+#include "macos.hpp"
+#endif
+
 constexpr int kNumInputRetries = 3;
 constexpr const char* kReportTag = "cli";
 static std::atomic_bool gShouldQuit = std::atomic_bool(false);
@@ -234,6 +238,22 @@ class CLIAppState final : public TaskAppState {
     bool networkLost() const override { return !gConnectionActive.load(); }
 };
 
+std::filesystem::path getOutputPath() {
+#if !defined(__APPLE__)
+    std::filesystem::path execPath;
+    try {
+        execPath = etcpp::getExecutableDir();
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to get executable directory: " << e.what() << std::endl;
+        std::cerr << "Will user working directory instead" << std::endl;
+    }
+
+    return execPath;
+#else
+    return getMacOSDownloadsDir() / "proton-mail-export-cli";
+#endif
+}
+
 int main(int argc, const char** argv) {
 #if defined(_WIN32)
     // Ensure Win32 Console correctly processes utf8 characters.
@@ -245,13 +265,7 @@ int main(int argc, const char** argv) {
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
               << "This program is licensed under the GNU General Public License v3\n"
               << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
-    std::filesystem::path execPath;
-    try {
-        execPath = etcpp::getExecutableDir();
-    } catch (const std::exception& e) {
-        std::cerr << "Failed to get executable directory: " << e.what() << std::endl;
-        std::cerr << "Will user working directory instead" << std::endl;
-    }
+    std::filesystem::path outputPath = getOutputPath();
 
     if (!registerCtrlCSignalHandler([]() {
             if (!gShouldQuit) {
@@ -271,7 +285,7 @@ int main(int argc, const char** argv) {
     }
 
     try {
-        auto logDir = execPath / "logs";
+        auto logDir = outputPath / "logs";
         auto globalScope = etcpp::GlobalScope(logDir, []() {
             std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
                          "log for more details."
@@ -466,7 +480,7 @@ int main(int argc, const char** argv) {
                 pathCameFromArg = true;
             }
             if (exportPath.empty()) {
-                const auto defaultPath = execPath / session.getEmail();
+                const auto defaultPath = outputPath / session.getEmail();
                 std::cout << "\nBy default, the export will be made in:\n\n"
                           << defaultPath
                           << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
@@ -486,11 +500,11 @@ int main(int argc, const char** argv) {
                               << std::endl;
                     exportPath = readPath("Export Path");
                 } else {
-                    exportPath = execPath;
+                    exportPath = outputPath;
                 }
 
                 if (exportPath.is_relative()) {
-                    exportPath = execPath / exportPath;
+                    exportPath = outputPath / exportPath;
                 }
 
                 try {

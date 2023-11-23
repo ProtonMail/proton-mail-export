@@ -39,17 +39,21 @@ import (
 	"context"
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/sirupsen/logrus"
+	"runtime/cgo"
 	"unsafe"
 )
 
-//nolint:gochecknoglobals
-var gpaServerAllocator = internal.HandleMap[internal.GPAServer]{}
+type GPAHandle struct {
+	internal.Handle
+}
 
-type GPAHandle = internal.Handle[internal.GPAServer]
+func (h GPAHandle) resolve() (*internal.GPAServer, bool) {
+	return internal.ResolveHandle[internal.GPAServer](h.Handle)
+}
 
 //export gpaServerNew
 func gpaServerNew() *C.gpaServer {
-	h := gpaServerAllocator.Alloc(internal.NewGPAServer(context.Background()))
+	h := cgo.NewHandle(internal.NewGPAServer(context.Background()))
 
 	p := unsafe.Pointer(uintptr(h))
 	return (*C.gpaServer)(p)
@@ -59,14 +63,14 @@ func gpaServerNew() *C.gpaServer {
 func gpaServerDelete(ptr *C.gpaServer) C.gpaServerStatus {
 	h := gpaPtrToHandle(ptr)
 
-	s, ok := gpaServerAllocator.Resolve(h)
+	s, ok := h.resolve()
 	if !ok {
 		return C.GPA_SERVER_STATUS_INVALID
 	}
 
 	s.Close()
 
-	gpaServerAllocator.Free(h)
+	h.Delete()
 
 	return C.GPA_SERVER_STATUS_OK
 }
@@ -144,13 +148,13 @@ func gpaFree(ptr *C.void) {
 }
 
 func gpaPtrToHandle(ptr *C.gpaServer) GPAHandle {
-	return GPAHandle(uintptr(unsafe.Pointer(ptr)))
+	return GPAHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
 }
 
 func resolveGPAServer(ptr *C.gpaServer) (*internal.GPAServer, bool) {
 	h := gpaPtrToHandle(ptr)
 
-	return gpaServerAllocator.Resolve(h)
+	return h.resolve()
 }
 
 func main() {}

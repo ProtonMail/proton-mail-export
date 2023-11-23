@@ -7,17 +7,8 @@ To make sure it can be easily integrated with a myriad of other toolkits, a C in
 ## Notes
 
 ### Go Pointers
-Due to the nature of CGo, Go pointers can't be shared across the C boundary. We instead return a handle to a global map
-which contains the active instance pointers. See [internal/handle.go](internal/handle.go) for more details.
-
-Do note that the current implementation is not designed to be usable in all possible scenarios. It's tailored
-to the needs for the export tool. More specifically, freed handles are not reused. If one were to allocate
-and deallocate many small instances, the handle array would grow in size for each new instance.
-
-If such a scenario is desirable, then handles should be replaced with a something similar to a generational handle map.
-
-Finally, the handles are encoded into the C pointers returned by the API, so we must make sure never to return a 0 
-handle as the null pointer checks would fail.
+Due to the nature of CGo, Go pointers can't be shared across the C boundary. We instead use `cgo.Handle` type to pass
+cgo handle to the C code as struct pointers.
 
 ### Memory Allocation
 

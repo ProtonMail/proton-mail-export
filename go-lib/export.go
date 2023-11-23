@@ -26,6 +26,7 @@ import "C"
 import (
 	"context"
 	"errors"
+	"runtime/cgo"
 	"sync"
 	"unsafe"
 
@@ -37,7 +38,13 @@ import (
 	"github.com/ProtonMail/gluon/async"
 )
 
-type SessionHandle = internal.Handle[csession]
+type SessionHandle struct {
+	internal.Handle
+}
+
+func (h SessionHandle) resolve() (*csession, bool) {
+	return internal.ResolveHandle[csession](h.Handle)
+}
 
 //export etSessionNew
 func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks, cErr **C.char) *C.etSession {
@@ -49,7 +56,7 @@ func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks, cErr **C.char) *C.
 		return nil
 	}
 
-	h := sessionAllocator.Alloc(cSession)
+	h := internal.NewHandle(cSession)
 	// Intentional misuse of unsafe pointer.
 	p := unsafe.Pointer(uintptr(h)) //nolint:govet
 	return (*C.etSession)(p)
@@ -59,14 +66,14 @@ func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks, cErr **C.char) *C.
 func etSessionDelete(ptr *C.etSession) C.etSessionStatus {
 	h := ptrToHandle(ptr)
 
-	s, ok := sessionAllocator.Resolve(h)
+	s, ok := h.resolve()
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
 	}
 
 	s.close()
 
-	sessionAllocator.Free(h)
+	h.Delete()
 
 	return C.ET_SESSION_STATUS_OK
 }
@@ -75,7 +82,7 @@ func etSessionDelete(ptr *C.etSession) C.etSessionStatus {
 func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 	h := ptrToHandle(ptr)
 
-	s, ok := sessionAllocator.Resolve(h)
+	s, ok := h.resolve()
 	if !ok {
 		return nil
 	}
@@ -87,7 +94,7 @@ func etSessionGetLastError(ptr *C.etSession) *C.cchar_t {
 func etSessionCancel(ptr *C.etSession) C.etSessionStatus {
 	h := ptrToHandle(ptr)
 
-	s, ok := sessionAllocator.Resolve(h)
+	s, ok := h.resolve()
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
 	}
@@ -277,17 +284,14 @@ func (c *csession) setLastError(err error) {
 	c.lastError.Set(err)
 }
 
-//nolint:gochecknoglobals
-var sessionAllocator = internal.NewHandleMap[csession](5)
-
 func ptrToHandle(ptr *C.etSession) SessionHandle {
-	return SessionHandle(uintptr(unsafe.Pointer(ptr)))
+	return SessionHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
 }
 
 func resolveSession(ptr *C.etSession) (*csession, bool) {
 	h := ptrToHandle(ptr)
 
-	return sessionAllocator.Resolve(h)
+	return h.resolve()
 }
 
 type csessionCallback struct {

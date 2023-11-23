@@ -27,6 +27,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"runtime/cgo"
 	"sync/atomic"
 	"unsafe"
 
@@ -56,13 +57,13 @@ func etSessionNewExportMail(sessionPtr *C.etSession, cExportPath *C.cchar_t, out
 
 	mailExport := mail.NewExportTask(csession.ctx, exportPath, csession.s)
 
-	h := exportMailAllocator.Alloc(&cExportMail{
+	h := internal.NewHandle(&cExportMail{
 		csession: csession,
 		exporter: mailExport,
 	})
 
 	// Intentional misuse of unsafe pointer.
-	*outExportMail = (*C.etExportMail)(unsafe.Pointer(uintptr(h))) //nolint:govet
+	*outExportMail = (*C.etExportMail)(unsafe.Pointer(h)) //nolint:govet
 
 	return C.ET_SESSION_STATUS_OK
 }
@@ -71,7 +72,7 @@ func etSessionNewExportMail(sessionPtr *C.etSession, cExportPath *C.cchar_t, out
 func etExportMailDelete(ptr *C.etExportMail) C.etExportMailStatus {
 	h := exportMailPtrToHandle(ptr)
 
-	s, ok := exportMailAllocator.Resolve(h)
+	s, ok := h.resolve()
 	if !ok {
 		return C.ET_EXPORT_MAIL_STATUS_INVALID
 	}
@@ -81,7 +82,7 @@ func etExportMailDelete(ptr *C.etExportMail) C.etExportMailStatus {
 	s.exporter.Close()
 	s.lastError.Close()
 
-	exportMailAllocator.Free(h)
+	h.Delete()
 
 	return C.ET_EXPORT_MAIL_STATUS_OK
 }
@@ -176,19 +177,22 @@ type cExportMail struct {
 	lastError utils.CLastError
 }
 
-//nolint:gochecknoglobals
-var exportMailAllocator = internal.NewHandleMap[cExportMail](5)
+type ExportMailHandle struct {
+	internal.Handle
+}
 
-type ExportMailHandle = internal.Handle[cExportMail]
+func (h ExportMailHandle) resolve() (*cExportMail, bool) {
+	return internal.ResolveHandle[cExportMail](h.Handle)
+}
 
 func exportMailPtrToHandle(ptr *C.etExportMail) ExportMailHandle {
-	return ExportMailHandle(uintptr(unsafe.Pointer(ptr)))
+	return ExportMailHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
 }
 
 func resolveExportMail(ptr *C.etExportMail) (*cExportMail, bool) {
 	h := exportMailPtrToHandle(ptr)
 
-	return exportMailAllocator.Resolve(h)
+	return h.resolve()
 }
 
 type mailExportReporter struct {

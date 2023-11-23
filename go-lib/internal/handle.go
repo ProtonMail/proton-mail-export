@@ -17,48 +17,19 @@
 
 package internal
 
-import "sync"
+import "C"
+import (
+	"runtime/cgo"
+)
 
-type Handle[T any] int
+type Handle = cgo.Handle
 
-// HandleMap exists to bridge the GAP between C interface and the Go Code. Since we are not allowed to pass
-// go pointers to the "outside" world, we pass handle instead. On each C call, we then Resolve the handle.
-type HandleMap[T any] struct {
-	sync      sync.RWMutex
-	instances []*T
+func NewHandle[T any](i *T) Handle {
+	return cgo.NewHandle(i)
 }
 
-func NewHandleMap[T any](capacity int) *HandleMap[T] {
-	return &HandleMap[T]{
-		instances: make([]*T, 0, capacity),
-	}
-}
+func ResolveHandle[T any](h Handle) (*T, bool) {
+	v, ok := h.Value().(*T)
 
-func (a *HandleMap[T]) Alloc(i *T) Handle[T] {
-	a.sync.Lock()
-	defer a.sync.Unlock()
-
-	a.instances = append(a.instances, i)
-
-	// Return index +1 so we can still do null checks with c pointers.
-	return Handle[T](len(a.instances))
-}
-
-func (a *HandleMap[T]) Free(h Handle[T]) {
-	a.sync.Lock()
-	defer a.sync.Unlock()
-
-	index := h - 1
-
-	a.instances[index] = nil
-}
-
-func (a *HandleMap[T]) Resolve(h Handle[T]) (*T, bool) {
-	a.sync.RLock()
-	defer a.sync.RUnlock()
-
-	index := h - 1
-	instance := a.instances[index]
-
-	return instance, instance != nil
+	return v, ok
 }

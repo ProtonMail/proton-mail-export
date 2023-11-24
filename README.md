@@ -8,7 +8,7 @@ Proton Mail Export allows you to export your emails as eml files.
 * C++ 17 compatible compiler
   * GCC/Clang (Linux/Mac)
   * MSVC 2022 (Windows)
-* CMake >= 3.23 
+* CMake >= 3.23
 * Go >= 1.20
 
 ## Fetch submodules
@@ -20,11 +20,11 @@ git submodule update --init --recursive
 ## Linux/Mac
 
 ```
-cmake -S. -B $BUILD_DIR -G <Insert favorite Generator> 
+cmake -S. -B $BUILD_DIR -G <Insert favorite Generator>
 cmake --build $BUILD_DIR
 ```
 
-## Windows 
+## Windows
 
 ```
 cmake -S. -B $BUILD_DIR -G "Visual Studio 17 2022" -DVCPKG_TARGET_TRIPLET=x64-windows-static
@@ -37,5 +37,5 @@ the CGO module.
 ## Layout
 
 * [go-lib](go-lib): CGO Shared library implementation
-* [lib](lib): C++ shared library over the exported C interface from [cgo-lib](cgo-lib)
+* [lib](lib): C++ shared library over the exported C interface from [go-lib](go-lib)
 * [cli](cli): CLI application

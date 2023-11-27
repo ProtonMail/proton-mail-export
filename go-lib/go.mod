@@ -13,6 +13,7 @@ require (
 	github.com/getsentry/sentry-go v0.24.1
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/golang/mock v1.6.0
+	github.com/jeandeaual/go-locale v0.0.0-20220711133428-7de61946b173
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.4

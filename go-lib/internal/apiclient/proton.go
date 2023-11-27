@@ -128,10 +128,22 @@ func newCookieJar(apiURL string) (*cookiejar.Jar, error) {
 		return nil, err
 	}
 
+	hostname, err := hv.GetProtectedHostname()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get hostname")
+		hostname = "Unknown"
+	}
+
+	sysLang, err := hv.GetSystemLang()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get system language")
+		sysLang = "Unknown"
+	}
+
 	for name, value := range map[string]string{
-		"hhn":  hv.GetProtectedHostname(),
+		"hhn":  hostname,
 		"tz":   hv.GetTimeZone(),
-		"lng":  hv.GetSystemLang(),
+		"lng":  sysLang,
 		"arch": hv.GetHostArch(),
 	} {
 		jar.SetCookies(url, []*http.Cookie{{Name: name, Value: value, Secure: true}})

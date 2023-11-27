@@ -78,6 +78,7 @@ variables:
     - export PATH=$(pwd)/.cache/bin:$PATH
     - export GOPATH="$CI_PROJECT_DIR/.cache"
     - export PATH=$PATH:$QT6DIR/bin
+    - export LC_ALL=en-US
   tags:
     - shared-large
 

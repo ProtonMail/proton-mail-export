@@ -18,23 +18,9 @@
 package hv
 
 import (
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/ProtonMail/proton-bridge/v3/pkg/algo"
+	"github.com/jeandeaual/go-locale"
 )
 
-func GetProtectedHostname() (string, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return "", err
-	}
-
-	return algo.HashBase64SHA256(hostname), nil
-}
-
-func GetTimeZone() string {
-	zone, offset := time.Now().Zone()
-	return fmt.Sprintf("%s%+d", zone, offset/3600)
+func GetSystemLang() (string, error) {
+	return locale.GetLanguage()
 }

@@ -51,12 +51,18 @@ func initSentryImpl() error {
 		return nil
 	}
 
+	hostname, err := hv.GetProtectedHostname()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get hostname")
+		hostname = "Unknown"
+	}
+
 	options := sentry.ClientOptions{
 		Dsn:            internal.ETSentryDNS,
 		Transport:      sentry.NewHTTPSyncTransport(),
 		Release:        internal.ETAppIdentifier,
 		MaxBreadcrumbs: 50,
-		ServerName:     hv.GetProtectedHostname(),
+		ServerName:     hostname,
 	}
 
 	if err := sentry.Init(options); err != nil {
@@ -65,7 +71,7 @@ func initSentryImpl() error {
 
 	sentry.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetFingerprint([]string{"{{ default }}"})
-		scope.SetUser(sentry.User{ID: hv.GetProtectedHostname()})
+		scope.SetUser(sentry.User{ID: hostname})
 	})
 
 	sentry.Logger = log.New(

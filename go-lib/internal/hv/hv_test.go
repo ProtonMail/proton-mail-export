@@ -15,18 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-//go:build !windows
-// +build !windows
-
 package hv
 
-import "os"
+import (
+	"testing"
 
-func GetSystemLang() string {
-	lang := os.Getenv("LC_ALL")
-	if lang == "" {
-		lang = os.Getenv("LANG")
-	}
+	"github.com/stretchr/testify/require"
+)
 
-	return lang
+func TestGetSystemLang(t *testing.T) {
+	l, err := GetSystemLang()
+	require.NoError(t, err)
+	require.NotEmpty(t, l)
 }

@@ -475,8 +475,10 @@ int main(int argc, const char** argv) {
             bool pathCameFromArg = false;
             bool promptEntry = false;
             if (argParseResult.count("export-dir")) {
-                exportPath = etcpp::expandCLIPath(
-                    std::filesystem::u8path(argParseResult["export-dir"].as<std::string>()));
+                auto argPath = argParseResult["export-dir"].as<std::string>();
+                if (!argPath.empty()) {
+                    exportPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
+                }
                 pathCameFromArg = true;
             }
             if (exportPath.empty()) {
@@ -499,7 +501,7 @@ int main(int argc, const char** argv) {
                     std::cout << "Please input desired export path. E.g.: " << exampleDir
                               << std::endl;
                     exportPath = readPath("Export Path");
-                } else {
+                } else if (exportPath.empty()) {
                     exportPath = outputPath;
                 }
 

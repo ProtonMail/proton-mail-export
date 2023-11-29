@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/ProtonMail/gluon v0.17.1-0.20231025125916-5c7941465df8
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20231030091225-8fc2478b27f4
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20231129105641-0ee691e470f2
 	github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton
 	github.com/ProtonMail/proton-bridge/v3 v3.4.2-0.20231030091452-d29571fb01a0
 	github.com/bradenaw/juniper v0.12.0
@@ -76,5 +76,6 @@ require (
 
 replace (
 	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.13.1-0.20230526094639-b62c999c85b7
+	github.com/go-resty/resty/v2 => github.com/LBeernaertProton/resty/v2 v2.0.0-20231129100320-dddf8030d93a
 	github.com/keybase/go-keychain => github.com/cuthix/go-keychain v0.0.0-20230517073537-fc1740a83768
 )

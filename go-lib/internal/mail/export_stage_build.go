@@ -86,7 +86,7 @@ func (b *BuildStage) Run(
 
 			results := make([]MessageWriter, len(chunk))
 
-			if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(ctx context.Context, i int) error {
+			if err := parallel.DoContext(ctx, b.parallelBuilders, len(results), func(_ context.Context, i int) error {
 				addrID := chunk[i].AddressID
 
 				kr, ok := keys.GetAddrKeyRing(addrID)

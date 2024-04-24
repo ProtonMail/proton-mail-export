@@ -70,7 +70,7 @@ func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, er
 			return
 		}
 
-		if err := parallel.DoContext(ctx, w.parallelWriters, len(input.messages), func(ctx context.Context, i int) error {
+		if err := parallel.DoContext(ctx, w.parallelWriters, len(input.messages), func(_ context.Context, i int) error {
 			metadata := input.messages[i].GetMetadata()
 			metadataPath := filepath.Join(w.dirPath, getMetadataFileName(metadata.ID))
 

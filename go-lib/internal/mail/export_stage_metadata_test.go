@@ -55,12 +55,12 @@ func TestMetadataStage_RunWithCached(t *testing.T) {
 
 	reporter.EXPECT().OnProgress(1).MinTimes(20 / 3)
 
-	filteredIDS := make(xmaps.Set[string])
+	filteredIDs := make(xmaps.Set[string])
 
 	for idx, m := range expected {
 		if idx%3 == 0 {
 			fileChecker.EXPECT().HasMessage(gomock.Eq(m.ID)).Return(true, nil)
-			filteredIDS.Add(m.ID)
+			filteredIDs.Add(m.ID)
 		} else {
 			fileChecker.EXPECT().HasMessage(gomock.Eq(m.ID)).Return(false, nil)
 		}
@@ -78,10 +78,10 @@ func TestMetadataStage_RunWithCached(t *testing.T) {
 	}
 
 	expectedFiltered := xslices.Filter(expected, func(t proton.MessageMetadata) bool {
-		return !filteredIDS.Contains(t.ID)
+		return !filteredIDs.Contains(t.ID)
 	})
 
-	require.Equal(t, len(expected)-len(filteredIDS), len(expectedFiltered))
+	require.Equal(t, len(expected)-len(filteredIDs), len(expectedFiltered))
 	require.Equal(t, expectedFiltered, result)
 }
 

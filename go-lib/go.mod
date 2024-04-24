@@ -1,15 +1,15 @@
 module github.com/ProtonMail/export-tool
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/ProtonMail/gluon v0.17.1-0.20231025125916-5c7941465df8
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20231129105641-0ee691e470f2
-	github.com/ProtonMail/gopenpgp/v2 v2.7.4-proton
-	github.com/ProtonMail/proton-bridge/v3 v3.4.2-0.20231030091452-d29571fb01a0
+	github.com/ProtonMail/gluon v0.17.1-0.20240227105633-3734c7694bcd
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20240226161523-ec58ed7ea4b9
+	github.com/ProtonMail/gopenpgp/v2 v2.7.5-proton
+	github.com/ProtonMail/proton-bridge/v3 v3.10.0
 	github.com/bradenaw/juniper v0.12.0
-	github.com/elastic/go-sysinfo v1.8.1
+	github.com/elastic/go-sysinfo v1.14.0
 	github.com/getsentry/sentry-go v0.24.1
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/golang/mock v1.6.0
@@ -18,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
-	golang.org/x/sys v0.13.0
+	golang.org/x/sys v0.16.0
 )
 
 require (
@@ -46,7 +46,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
-	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
@@ -58,18 +57,18 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	gitlab.com/c0b/go-ordered-json v0.0.0-20201030195603-febf46534d5a // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v1.0.0 // indirect
 )

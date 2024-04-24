@@ -1,8 +1,6 @@
 ---
 run:
   timeout: 10m
-  skip-files:
-    - internal/constants.go
 
 issues:
   exclude-use-default: false
@@ -17,6 +15,9 @@ issues:
     # Migration uses underscores to make versions clearer.
     - "var-naming: don't use underscores in Go names"
     - "ST1003: should not use underscores in Go names"
+
+  exclude-files:
+    - internal/constants.go
 
   exclude-rules:
     - path: _test\.go

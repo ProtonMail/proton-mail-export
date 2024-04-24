@@ -106,7 +106,7 @@ func etSessionCancel(ptr *C.etSession) C.etSessionStatus {
 
 //export etSessionGetLoginState
 func etSessionGetLoginState(ptr *C.etSession, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
 		*outStatus = mapLoginState(session.LoginState())
 		return nil
 	})
@@ -145,7 +145,7 @@ func etSessionSubmitTOTP(ptr *C.etSession, totp *C.cchar_t, outStatus *C.etSessi
 
 //export etSessionSubmitMailboxPassword
 func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passwordLen C.int, outStatus *C.etSessionLoginState) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
 		validator := apiclient.NewProtonMailboxPasswordValidator(session.GetUser(), session.GetUserSalts())
 		if err := session.SubmitMailboxPassword(validator, C.GoBytes(unsafe.Pointer(password), passwordLen)); err != nil {
 			return err
@@ -158,7 +158,7 @@ func etSessionSubmitMailboxPassword(ptr *C.etSession, password *C.cchar_t, passw
 
 //export etSessionGetHVSolveURL
 func etSessionGetHVSolveURL(ptr *C.etSession, outURL **C.char) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
 		hvURL, err := session.GetHVSolveURL()
 		if err != nil {
 			return err
@@ -184,7 +184,7 @@ func etSessionMarkHVSolved(ptr *C.etSession, outLoginState *C.etSessionLoginStat
 
 //export etSessionGetEmail
 func etSessionGetEmail(ptr *C.etSession, outEmail **C.char) C.etSessionStatus {
-	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
 		*outEmail = C.CString(session.GetUser().Email)
 		return nil
 	})

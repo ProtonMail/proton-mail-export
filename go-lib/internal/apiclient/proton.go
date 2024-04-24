@@ -73,7 +73,7 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 		}
 	})
 
-	b.manager.AddPostRequestHook(func(client *resty.Client, r *resty.Response) error {
+	b.manager.AddPostRequestHook(func(_ *resty.Client, r *resty.Response) error {
 		if _, ok := proton.ClientIDFromContext(r.Request.Context()); !ok {
 			if r.StatusCode() >= 400 {
 				logrus.Debugf("[MANAGER] %v: %v %v", r.Status(), r.Request.Method, r.Request.URL)

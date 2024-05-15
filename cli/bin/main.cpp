@@ -35,6 +35,7 @@
 #include <etsession.hpp>
 #include <etutil.hpp>
 
+#include "operation.h"
 #include "task_runner.hpp"
 #include "tasks/global_task.hpp"
 #include "tasks/mail_task.hpp"
@@ -55,11 +56,13 @@ inline uint64_t toMB(uint64_t value) {
 }
 
 class ReadInputException final : public etcpp::Exception {
-   public:
-    explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
+public:
+    explicit ReadInputException(std::string_view what) :
+        etcpp::Exception(what) {
+    }
 };
 
-template <class C>
+template<class C>
 inline auto readLine(C& stream, std::string_view label) {
     std::conditional_t<std::is_same_v<C, decltype(std::cin)>, std::string, std::wstring> result;
     std::cout << label << ": " << std::flush;
@@ -128,8 +131,7 @@ std::filesystem::path readPath(std::string_view label) {
         auto expandedPath = etcpp::expandCLIPath(utf8path);
 
         try {
-            if (std::filesystem::exists(expandedPath) &&
-                !std::filesystem::is_directory(expandedPath)) {
+            if (std::filesystem::exists(expandedPath) && !std::filesystem::is_directory(expandedPath)) {
                 std::cerr << "Path is not a directory" << std::endl;
                 continue;
             }
@@ -149,6 +151,7 @@ std::filesystem::path readPath(std::string_view label) {
 std::string readSecret(std::string_view label) {
     struct PasswordScope {
         PasswordScope() { setStdinEcho(false); }
+
         ~PasswordScope() {
             setStdinEcho(true);
             std::cout << std::endl;
@@ -179,8 +182,7 @@ bool readYesNo(std::string_view label) {
             continue;
         }
 
-        std::transform(result.begin(), result.end(), result.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
+        std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
 
         if (result == "y" || result == "yes") {
             return true;
@@ -194,17 +196,38 @@ bool readYesNo(std::string_view label) {
     throw ReadInputException(fmt::format("Failed read value for '{}'", label));
 }
 
+std::string readOperation(std::string_view label) {
+    for (int i = 0; i < kNumInputRetries; i++) {
+        std::string result = readLine(std::cin, label);
+
+        if (result.empty()) {
+            std::cerr << "Value can't be empty" << std::endl;
+            continue;
+        }
+
+        std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        if (result == "b" || result == backupStr) {
+            return "backup";
+        }
+        if (result == "r" || result == restoreStr) {
+            return "restore";
+        }
+
+        std::cerr << "Value must be one of: b, B, Backup, backup, R, r, Restore, restore" << std::endl;
+    }
+
+    throw ReadInputException(fmt::format("Failed read value for '{}'", label));
+}
+
 void waitForEnter(std::string_view label) {
     std::string result;
     std::cout << label << ": " << std::flush;
     std::getline(std::cin, result);
 }
 
-template <class F>
-std::string getCLIValue(cxxopts::ParseResult& parseResult,
-                        const char* argKey,
-                        std::optional<const char*> envVariable,
-                        F fallback) {
+template<class F>
+std::string getCLIValue(cxxopts::ParseResult& parseResult, const char* argKey, std::optional<const char*> envVariable, F fallback) {
     static_assert(std::is_invocable_r_v<std::string, F>);
 
     std::string result;
@@ -216,7 +239,7 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
     }
 
     if (envVariable) {
-        auto envVar = std::getenv(*envVariable);
+        const auto envVar = std::getenv(*envVariable);
         if (envVar != nullptr && std::strlen(envVar) != 0) {
             return envVar;
         }
@@ -226,13 +249,13 @@ std::string getCLIValue(cxxopts::ParseResult& parseResult,
 }
 
 class SessionCallback final : public etcpp::SessionCallback {
-   public:
+public:
     void onNetworkLost() override { gConnectionActive.store(false); }
     void onNetworkRestored() override { gConnectionActive.store(true); }
 };
 
 class CLIAppState final : public TaskAppState {
-   public:
+public:
     bool shouldQuit() const override { return gShouldQuit.load(); }
 
     bool networkLost() const override { return !gConnectionActive.load(); }
@@ -263,23 +286,22 @@ int main(int argc, const char** argv) {
 #endif
     auto appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
-              << "This program is licensed under the GNU General Public License v3\n"
-              << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
+        << "This program is licensed under the GNU General Public License v3\n"
+        << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path outputPath = getOutputPath();
 
     if (!registerCtrlCSignalHandler([]() {
-            if (!gShouldQuit) {
-                std::cout << std::endl
-                          << "Received Ctrl+C, exiting as soon as possible" << std::endl;
-                gShouldQuit.store(true);
+        if (!gShouldQuit) {
+            std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
+            gShouldQuit.store(true);
 #if !defined(_WIN32)
-                // We need to reset the printing of chars by stdin here. As soon as we close stdin
-                // to force the input reading to exit, we can't apply any more changes.
-                setStdinEcho(true);
+            // We need to reset the printing of chars by stdin here. As soon as we close stdin
+            // to force the input reading to exit, we can't apply any more changes.
+            setStdinEcho(true);
 #endif
-                fclose(stdin);
-            }
-        })) {
+            fclose(stdin);
+        }
+    })) {
         std::cerr << "Failed to register signal handler";
         return EXIT_FAILURE;
     }
@@ -288,24 +310,23 @@ int main(int argc, const char** argv) {
         auto logDir = outputPath / "logs";
         auto globalScope = etcpp::GlobalScope(logDir, []() {
             std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
-                         "log for more details."
-                      << std::endl;
+                "log for more details."
+                << std::endl;
             exit(-1);
         });
 
         cxxopts::Options options("proton-mail-export-cli");
 
-        options.add_options()("e,export-dir", "Export directory", cxxopts::value<std::string>())(
-            "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)",
-            cxxopts::value<std::string>())(
+        options.add_options()(
+            "o,operation", "operation to perform, backup or restore (can also be set with env var ET_OPERATION)", cxxopts::value<std::string>())(
+            "d,dir", "Backup/restore directory (can also be set with env var ET_DIR)", cxxopts::value<std::string>())(
+            "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)", cxxopts::value<std::string>())(
             "m,mbox-password",
             "User's mailbox password when using 2 Password Mode (can also be set with env var "
             "ET_USER_MAILBOX_PASSWORD)",
-            cxxopts::value<std::string>())(
-            "t,totp", "User's TOTP 2FA code (can also be set with env var ET_TOTP_CODE)",
-            cxxopts::value<std::string>())(
-            "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL",
-            cxxopts::value<std::string>())("h,help", "Show help");
+            cxxopts::value<std::string>())("t,totp", "User's TOTP 2FA code (can also be set with env var ET_TOTP_CODE)",
+                                           cxxopts::value<std::string>())(
+            "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL", cxxopts::value<std::string>())("h,help", "Show help");
 
         auto argParseResult = options.parse(argc, argv);
 
@@ -319,8 +340,8 @@ int main(int argc, const char** argv) {
             auto task = NewVersionCheckTask(globalScope, "Checking for new version");
             if (runTask(appState, task)) {
                 std::cout << "A new version is available at: "
-                             "https://proton.me/support/proton-mail-export-tool"
-                          << std::endl;
+                    "https://proton.me/support/proton-mail-export-tool"
+                    << std::endl;
             }
         } catch (const std::exception&) {
         }
@@ -350,128 +371,129 @@ int main(int argc, const char** argv) {
             }
 
             switch (loginState) {
-                case etcpp::Session::LoginState::LoggedOut: {
-                    auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL",
-                                                []() { return readText("Username"); });
-                    if (gShouldQuit) {
-                        return EXIT_SUCCESS;
-                    }
+            case etcpp::Session::LoginState::LoggedOut:
+            {
+                auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL", []() { return readText("Username"); });
+                if (gShouldQuit) {
+                    return EXIT_SUCCESS;
+                }
 
-                    auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD",
-                                                []() { return readSecret("Password"); });
+                auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD", []() { return readSecret("Password"); });
 
-                    try {
-                        auto task =
-                            LoginSessionTask(session, "Logging In",
-                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState {
-                                                 return s.login(username.c_str(), password);
-                                             });
+                try {
+                    auto task = LoginSessionTask(
+                        session, "Logging In", [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(username.c_str(), password); });
+                    loginState = runTask(appState, task);
+                    loginUsername = std::move(username);
+                    loginPassword = std::move(password);
+                } catch (const etcpp::SessionException& e) {
+                    std::cerr << "Failed to login: " << e.what() << std::endl;
+                    numLoginAttempts += 1;
+                    continue;
+                }
+
+                numLoginAttempts = 0;
+                break;
+            }
+            case etcpp::Session::LoginState::AwaitingTOTP:
+            {
+                const auto totp =
+                    getCLIValue(argParseResult, "totp", "ET_TOTP_CODE", []() { return readSecret("Enter the code from your authenticator app"); });
+                if (gShouldQuit) {
+                    return EXIT_SUCCESS;
+                }
+                try {
+                    auto task = LoginSessionTask(session, "Submitting 2FA Code",
+                                                 [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.loginTOTP(totp.c_str()); });
+                    loginState = runTask(appState, task);
+                } catch (const etcpp::SessionException& e) {
+                    std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
+                    numLoginAttempts += 1;
+                    continue;
+                }
+
+                numLoginAttempts = 0;
+                break;
+            }
+            case etcpp::Session::LoginState::AwaitingHV:
+            {
+                const auto hvUrl = session.getHVSolveURL();
+
+                std::cout << "\nHuman Verification requested. Please open the URL below in a "
+                    "browser and"
+                    << " press ENTER when the challenge has been completed.\n\n"
+                    << hvUrl << '\n'
+                    << std::endl;
+
+                waitForEnter("Press ENTER to continue");
+                if (gShouldQuit) {
+                    return EXIT_SUCCESS;
+                }
+
+                try {
+                    loginState = session.markHVSolved();
+                    // Auto-retry login with existing information if the HV was triggered during
+                    // login.
+                    if (loginState == etcpp::Session::LoginState::LoggedOut) {
+                        auto task = LoginSessionTask(
+                            session, "Retrying login after Human Verification request",
+                            [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(loginUsername.c_str(), loginPassword); });
                         loginState = runTask(appState, task);
-                        loginUsername = std::move(username);
-                        loginPassword = std::move(password);
-                    } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to login: " << e.what() << std::endl;
+                    }
+                    if (loginState == etcpp::Session::LoginState::AwaitingHV) {
                         numLoginAttempts += 1;
                         continue;
                     }
-
-                    numLoginAttempts = 0;
-                    break;
+                } catch (const etcpp::SessionException& e) {
+                    std::cerr << "Failed to login: " << e.what() << std::endl;
+                    numLoginAttempts += 1;
+                    continue;
                 }
-                case etcpp::Session::LoginState::AwaitingTOTP: {
-                    const auto totp = getCLIValue(argParseResult, "totp", "ET_TOTP_CODE", []() {
-                        return readSecret("Enter the code from your authenticator app");
-                    });
-                    if (gShouldQuit) {
-                        return EXIT_SUCCESS;
-                    }
-                    try {
-                        auto task =
-                            LoginSessionTask(session, "Submitting 2FA Code",
-                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState {
-                                                 return s.loginTOTP(totp.c_str());
-                                             });
-                        loginState = runTask(appState, task);
-                    } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
-                        numLoginAttempts += 1;
-                        continue;
-                    }
 
-                    numLoginAttempts = 0;
-                    break;
+                numLoginAttempts = 0;
+                break;
+            }
+            case etcpp::Session::LoginState::AwaitingMailboxPassword:
+            {
+                const auto mboxPassword =
+                    getCLIValue(argParseResult, "mbox-password", "ET_USER_MAILBOX_PASSWORD", []() { return readSecret("Mailbox Password"); });
+                if (gShouldQuit) {
+                    return EXIT_SUCCESS;
                 }
-                case etcpp::Session::LoginState::AwaitingHV: {
-                    const auto hvUrl = session.getHVSolveURL();
 
-                    std::cout << "\nHuman Verification requested. Please open the URL below in a "
-                                 "browser and"
-                              << " press ENTER when the challenge has been completed.\n\n"
-                              << hvUrl << '\n'
-                              << std::endl;
-
-                    waitForEnter("Press ENTER to continue");
-                    if (gShouldQuit) {
-                        return EXIT_SUCCESS;
-                    }
-
-                    try {
-                        loginState = session.markHVSolved();
-                        // Auto-retry login with existing information if the HV was triggered during
-                        // login.
-                        if (loginState == etcpp::Session::LoginState::LoggedOut) {
-                            auto task = LoginSessionTask(
-                                session, "Retrying login after Human Verification request",
-                                [&](etcpp::Session& s) -> etcpp::Session::LoginState {
-                                    return s.login(loginUsername.c_str(), loginPassword);
-                                });
-                            loginState = runTask(appState, task);
-                        }
-                        if (loginState == etcpp::Session::LoginState::AwaitingHV) {
-                            numLoginAttempts += 1;
-                            continue;
-                        }
-                    } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to login: " << e.what() << std::endl;
-                        numLoginAttempts += 1;
-                        continue;
-                    }
-
-                    numLoginAttempts = 0;
-                    break;
+                try {
+                    loginState = session.loginMailboxPassword(mboxPassword);
+                } catch (const etcpp::SessionException& e) {
+                    std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
+                    numLoginAttempts += 1;
+                    continue;
                 }
-                case etcpp::Session::LoginState::AwaitingMailboxPassword: {
-                    const auto mboxPassword =
-                        getCLIValue(argParseResult, "mbox-password", "ET_USER_MAILBOX_PASSWORD",
-                                    []() { return readSecret("Mailbox Password"); });
-                    if (gShouldQuit) {
-                        return EXIT_SUCCESS;
-                    }
 
-                    try {
-                        loginState = session.loginMailboxPassword(mboxPassword);
-                    } catch (const etcpp::SessionException& e) {
-                        std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
-                        numLoginAttempts += 1;
-                        continue;
-                    }
-
-                    numLoginAttempts = 0;
-                    break;
-                }
-                default: {
-                    const auto msg = fmt::format("Encountered unexpected login state: {:x}",
-                                                 uint32_t(loginState));
-                    etcpp::GlobalScope::reportError(kReportTag, msg.c_str());
-                    std::cerr << msg << std::endl;
-                    return EXIT_FAILURE;
-                }
+                numLoginAttempts = 0;
+                break;
+            }
+            default:
+            {
+                const auto msg = fmt::format("Encountered unexpected login state: {:x}", static_cast<uint32_t>(loginState));
+                etcpp::GlobalScope::reportError(kReportTag, msg.c_str());
+                std::cerr << msg << std::endl;
+                return EXIT_FAILURE;
+            }
             }
         }
 
-        std::filesystem::path exportPath;
+        std::string operationStr =
+            getCLIValue(argParseResult, "operation", "ET_OPERATION", [] { return readOperation("Operation ((B)ackup/(R)estore))"); });
+        if (gShouldQuit) {
+            return EXIT_SUCCESS;
+        }
+        EOperation const operation = stringToOperation(operationStr);
+        if (EOperation::Unknown == operation) {
+            std::cerr << "Could not determine operation to perform (" + operationStr + ")" << std::endl;
+            return EXIT_FAILURE;
+        }
 
-        {
+        std::filesystem::path exportPath; {
             bool pathCameFromArg = false;
             bool promptEntry = false;
             if (argParseResult.count("export-dir")) {
@@ -484,9 +506,8 @@ int main(int argc, const char** argv) {
             if (exportPath.empty()) {
                 const auto defaultPath = outputPath / session.getEmail();
                 std::cout << "\nBy default, the export will be made in:\n\n"
-                          << defaultPath
-                          << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
-                          << std::endl;
+                    << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
+                    << std::endl;
 
                 promptEntry = !readYesNo("Do you wish to proceed?");
             }
@@ -498,8 +519,7 @@ int main(int argc, const char** argv) {
 #else
                     const std::string_view exampleDir = "~/Documents";
 #endif
-                    std::cout << "Please input desired export path. E.g.: " << exampleDir
-                              << std::endl;
+                    std::cout << "Please input desired export path. E.g.: " << exampleDir << std::endl;
                     exportPath = readPath("Export Path");
                 } else if (exportPath.empty()) {
                     exportPath = outputPath;
@@ -513,10 +533,8 @@ int main(int argc, const char** argv) {
                     std::filesystem::create_directories(exportPath);
                     break;
                 } catch (const std::exception& e) {
-                    etcpp::logError("Failed to create export directory '{}': {}",
-                                    exportPath.u8string(), e.what());
-                    std::cerr << "Failed to create export directory '" << exportPath
-                              << "': " << e.what() << std::endl;
+                    etcpp::logError("Failed to create export directory '{}': {}", exportPath.u8string(), e.what());
+                    std::cerr << "Failed to create export directory '" << exportPath << "': " << e.what() << std::endl;
                     if (pathCameFromArg) {
                         return EXIT_FAILURE;
                     }
@@ -551,11 +569,10 @@ int main(int argc, const char** argv) {
         }
 
         if (expectedSpace > spaceInfo.available) {
-            std::cout << "\nThis operation requires at least " << toMB(expectedSpace)
-                      << " MB of free space, but the destination volume only has "
-                      << toMB(spaceInfo.available) << " MB available. " << std::endl
-                      << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
-                      << std::endl;
+            std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
+                << toMB(spaceInfo.available) << " MB available. " << std::endl
+                << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+                << std::endl;
 
             if (!readYesNo("Do you wish to proceed?")) {
                 return EXIT_SUCCESS;
@@ -571,7 +588,6 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
         std::cout << "Export Finished" << std::endl;
-
     } catch (const etcpp::CancelledException&) {
         return EXIT_SUCCESS;
     } catch (const ReadInputException& e) {

@@ -76,7 +76,7 @@ function(build_cgo_lib)
             COMMAND ${ENV_MANIP} "${go_bin}" build -a -tags="${CGO_TAGS}" ${ADDITIONAL_FLAGS} -buildmode=c-shared  -o "${lib}"
             ${CGO_GO_EXPORTS}
             ${GO_LIB_BUILD_EXTRA}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmd/lib
     )
 
     add_custom_target("${target}-go-lib-build"
@@ -97,7 +97,7 @@ function(build_cgo_lib)
             IMPORTED_LOCATION ${lib}
             IMPORTED_RUNTIME ${lib}
             IMPORTED_IMPLIB "${win32_imp_lib}"
-            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/cgo_headers"
+            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_SOURCE_DIR}/cmd/lib/cgo_headers"
     )
 endfunction()
 

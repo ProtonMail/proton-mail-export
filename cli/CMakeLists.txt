@@ -13,6 +13,8 @@ target_include_directories(proton-mail-export-cli PRIVATE "${CMAKE_CURRENT_SOURC
 
 target_sources(proton-mail-export-cli PRIVATE
         bin/main.cpp
+        bin/operation.h
+        bin/operation.cpp
         bin/tui_util.cpp
         bin/tui_util.hpp
         bin/task_runner.hpp

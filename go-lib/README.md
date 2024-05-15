@@ -20,7 +20,7 @@ code is built with MSVC.
 
 Since CGO can't call function pointers, if you need/want to simulate callback, you to write a C function that accepts 
 your vtable/function pointer and calls the function pointer in question. See 
-[this header](cgo_headers/etexport_mail_impl.h) for an example.
+[this header](cmd/lib/cgo_headers/etexport_mail_impl.h) for an example.
 
 ### Context Cancelled
 

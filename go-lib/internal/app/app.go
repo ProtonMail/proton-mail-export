@@ -10,30 +10,30 @@ void etSessionCallbackOnNetworkRestored() {}
 import "C"
 
 import (
-	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
-	"strings"
-	"syscall"
 
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/mail"
 	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/term"
 )
+
+const retryCount = 5
 
 var (
 	flagUsername = &cli.StringFlag{ //nolint:gochecknoglobals
 		Name:    "username",
 		Aliases: []string{"u"},
 		EnvVars: []string{"ET_USER_EMAIL"},
-	} //nolint:gochecknoglobals
+	}
 	flagPassword = &cli.StringFlag{ //nolint:gochecknoglobals
 		Name:    "password",
 		Aliases: []string{"p"},
@@ -49,6 +49,16 @@ var (
 		Aliases: []string{"t"},
 		EnvVars: []string{"ET_TOTP_CODE"},
 	}
+	flagOperation = &cli.StringFlag{ //nolint:gochecknoglobals
+		Name:    "operation",
+		Aliases: []string{"o"},
+		EnvVars: []string{"ET_OPERATION"},
+	}
+	flagFolder = &cli.StringFlag{ //nolint:gochecknoglobals
+		Name:    "folder",
+		Aliases: []string{"f"},
+		EnvVars: []string{"ET_FOLDER"},
+	}
 )
 
 func Run() {
@@ -60,6 +70,8 @@ func Run() {
 			flagPassword,
 			flagMBoxPassword,
 			flagTOTP,
+			flagOperation,
+			flagFolder,
 		},
 	}
 
@@ -75,18 +87,35 @@ func run(ctx *cli.Context) error {
 	panicHandler := sentry.NewPanicHandler(func() {})
 	defer async.HandlePanic(panicHandler)
 
-	s, err := newSession(panicHandler)
+	session, err := newSession(panicHandler)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("DownloadDir: %v\n", getDownloadDir())
-
-	if err = login(ctx, s); err != nil {
+	operation, err := getOperation(ctx)
+	if err != nil {
 		return err
 	}
 
-	logrus.Info("Login was successful")
+	if err = login(ctx, session); err != nil {
+		return err
+	}
+
+	dir, err := getTargetFolder(ctx, operation, session.GetUser().Email)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Target folder: %s\n", dir)
+
+	if operation == operationBackup {
+		return runBackup(ctx.Context, dir, session)
+	}
+
+	if operation == operationRestore {
+		return errors.New("not yet implemented")
+	}
+
 	return nil
 }
 
@@ -128,7 +157,7 @@ func (n CliCallback) OnNetworkLost() {
 }
 
 func login(ctx *cli.Context, s *session.Session) error {
-	creds := newCredentialsFromCli(ctx)
+	creds := newCredentialsFromCLI(ctx)
 	var err error
 	for {
 		switch s.LoginState() {
@@ -193,68 +222,8 @@ func login(ctx *cli.Context, s *session.Session) error {
 	}
 }
 
-type credentials struct {
-	username     string
-	password     []byte
-	totp         string
-	mboxPassword []byte
-	attemptCount int
-}
+func runBackup(ctx context.Context, exportPath string, session *session.Session) error {
+	exportTask := mail.NewExportTask(ctx, exportPath, session)
 
-func newCredentialsFromCli(ctx *cli.Context) *credentials {
-	return &credentials{
-		username:     ctx.String(flagUsername.Name),
-		password:     []byte(ctx.String(flagPassword.Name)),
-		totp:         ctx.String(flagTOTP.Name),
-		mboxPassword: []byte(ctx.String(flagMBoxPassword.Name)),
-	}
-}
-
-func (c *credentials) nextAttempt() error {
-	if c.attemptCount++; c.attemptCount >= 5 {
-		return errors.New("failed to login: max attempts reached")
-	}
-
-	c.username = ""
-	c.password = nil
-	c.totp = ""
-	c.mboxPassword = nil
-
-	return nil
-}
-
-func readLine(prompt string) (string, error) {
-	if len(prompt) > 0 {
-		fmt.Print(prompt)
-	}
-
-	result, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(result), nil
-}
-
-func readPassword(prompt string) ([]byte, error) {
-	if len(prompt) > 0 {
-		fmt.Print(prompt)
-	}
-
-	result, err := term.ReadPassword(syscall.Stdin)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println()
-
-	return result, nil
-}
-
-func waitForReturn() {
-	_, _ = bufio.NewReader(os.Stdin).ReadSlice('\n')
-}
-
-func defaultDownloadFolder() string {
-	return getDownloadDir()
+	return exportTask.Run(ctx, newCliReporter())
 }

@@ -15,12 +15,13 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jeandeaual/go-locale v0.0.0-20220711133428-7de61946b173
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
+	github.com/schollz/progressbar/v3 v3.14.3
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.24.4
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
-	golang.org/x/sys v0.16.0
-	golang.org/x/term v0.16.0
+	golang.org/x/sys v0.20.0
+	golang.org/x/term v0.20.0
 )
 
 require (
@@ -52,8 +53,9 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
@@ -61,7 +63,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	github.com/rivo/uniseg v0.4.2 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

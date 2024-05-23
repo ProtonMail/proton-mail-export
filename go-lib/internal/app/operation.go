@@ -10,6 +10,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	strBackup  = "backup"
+	strRestore = "restore"
+	strUnknown = "unknown"
+)
+
 type Operation int
 
 const (
@@ -22,9 +28,9 @@ func getOperation(ctx *cli.Context) (Operation, error) {
 	argsOperation := ctx.String(flagOperation.Name)
 	if len(argsOperation) == 0 {
 		return readOperationFromCLI()
-	} else {
-		return stringToOperation(argsOperation)
 	}
+
+	return stringToOperation(argsOperation)
 }
 
 func readOperationFromCLI() (Operation, error) {
@@ -62,10 +68,12 @@ func stringToOperation(operation string) (Operation, error) {
 func operationToString(operation Operation) string {
 	switch operation {
 	case operationBackup:
-		return "backup"
+		return strBackup
 	case operationRestore:
-		return "restore"
+		return strRestore
+	case operationUnknown:
+		return strUnknown
 	default:
-		return "unknown"
+		return strUnknown
 	}
 }

@@ -105,6 +105,12 @@ func (arc *AutoRetryClient) GetLabels(ctx context.Context, labelTypes ...proton.
 	})
 }
 
+func (arc *AutoRetryClient) CreateLabel(ctx context.Context, req proton.CreateLabelReq) (proton.Label, error) {
+	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (proton.Label, error) {
+		return client.CreateLabel(ctx, req)
+	})
+}
+
 func (arc *AutoRetryClient) GetAddresses(ctx context.Context) ([]proton.Address, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) ([]proton.Address, error) {
 		return client.GetAddresses(ctx)

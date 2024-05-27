@@ -37,6 +37,7 @@ type Client interface {
 	Close()
 
 	GetLabels(ctx context.Context, labelTypes ...proton.LabelType) ([]proton.Label, error)
+	CreateLabel(ctx context.Context, req proton.CreateLabelReq) (proton.Label, error)
 	GetAddresses(ctx context.Context) ([]proton.Address, error)
 
 	GetGroupedMessageCount(ctx context.Context) ([]proton.MessageGroupCount, error)

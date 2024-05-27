@@ -17,9 +17,11 @@
 
 package mail
 
-import "github.com/ProtonMail/go-proton-api"
+import (
+	"github.com/ProtonMail/go-proton-api"
+)
 
-func wantLabel(label proton.Label) bool {
+func nonSystemLabel(label proton.Label) bool {
 	return label.Type != proton.LabelTypeSystem
 }
 

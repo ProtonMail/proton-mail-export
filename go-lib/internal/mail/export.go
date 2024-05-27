@@ -264,7 +264,7 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 		return fmt.Errorf("failed to retrieve labels: %w", err)
 	}
 
-	apiLabels = xslices.Filter(apiLabels, wantLabel)
+	apiLabels = xslices.Filter(apiLabels, nonSystemLabel)
 
 	labelData, err := utils.GenerateVersionedJSON(LabelMetadataVersion, apiLabels)
 	if err != nil {

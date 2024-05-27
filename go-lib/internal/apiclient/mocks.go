@@ -127,6 +127,21 @@ func (mr *MockClientMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockClient)(nil).Close))
 }
 
+// CreateLabel mocks base method.
+func (m *MockClient) CreateLabel(arg0 context.Context, arg1 proton.CreateLabelReq) (proton.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLabel", arg0, arg1)
+	ret0, _ := ret[0].(proton.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateLabel indicates an expected call of CreateLabel.
+func (mr *MockClientMockRecorder) CreateLabel(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLabel", reflect.TypeOf((*MockClient)(nil).CreateLabel), arg0, arg1)
+}
+
 // GetAddresses mocks base method.
 func (m *MockClient) GetAddresses(arg0 context.Context) ([]proton.Address, error) {
 	m.ctrl.T.Helper()

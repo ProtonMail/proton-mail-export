@@ -21,7 +21,12 @@ func getTargetFolder(ctx *cli.Context, operation Operation, username string) (st
 }
 
 func readTargetFolderFromCLI(operation Operation, username string) (string, error) {
-	defaultDir := filepath.Join(getDownloadDir(), username)
+	defaultDir, err := getDefaultOperationFolder()
+	if err != nil {
+		return "", fmt.Errorf("cannot determine download dir: %w", err)
+	}
+
+	defaultDir = filepath.Join(defaultDir, username)
 	useDefault, err := readYesNo(fmt.Sprintf("Use default folder '%s' for %s? (Y/N): ", defaultDir, operationToString(operation)), retryCount)
 	if err != nil {
 		return "", err

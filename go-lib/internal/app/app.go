@@ -11,7 +11,6 @@ import "C"
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -106,14 +105,12 @@ func run(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Printf("Target folder: %s\n", dir)
-
 	if operation == operationBackup {
 		return runBackup(ctx.Context, dir, session)
 	}
 
 	if operation == operationRestore {
-		return errors.New("not yet implemented")
+		return runRestore(ctx.Context, dir, session)
 	}
 
 	return nil
@@ -226,4 +223,10 @@ func runBackup(ctx context.Context, exportPath string, session *session.Session)
 	exportTask := mail.NewExportTask(ctx, exportPath, session)
 
 	return exportTask.Run(ctx, newCliReporter())
+}
+
+func runRestore(ctx context.Context, backupPath string, session *session.Session) error {
+	restoreTask := mail.NewRestoreTask(ctx, backupPath, session)
+
+	return restoreTask.Run(newCliReporter())
 }

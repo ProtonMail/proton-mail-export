@@ -1,3 +1,5 @@
 .idea
 cmake-build-debug
 cmake-build-release
+.DS_Store
+go-lib/cmd/proton-mail-export/proton-mail-export

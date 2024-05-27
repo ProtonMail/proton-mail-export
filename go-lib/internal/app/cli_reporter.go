@@ -2,6 +2,7 @@ package app
 
 import "C"
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/schollz/progressbar/v3"
@@ -16,10 +17,10 @@ type cliReporter struct {
 func newCliReporter() *cliReporter {
 	return &cliReporter{
 		progressbar: progressbar.NewOptions64(
-			1000,
-			progressbar.OptionClearOnFinish(),
+			0,
+			progressbar.OptionOnCompletion(func() { fmt.Println() }),
 			progressbar.OptionSetPredictTime(false),
-			progressbar.OptionFullWidth(),
+			progressbar.OptionSetWidth(100),
 		),
 	}
 }

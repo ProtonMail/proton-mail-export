@@ -17,8 +17,8 @@
 
 #include "etutil.hpp"
 
-#include <mach-o/dyld.h>
 #include <climits>
+#include <mach-o/dyld.h>
 
 namespace etcpp {
 std::filesystem::path getExecutablePath() {
@@ -35,4 +35,4 @@ std::filesystem::path getExecutablePath() {
 
     return std::filesystem::u8path(realPathName);
 }
-}    // namespace etcpp
+} // namespace etcpp

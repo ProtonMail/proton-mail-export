@@ -26,4 +26,4 @@ std::filesystem::path getExecutableDir() {
 
     return {};
 }
-}    // namespace etcpp
+} // namespace etcpp

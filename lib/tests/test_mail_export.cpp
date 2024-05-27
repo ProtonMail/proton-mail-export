@@ -17,26 +17,26 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <fmt/format.h>
 #include <etsession.hpp>
 #include <filesystem>
+#include <fmt/format.h>
 
 #include "gpa_server.hpp"
 
 class NullCallback final : public etcpp::ExportMailCallback {
-   public:
+public:
     void onProgress(float) override {}
 };
 
 class ProgressCancelCallback final : public etcpp::ExportMailCallback {
-   private:
+private:
     etcpp::ExportMail& mE;
     float mCancelPercentage;
     bool mCancelled = false;
 
-   public:
-    explicit ProgressCancelCallback(etcpp::ExportMail& e, float cancelPercentage)
-        : etcpp::ExportMailCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
+public:
+    explicit ProgressCancelCallback(etcpp::ExportMail& e, float cancelPercentage) :
+        etcpp::ExportMailCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
 
     void onProgress(float p) override {
         if (p > mCancelPercentage && !mCancelled) {
@@ -66,8 +66,7 @@ TEST_CASE("MailExport") {
     REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
 
     std::vector<std::string> messageIDs;
-    REQUIRE_NOTHROW(messageIDs = server.createTestMessages(userID.c_str(), addrID.c_str(),
-                                                           userEmail, userPassword, 50));
+    REQUIRE_NOTHROW(messageIDs = server.createTestMessages(userID.c_str(), addrID.c_str(), userEmail, userPassword, 50));
 
     time_t t = time(nullptr);
 
@@ -84,7 +83,7 @@ TEST_CASE("MailExport") {
         REQUIRE_NOTHROW(exporter.start(nullCallback));
     }
 
-    for (const auto& msgID : messageIDs) {
+    for (const auto& msgID: messageIDs) {
         auto msgPath = exportDir / (msgID + ".eml");
         auto metadataPath = exportDir / (msgID + ".metadata.json");
         REQUIRE(std::filesystem::is_regular_file(msgPath));

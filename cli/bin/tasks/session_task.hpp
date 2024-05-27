@@ -23,16 +23,16 @@
 
 #include "tasks/task.hpp"
 
-template <class R>
+template<class R>
 class SessionTask : public Task<R> {
-   protected:
+protected:
     std::string mDesc;
     etcpp::Session& mSession;
 
-   protected:
+protected:
     SessionTask(etcpp::Session& session, std::string_view desc) : mDesc(desc), mSession(session) {}
 
-   public:
+public:
     virtual ~SessionTask() override = default;
 
     void cancel() override { mSession.cancel(); }
@@ -40,14 +40,13 @@ class SessionTask : public Task<R> {
     std::string_view description() const override { return mDesc; }
 };
 
-template <class F>
+template<class F>
 class LoginSessionTask final : public SessionTask<etcpp::Session::LoginState> {
     static_assert(std::is_invocable_r_v<etcpp::Session::LoginState, F, etcpp::Session&>);
     F mFn;
 
-   public:
-    LoginSessionTask(etcpp::Session& session, std::string_view desc, F&& f)
-        : SessionTask<etcpp::Session::LoginState>(session, desc), mFn(f) {}
+public:
+    LoginSessionTask(etcpp::Session& session, std::string_view desc, F&& f) : SessionTask<etcpp::Session::LoginState>(session, desc), mFn(f) {}
 
     virtual ~LoginSessionTask() override = default;
 

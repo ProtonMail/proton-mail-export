@@ -17,8 +17,8 @@
 
 #include <etsession.hpp>
 
-#include <proton-mail-export.h>
 #include <etconfig.hpp>
+#include <proton-mail-export.h>
 
 namespace etcpp {
 
@@ -26,19 +26,20 @@ Session::LoginState mapLoginState(etSessionLoginState s);
 
 inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
     switch (status) {
-        case ET_SESSION_STATUS_INVALID:
-            throw SessionException("Invalid instance");
-        case ET_SESSION_STATUS_ERROR: {
-            const char* lastErr = etSessionGetLastError(ptr);
-            if (lastErr == nullptr) {
-                lastErr = "unknown";
-            }
-            throw SessionException(lastErr);
+    case ET_SESSION_STATUS_INVALID:
+        throw SessionException("Invalid instance");
+    case ET_SESSION_STATUS_ERROR:
+    {
+        const char* lastErr = etSessionGetLastError(ptr);
+        if (lastErr == nullptr) {
+            lastErr = "unknown";
         }
-        case ET_SESSION_STATUS_CANCELLED:
-            throw CancelledException();
-        case ET_SESSION_STATUS_OK:
-            break;
+        throw SessionException(lastErr);
+    }
+    case ET_SESSION_STATUS_CANCELLED:
+        throw CancelledException();
+    case ET_SESSION_STATUS_OK:
+        break;
     }
 }
 
@@ -51,15 +52,12 @@ etSessionCallbacks makeCCallback(SessionCallback* ptr) {
 
     cb.ptr = ptr;
     cb.onNetworkLost = [](void* p) { reinterpret_cast<SessionCallback*>(p)->onNetworkLost(); };
-    cb.onNetworkRestored = [](void* p) {
-        reinterpret_cast<SessionCallback*>(p)->onNetworkRestored();
-    };
+    cb.onNetworkRestored = [](void* p) { reinterpret_cast<SessionCallback*>(p)->onNetworkRestored(); };
 
     return cb;
 }
 
-Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& callbacks)
-    : mCallbacks(callbacks) {
+Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& callbacks) : mCallbacks(callbacks) {
     char* outErr = nullptr;
     mPtr = etSessionNew(serverURL, makeCCallback(mCallbacks.get()), &outErr);
     if (mPtr == nullptr) {
@@ -124,8 +122,7 @@ Session::LoginState Session::loginMailboxPassword(std::string_view password) {
     LoginState ls = LoginState::LoggedOut;
     wrapCCall([&](etSession* ptr) {
         etSessionLoginState els = ET_SESSION_LOGIN_STATE_LOGGED_OUT;
-        auto status =
-            etSessionSubmitMailboxPassword(ptr, password.data(), int(password.length()), &els);
+        auto status = etSessionSubmitMailboxPassword(ptr, password.data(), int(password.length()), &els);
         if (status == ET_SESSION_STATUS_OK) {
             ls = mapLoginState(els);
         }
@@ -151,9 +148,7 @@ Session::LoginState Session::getLoginState() const {
 
 ExportMail Session::newExportMail(const char* exportPath) const {
     etExportMail* exportPtr = nullptr;
-    wrapCCall([&](etSession* ptr) -> etSessionStatus {
-        return etSessionNewExportMail(ptr, exportPath, &exportPtr);
-    });
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportMail(ptr, exportPath, &exportPtr); });
 
     return ExportMail(*this, exportPtr);
 }
@@ -173,8 +168,7 @@ std::string Session::getEmail() const {
 
 std::string Session::getHVSolveURL() const {
     char* outURL = nullptr;
-    wrapCCall(
-        [&](etSession* ptr) -> etSessionStatus { return etSessionGetHVSolveURL(ptr, &outURL); });
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionGetHVSolveURL(ptr, &outURL); });
 
     auto result = std::string(outURL);
     etFree(outURL);
@@ -196,34 +190,32 @@ Session::LoginState Session::markHVSolved() {
     return ls;
 }
 
-template <class F>
+template<class F>
 void Session::wrapCCall(F func) {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,
-                  "invalid function/lambda signature");
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>, "invalid function/lambda signature");
     mapETStatusToException(mPtr, func(mPtr));
 }
 
-template <class F>
+template<class F>
 void Session::wrapCCall(F func) const {
-    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>,
-                  "invalid function/lambda signature");
+    static_assert(std::is_invocable_r_v<etSessionStatus, F, etSession*>, "invalid function/lambda signature");
     mapETStatusToException(mPtr, func(mPtr));
 }
 Session::LoginState mapLoginState(etSessionLoginState s) {
     switch (s) {
-        case ET_SESSION_LOGIN_STATE_LOGGED_OUT:
-            return Session::LoginState::LoggedOut;
-        case ET_SESSION_LOGIN_STATE_AWAITING_HV:
-            return Session::LoginState::AwaitingHV;
-        case ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD:
-            return Session::LoginState::AwaitingMailboxPassword;
-        case ET_SESSION_LOGIN_STATE_LOGGED_IN:
-            return Session::LoginState::LoggedIn;
-        case ET_SESSION_LOGIN_STATE_AWAITING_TOTP:
-            return Session::LoginState::AwaitingTOTP;
+    case ET_SESSION_LOGIN_STATE_LOGGED_OUT:
+        return Session::LoginState::LoggedOut;
+    case ET_SESSION_LOGIN_STATE_AWAITING_HV:
+        return Session::LoginState::AwaitingHV;
+    case ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD:
+        return Session::LoginState::AwaitingMailboxPassword;
+    case ET_SESSION_LOGIN_STATE_LOGGED_IN:
+        return Session::LoginState::LoggedIn;
+    case ET_SESSION_LOGIN_STATE_AWAITING_TOTP:
+        return Session::LoginState::AwaitingTOTP;
     }
 
     return Session::LoginState::LoggedOut;
 }
 
-}    // namespace etcpp
+} // namespace etcpp

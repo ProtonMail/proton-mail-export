@@ -19,8 +19,8 @@
 #include <etsession.hpp>
 #include <iostream>
 
-MailTask::MailTask(etcpp::Session& session, const std::filesystem::path& exportPath)
-    : mExport(session.newExportMail(exportPath.u8string().c_str())) {}
+MailTask::MailTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
+    mExport(session.newExportMail(exportPath.u8string().c_str())) {}
 
 void MailTask::onProgress(float progress) {
     updateProgress(progress);

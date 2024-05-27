@@ -58,4 +58,4 @@ bool GlobalScope::newVersionAvailable() const {
     return etNewVersionAvailable() == 1;
 }
 
-}    // namespace etcpp
+} // namespace etcpp

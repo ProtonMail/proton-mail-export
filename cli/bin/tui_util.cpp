@@ -17,15 +17,15 @@
 
 #include "tui_util.hpp"
 
-#include <fmt/format.h>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <fmt/format.h>
 
 #if !defined(_WIN32)
+#include <csignal>
 #include <termios.h>
 #include <unistd.h>
-#include <csignal>
 #else
 #include <io.h>
 #include <windows.h>
@@ -83,11 +83,11 @@ bool registerCtrlCSignalHandler(std::function<void()>&& handler) {
     if (SetConsoleCtrlHandler(
             [](DWORD ctrlType) -> BOOL {
                 switch (ctrlType) {
-                    case CTRL_C_EVENT:
-                        gSignalHandler();
-                        return TRUE;
-                    default:
-                        return FALSE;
+                case CTRL_C_EVENT:
+                    gSignalHandler();
+                    return TRUE;
+                default:
+                    return FALSE;
                 }
             },
             TRUE) == FALSE) {

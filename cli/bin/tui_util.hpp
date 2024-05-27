@@ -31,20 +31,20 @@ bool isStdInTerminal();
 bool registerCtrlCSignalHandler(std::function<void()>&& handler);
 
 class CliSpinner {
-   private:
+private:
     int mState = 0;
 
-   public:
+public:
     CliSpinner() = default;
     char next();
 };
 
 class CLIProgressBar {
-   private:
+private:
     int mActiveBars = -1;
     std::string mValue;
 
-   public:
+public:
     CLIProgressBar();
     void update(float progress);
 

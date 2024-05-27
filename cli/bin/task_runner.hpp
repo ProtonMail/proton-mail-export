@@ -30,7 +30,7 @@ void fillSpaces(size_t previousLength, size_t currentLength) {
     }
 }
 
-template <class R>
+template<class R>
 R runTask(const TaskAppState& state, Task<R>& task) {
     auto desc = task.description();
     auto future = std::async(std::launch::async, [&]() -> R { return task.run(); });
@@ -60,7 +60,7 @@ R runTask(const TaskAppState& state, Task<R>& task) {
     }
 }
 
-template <class R>
+template<class R>
 R runTaskWithProgress(const TaskAppState& state, TaskWithProgress<R>& task) {
     auto future = std::async(std::launch::async, [&]() -> R { return task.run(); });
     auto spinner = CliSpinner();

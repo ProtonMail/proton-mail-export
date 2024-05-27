@@ -57,9 +57,7 @@ inline uint64_t toMB(uint64_t value) {
 
 class ReadInputException final : public etcpp::Exception {
 public:
-    explicit ReadInputException(std::string_view what) :
-        etcpp::Exception(what) {
-    }
+    explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
 };
 
 template<class C>
@@ -286,22 +284,22 @@ int main(int argc, const char** argv) {
 #endif
     auto appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
-        << "This program is licensed under the GNU General Public License v3\n"
-        << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
+              << "This program is licensed under the GNU General Public License v3\n"
+              << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path outputPath = getOutputPath();
 
     if (!registerCtrlCSignalHandler([]() {
-        if (!gShouldQuit) {
-            std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
-            gShouldQuit.store(true);
+            if (!gShouldQuit) {
+                std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
+                gShouldQuit.store(true);
 #if !defined(_WIN32)
-            // We need to reset the printing of chars by stdin here. As soon as we close stdin
-            // to force the input reading to exit, we can't apply any more changes.
-            setStdinEcho(true);
+                // We need to reset the printing of chars by stdin here. As soon as we close stdin
+                // to force the input reading to exit, we can't apply any more changes.
+                setStdinEcho(true);
 #endif
-            fclose(stdin);
-        }
-    })) {
+                fclose(stdin);
+            }
+        })) {
         std::cerr << "Failed to register signal handler";
         return EXIT_FAILURE;
     }
@@ -310,16 +308,16 @@ int main(int argc, const char** argv) {
         auto logDir = outputPath / "logs";
         auto globalScope = etcpp::GlobalScope(logDir, []() {
             std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
-                "log for more details."
-                << std::endl;
+                         "log for more details."
+                      << std::endl;
             exit(-1);
         });
 
         cxxopts::Options options("proton-mail-export-cli");
 
-        options.add_options()(
-            "o,operation", "operation to perform, backup or restore (can also be set with env var ET_OPERATION)", cxxopts::value<std::string>())(
-            "d,dir", "Backup/restore directory (can also be set with env var ET_DIR)", cxxopts::value<std::string>())(
+        options.add_options()("o,operation", "operation to perform, backup or restore (can also be set with env var ET_OPERATION)",
+                              cxxopts::value<std::string>())("d,dir", "Backup/restore directory (can also be set with env var ET_DIR)",
+                                                             cxxopts::value<std::string>())(
             "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)", cxxopts::value<std::string>())(
             "m,mbox-password",
             "User's mailbox password when using 2 Password Mode (can also be set with env var "
@@ -340,8 +338,8 @@ int main(int argc, const char** argv) {
             auto task = NewVersionCheckTask(globalScope, "Checking for new version");
             if (runTask(appState, task)) {
                 std::cout << "A new version is available at: "
-                    "https://proton.me/support/proton-mail-export-tool"
-                    << std::endl;
+                             "https://proton.me/support/proton-mail-export-tool"
+                          << std::endl;
             }
         } catch (const std::exception&) {
         }
@@ -420,10 +418,10 @@ int main(int argc, const char** argv) {
                 const auto hvUrl = session.getHVSolveURL();
 
                 std::cout << "\nHuman Verification requested. Please open the URL below in a "
-                    "browser and"
-                    << " press ENTER when the challenge has been completed.\n\n"
-                    << hvUrl << '\n'
-                    << std::endl;
+                             "browser and"
+                          << " press ENTER when the challenge has been completed.\n\n"
+                          << hvUrl << '\n'
+                          << std::endl;
 
                 waitForEnter("Press ENTER to continue");
                 if (gShouldQuit) {
@@ -493,7 +491,8 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        std::filesystem::path exportPath; {
+        std::filesystem::path exportPath;
+        {
             bool pathCameFromArg = false;
             bool promptEntry = false;
             if (argParseResult.count("export-dir")) {
@@ -506,8 +505,8 @@ int main(int argc, const char** argv) {
             if (exportPath.empty()) {
                 const auto defaultPath = outputPath / session.getEmail();
                 std::cout << "\nBy default, the export will be made in:\n\n"
-                    << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
-                    << std::endl;
+                          << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
+                          << std::endl;
 
                 promptEntry = !readYesNo("Do you wish to proceed?");
             }
@@ -570,9 +569,9 @@ int main(int argc, const char** argv) {
 
         if (expectedSpace > spaceInfo.available) {
             std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
-                << toMB(spaceInfo.available) << " MB available. " << std::endl
-                << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
-                << std::endl;
+                      << toMB(spaceInfo.available) << " MB available. " << std::endl
+                      << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+                      << std::endl;
 
             if (!readYesNo("Do you wish to proceed?")) {
                 return EXIT_SUCCESS;

@@ -44,4 +44,4 @@ std::filesystem::path expandCLIPath(const std::filesystem::path& path) {
     return std::filesystem::path(outBuffer);
 }
 
-}    // namespace etcpp
+} // namespace etcpp

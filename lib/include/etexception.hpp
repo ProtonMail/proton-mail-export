@@ -24,10 +24,10 @@
 namespace etcpp {
 
 class Exception : public std::exception {
-   protected:
+protected:
     std::string mWhat;
 
-   public:
+public:
     inline explicit Exception(std::string_view what) : mWhat(what) {}
     ~Exception() override = default;
 
@@ -40,7 +40,7 @@ class Exception : public std::exception {
 };
 
 class CancelledException final : public Exception {
-   public:
+public:
     inline CancelledException() : Exception("Operation Cancelled") {}
 };
-}    // namespace etcpp
+} // namespace etcpp

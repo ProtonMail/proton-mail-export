@@ -24,11 +24,11 @@
 #include "tui_util.hpp"
 
 class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback {
-   private:
+private:
     etcpp::ExportMail mExport;
     CLIProgressBar mProgressBar;
 
-   public:
+public:
     MailTask(etcpp::Session& session, const std::filesystem::path& exportPath);
     ~MailTask() override = default;
     MailTask(const MailTask&) = delete;
@@ -46,6 +46,6 @@ class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback 
 
     inline uint64_t getExpectedDiskUsage() const { return mExport.getExpectedDiskUsage(); }
 
-   private:
+private:
     void onProgress(float progress) override;
 };

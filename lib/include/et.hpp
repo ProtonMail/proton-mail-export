@@ -23,7 +23,7 @@
 namespace etcpp {
 
 class GlobalScope final {
-   public:
+public:
     explicit GlobalScope(const std::filesystem::path& p, void (*onRecover)());
     ~GlobalScope();
 
@@ -40,4 +40,4 @@ class GlobalScope final {
     bool newVersionAvailable() const;
 };
 
-}    // namespace etcpp
+} // namespace etcpp

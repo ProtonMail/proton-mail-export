@@ -30,30 +30,24 @@ struct etSession;
 namespace etcpp {
 
 class SessionException final : public Exception {
-   public:
+public:
     explicit SessionException(std::string_view what) : Exception(what) {}
 };
 
 class SessionCallback {
-   public:
+public:
     virtual ~SessionCallback() = default;
     virtual void onNetworkRestored() = 0;
     virtual void onNetworkLost() = 0;
 };
 
 class Session final {
-   private:
+private:
     etSession* mPtr;
     std::shared_ptr<SessionCallback> mCallbacks;
 
-   public:
-    enum class LoginState {
-        LoggedOut,
-        AwaitingTOTP,
-        AwaitingHV,
-        AwaitingMailboxPassword,
-        LoggedIn
-    };
+public:
+    enum class LoginState { LoggedOut, AwaitingTOTP, AwaitingHV, AwaitingMailboxPassword, LoggedIn };
 
     inline explicit Session(const char* serverURL) : Session(serverURL, {}) {}
     explicit Session(const char* serverURL, const std::shared_ptr<SessionCallback>& mCallbacks);
@@ -76,11 +70,11 @@ class Session final {
 
     void cancel();
 
-   private:
-    template <class F>
+private:
+    template<class F>
     void wrapCCall(F func);
 
-    template <class F>
+    template<class F>
     void wrapCCall(F func) const;
 };
-}    // namespace etcpp
+} // namespace etcpp

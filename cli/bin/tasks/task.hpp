@@ -22,12 +22,12 @@
 #include <mutex>
 #include <thread>
 
-template <class R>
+template<class R>
 class Task {
-   protected:
+protected:
     Task() = default;
 
-   public:
+public:
     virtual ~Task() = default;
     Task(const Task<R>&) = delete;
     Task<R>& operator=(const Task<R>&) = delete;
@@ -41,17 +41,17 @@ class Task {
     virtual std::string_view description() const = 0;
 };
 
-template <class R>
+template<class R>
 class TaskWithProgress : public Task<R> {
-   private:
+private:
     std::mutex mMutex;
     std::condition_variable mCond;
     float mProgress;
 
-   protected:
+protected:
     TaskWithProgress() = default;
 
-   public:
+public:
     virtual ~TaskWithProgress() = default;
 
     float pollProgress() {
@@ -60,7 +60,7 @@ class TaskWithProgress : public Task<R> {
         return mProgress;
     }
 
-   protected:
+protected:
     void updateProgress(float progress) {
         std::unique_lock lockScope(mMutex);
         mProgress = progress;
@@ -69,7 +69,7 @@ class TaskWithProgress : public Task<R> {
 };
 
 class TaskAppState {
-   public:
+public:
     virtual ~TaskAppState() = default;
 
     virtual bool shouldQuit() const = 0;

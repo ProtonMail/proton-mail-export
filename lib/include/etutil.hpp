@@ -30,4 +30,4 @@ std::filesystem::path getExecutableDir();
 /// May throw runtime_error if the expanded arguments result in multiple values or if there was an
 /// error;
 std::filesystem::path expandCLIPath(const std::filesystem::path& path);
-}    // namespace etcpp
+} // namespace etcpp

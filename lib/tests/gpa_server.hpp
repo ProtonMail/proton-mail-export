@@ -25,20 +25,20 @@
 #include "etgpa.h"
 
 class GPAException final : public std::exception {
-   private:
+private:
     friend class Session;
     std::string mWhat;
 
-   public:
+public:
     GPAException(std::string_view what);
     const char* what() const noexcept;
 };
 
 class GPAServer {
-   private:
+private:
     gpaServer* mServer;
 
-   public:
+public:
     GPAServer();
     ~GPAServer();
 
@@ -46,11 +46,7 @@ class GPAServer {
 
     std::string url() const;
 
-    std::vector<std::string> createTestMessages(const char* userID,
-                                                const char* addrRD,
-                                                const char* email,
-                                                const char* password,
-                                                int count);
+    std::vector<std::string> createTestMessages(const char* userID, const char* addrRD, const char* email, const char* password, int count);
 
     GPAServer(const GPAServer&) = delete;
     GPAServer(GPAServer&&) = delete;

@@ -43,32 +43,32 @@ std::string& getThreadLocalLogBuffer();
 
 constexpr const char* kLogTag = "etcpp";
 
-template <typename... T>
+template<typename... T>
 inline void logInfo(fmt::format_string<T...> fmt, T&&... args) {
     auto& buffer = getThreadLocalLogBuffer();
     fmt::format_to(std::back_inserter(buffer), fmt, args...);
     etLogInfo(kLogTag, buffer.c_str());
 }
 
-template <typename... T>
+template<typename... T>
 inline void logDebug(fmt::format_string<T...> fmt, T&&... args) {
     auto& buffer = getThreadLocalLogBuffer();
     fmt::format_to(std::back_inserter(buffer), fmt, args...);
     etLogDebug(kLogTag, buffer.c_str());
 }
 
-template <typename... T>
+template<typename... T>
 inline void logError(fmt::format_string<T...> fmt, T&&... args) {
     auto& buffer = getThreadLocalLogBuffer();
     fmt::format_to(std::back_inserter(buffer), fmt, args...);
     etLogError(kLogTag, buffer.c_str());
 }
 
-template <typename... T>
+template<typename... T>
 inline void logWarn(fmt::format_string<T...> fmt, T&&... args) {
     auto& buffer = getThreadLocalLogBuffer();
     fmt::format_to(std::back_inserter(buffer), fmt, args...);
     etLogWarn(kLogTag, buffer.c_str());
 }
 
-}    // namespace etcpp
+} // namespace etcpp

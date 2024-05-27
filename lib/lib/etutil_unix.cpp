@@ -42,4 +42,4 @@ std::filesystem::path expandCLIPath(const std::filesystem::path& path) {
     return result;
 }
 
-}    // namespace etcpp
+} // namespace etcpp

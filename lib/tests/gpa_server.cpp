@@ -52,23 +52,18 @@ std::string GPAServer::url() const {
     return result;
 }
 
-std::vector<std::string> GPAServer::createTestMessages(const char* userID,
-                                                       const char* addrID,
-                                                       const char* email,
-                                                       const char* password,
-                                                       int count) {
+std::vector<std::string> GPAServer::createTestMessages(const char* userID, const char* addrID, const char* email, const char* password, int count) {
     std::vector<char*> output;
     output.resize(count, nullptr);
 
-    if (gpaServerCreateMessages(mServer, userID, addrID, email, password, count, output.data()) !=
-        GPA_SERVER_STATUS_OK) {
+    if (gpaServerCreateMessages(mServer, userID, addrID, email, password, count, output.data()) != GPA_SERVER_STATUS_OK) {
         throw GPAException("Failed to create user");
     }
 
     std::vector<std::string> result;
     result.reserve(count);
 
-    for (const auto& id : output) {
+    for (const auto& id: output) {
         result.emplace_back(id);
         gpaFree(id);
     }

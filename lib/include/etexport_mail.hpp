@@ -32,12 +32,12 @@ namespace etcpp {
 class Session;
 
 class ExportMailException final : public Exception {
-   public:
+public:
     explicit ExportMailException(std::string_view what) : Exception(what) {}
 };
 
 class ExportMailCallback {
-   public:
+public:
     ExportMailCallback() = default;
     virtual ~ExportMailCallback() = default;
 
@@ -47,14 +47,14 @@ class ExportMailCallback {
 class ExportMail final {
     friend class Session;
 
-   private:
+private:
     const Session& mSession;
     etExportMail* mPtr;
 
-   protected:
+protected:
     ExportMail(const Session& session, etExportMail* ptr);
 
-   public:
+public:
     ~ExportMail();
     ExportMail(const ExportMail&) = delete;
     ExportMail(ExportMail&&) noexcept = delete;
@@ -69,11 +69,11 @@ class ExportMail final {
 
     std::uint64_t getExpectedDiskUsage() const;
 
-   private:
-    template <class F>
+private:
+    template<class F>
     void wrapCCall(F func);
 
-    template <class F>
+    template<class F>
     void wrapCCall(F func) const;
 };
-}    // namespace etcpp
+} // namespace etcpp

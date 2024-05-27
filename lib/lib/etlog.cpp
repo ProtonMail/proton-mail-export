@@ -25,4 +25,4 @@ std::string& getThreadLocalLogBuffer() {
     tlBuffer.clear();
     return tlBuffer;
 }
-}    // namespace etcpp
+} // namespace etcpp

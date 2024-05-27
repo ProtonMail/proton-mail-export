@@ -38,4 +38,4 @@ std::filesystem::path getExecutablePath() {
     return std::filesystem::u8path(rawPathName);
 }
 
-}    // namespace etcpp
+} // namespace etcpp

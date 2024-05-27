@@ -23,16 +23,16 @@
 
 #include "tasks/task.hpp"
 
-template <class R>
+template<class R>
 class GlobalTask : public Task<R> {
-   protected:
+protected:
     std::string mDesc;
     etcpp::GlobalScope& mScope;
 
-   protected:
+protected:
     GlobalTask(etcpp::GlobalScope& scope, std::string_view desc) : mDesc(desc), mScope(scope) {}
 
-   public:
+public:
     virtual ~GlobalTask() override = default;
 
     void cancel() override {}
@@ -41,9 +41,8 @@ class GlobalTask : public Task<R> {
 };
 
 class NewVersionCheckTask final : public GlobalTask<bool> {
-   public:
-    NewVersionCheckTask(etcpp::GlobalScope& scope, std::string_view desc)
-        : GlobalTask<bool>(scope, desc) {}
+public:
+    NewVersionCheckTask(etcpp::GlobalScope& scope, std::string_view desc) : GlobalTask<bool>(scope, desc) {}
 
     ~NewVersionCheckTask() override = default;
 

@@ -19,6 +19,7 @@ package mail
 
 import (
 	"context"
+	"path/filepath"
 	"regexp"
 
 	"github.com/ProtonMail/export-tool/internal/session"
@@ -36,17 +37,22 @@ type RestoreTask struct {
 	labelMapping map[string]string // map of [backup labelIDs] to remoteLabelIDs
 }
 
-func NewRestoreTask(ctx context.Context, backupDir string, session *session.Session) *RestoreTask {
+func NewRestoreTask(ctx context.Context, backupDir string, session *session.Session) (*RestoreTask, error) {
+	absPath, err := filepath.Abs(backupDir)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &RestoreTask{
 		ctx:          ctx,
 		ctxCancel:    cancel,
-		backupDir:    backupDir,
+		backupDir:    absPath,
 		session:      session,
 		log:          logrus.WithField("backup", "mail").WithField("userID", session.GetUser().ID),
 		labelMapping: make(map[string]string),
-	}
+	}, nil
 }
 
 func (r *RestoreTask) Run(_ Reporter) error {
@@ -57,5 +63,9 @@ func (r *RestoreTask) Run(_ Reporter) error {
 		return err
 	}
 
-	return r.restoreLabels()
+	if err := r.restoreLabels(); err != nil {
+		return err
+	}
+
+	return r.importMails()
 }

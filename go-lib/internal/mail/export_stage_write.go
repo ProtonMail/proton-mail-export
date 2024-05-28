@@ -141,7 +141,7 @@ type DecryptedAndBuiltMessageWriter struct {
 
 func (d *DecryptedAndBuiltMessageWriter) WriteMessage(dir string, tempDir string, log *logrus.Entry, integrityChecker utils.IntegrityChecker) error {
 	filePath := filepath.Join(dir, d.msg.ID)
-	filePath += ".eml"
+	filePath += emlExtension
 
 	if err := utils.WriteFileSafe(tempDir, filePath, d.eml.Bytes(), integrityChecker); err != nil {
 		log.WithField("msg-id", d.msg.ID).WithError(err).Errorf("Failed to write file %v", filePath)
@@ -264,11 +264,11 @@ func bodyFileNameEncrypted() string {
 }
 
 func getMetadataFileName(id string) string {
-	return id + ".metadata.json"
+	return id + jsonMetadataExtension
 }
 
 func getEMLFileName(id string) string {
-	return id + ".eml"
+	return id + emlExtension
 }
 
 type FileMetadataFileChecker struct {

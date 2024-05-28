@@ -226,7 +226,10 @@ func runBackup(ctx context.Context, exportPath string, session *session.Session)
 }
 
 func runRestore(ctx context.Context, backupPath string, session *session.Session) error {
-	restoreTask := mail.NewRestoreTask(ctx, backupPath, session)
+	restoreTask, err := mail.NewRestoreTask(ctx, backupPath, session)
+	if err != nil {
+		return err
+	}
 
 	return restoreTask.Run(newCliReporter())
 }

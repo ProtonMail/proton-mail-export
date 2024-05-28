@@ -39,6 +39,12 @@ func (r *RestoreTask) restoreLabels() error {
 	}
 
 	for _, label := range backupLabels {
+		select {
+		case <-r.ctx.Done():
+			return r.ctx.Err()
+		default:
+		}
+
 		matchIndex := slices.IndexFunc(remoteLabels, func(remoteLabel proton.Label) bool {
 			return (label.ID == remoteLabel.ID) || (label.Name == remoteLabel.Name)
 		})

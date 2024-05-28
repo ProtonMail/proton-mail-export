@@ -22,78 +22,45 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func (r *RestoreTask) validateBackupDir() error {
 	r.log.Info("Verifying backup folder")
 
-	dirEntry, err := os.ReadDir(r.backupDir)
+	var importableCount int
+	err := r.walkBackupDir(func(_, _ string) {
+		importableCount++
+	})
+
 	if err != nil {
 		return err
 	}
 
-	var labelsFileFound bool
-	var importableCount int
-	var dirs []string
-	for _, entry := range dirEntry {
-		select {
-		case <-r.ctx.Done():
-			return r.ctx.Err()
-		default:
-		}
-
-		name := entry.Name()
-		if entry.IsDir() {
-			if mailFolderRegExp.MatchString(name) {
-				r.log.WithField("name", name).Info("Found a potential backup sub-folder")
-				dirs = append(dirs, name)
-			}
-			continue
-		}
-
-		if strings.EqualFold(name, getLabelFileName()) {
-			labelsFileFound = true
-		}
-
-		if !strings.HasSuffix(name, ".eml") {
-			if !strings.HasSuffix(name, ".metadata.json") {
-				r.log.WithField("fileName", name).Warn("Ignoring unknown file")
-			}
-			continue
-		}
-
-		jsonFile := strings.TrimSuffix(name, ".eml") + ".metadata.json"
-		stats, err := os.Stat(filepath.Join(r.backupDir, jsonFile))
-		if err != nil {
-			r.log.WithError(err).WithField("jsonFile", jsonFile).Warn("EML file has no associated JSON file")
-			continue
-		}
-		if stats.IsDir() {
-			r.log.WithField("jsonFile", jsonFile).Warn("JSON file is directory")
-			continue
-		}
-		importableCount++
-	}
-
 	if importableCount > 0 {
-		if !labelsFileFound {
-			return fmt.Errorf("the labels file '%v' could not be found", getLabelFileName())
+		labelsFilename := getLabelFileName()
+		if _, err := os.Stat(filepath.Join(r.backupDir, labelsFilename)); errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
 		}
 
-		r.log.WithField("mailCount", importableCount).Info("Importable emails found")
+		r.log.WithField("messageCount", importableCount).Info("Found importable messages")
 		return nil
 	}
 
-	if len(dirs) == 0 {
+	subDirs, err := r.getTimestampedBackupDirs()
+	if err != nil {
+		return err
+	}
+
+	if len(subDirs) == 0 {
 		return errors.New("no importable mail found")
 	}
 
-	if len(dirs) > 1 {
+	if len(subDirs) > 1 {
 		return errors.New("the specified folder contains more than one backup sub-folder")
 	}
 
-	r.log.WithField("folderName", dirs[0]).Info("A potential backup sub-folder has been found and will be inspected")
-	r.backupDir = filepath.Join(r.backupDir, dirs[0])
+	r.log.WithField("folderName", subDirs[0]).Info("A potential backup sub-folder has been found and will be inspected")
+	r.backupDir = subDirs[0]
+
 	return r.validateBackupDir()
 }

@@ -21,6 +21,9 @@ import (
 	"github.com/ProtonMail/go-proton-api"
 )
 
+const emlExtension = ".eml"
+const jsonMetadataExtension = ".metadata.json"
+
 func nonSystemLabel(label proton.Label) bool {
 	return label.Type != proton.LabelTypeSystem
 }

@@ -26,6 +26,8 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-proton-api"
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/bradenaw/juniper/stream"
 	"github.com/sirupsen/logrus"
 )
 
@@ -138,6 +140,12 @@ func (arc *AutoRetryClient) GetMessageMetadataPage(ctx context.Context, page, pa
 func (arc *AutoRetryClient) GetAttachmentInto(ctx context.Context, attachmentID string, reader io.ReaderFrom) error {
 	return arc.repeatRequest(ctx, func(ctx context.Context, client Client) error {
 		return client.GetAttachmentInto(ctx, attachmentID, reader)
+	})
+}
+
+func (arc *AutoRetryClient) ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (stream.Stream[proton.ImportRes], error) {
+	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (stream.Stream[proton.ImportRes], error) {
+		return client.ImportMessages(ctx, addrKR, workers, buffer, req...)
 	})
 }
 

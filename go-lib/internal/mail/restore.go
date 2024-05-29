@@ -19,9 +19,12 @@ package mail
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"regexp"
 
+	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/sirupsen/logrus"
 )
@@ -31,6 +34,8 @@ var mailFolderRegExp = regexp.MustCompile(`^mail_\d{8}_\d{6}$`)
 type RestoreTask struct {
 	ctx          context.Context
 	ctxCancel    func()
+	addrKR       *apiclient.UnlockedKeyRing
+	addrID       string
 	backupDir    string
 	session      *session.Session
 	log          *logrus.Entry
@@ -43,16 +48,30 @@ func NewRestoreTask(ctx context.Context, backupDir string, session *session.Sess
 		return nil, err
 	}
 
+	addrID, err := getPrimaryAddressID(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
+	log := logrus.WithField("backup", "mail").WithField("userID", session.GetUser().ID)
+
+	addrKR, err := getUnlockedAddressKeyRing(ctx, session)
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &RestoreTask{
 		ctx:          ctx,
 		ctxCancel:    cancel,
+		addrKR:       addrKR,
+		addrID:       addrID,
 		backupDir:    absPath,
 		session:      session,
-		log:          logrus.WithField("backup", "mail").WithField("userID", session.GetUser().ID),
+		log:          log,
 		labelMapping: make(map[string]string),
 	}, nil
+}
+
+func (r *RestoreTask) Teardown() {
+	r.addrKR.Close()
 }
 
 func (r *RestoreTask) Run(_ Reporter) error {
@@ -68,4 +87,48 @@ func (r *RestoreTask) Run(_ Reporter) error {
 	}
 
 	return r.importMails()
+}
+
+func getPrimaryAddressID(ctx context.Context, session *session.Session) (string, error) {
+	addresses, err := session.GetClient().GetAddresses(ctx)
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(addresses) == 0 {
+		return "", errors.New("address list is empty")
+	}
+
+	return addresses[0].ID, nil
+}
+
+func getUnlockedAddressKeyRing(ctx context.Context, session *session.Session) (*apiclient.UnlockedKeyRing, error) {
+	client := session.GetClient()
+	user := session.GetUser()
+	salts := session.GetUserSalts()
+
+	saltedKeyPass, err := salts.SaltForKey(session.GetMailboxPassword(), user.Keys.Primary().ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to salt key password: %w", err)
+	}
+
+	if userKR, err := user.Keys.Unlock(saltedKeyPass, nil); err != nil {
+		return nil, fmt.Errorf("failed to unlock user keys: %w", err)
+	} else if userKR.CountDecryptionEntities() == 0 {
+		return nil, fmt.Errorf("failed to unlock user keys")
+	}
+
+	// Get User addresses
+	addresses, err := client.GetAddresses(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user addresses: %w", err)
+	}
+
+	addrKR, err := apiclient.NewUnlockedKeyRing(user, addresses, saltedKeyPass)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unlock user keyring:%w", err)
+	}
+
+	return addrKR, nil
 }

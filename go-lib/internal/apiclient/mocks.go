@@ -10,6 +10,7 @@ import (
 	reflect "reflect"
 
 	proton "github.com/ProtonMail/go-proton-api"
+	crypto "github.com/ProtonMail/gopenpgp/v2/crypto"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -264,6 +265,26 @@ func (m *MockClient) GetUserWithHV(arg0 context.Context, arg1 *proton.APIHVDetai
 func (mr *MockClientMockRecorder) GetUserWithHV(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserWithHV", reflect.TypeOf((*MockClient)(nil).GetUserWithHV), arg0, arg1)
+}
+
+// ImportMessages mocks base method.
+func (m *MockClient) ImportMessages(arg0 context.Context, arg1 *crypto.KeyRing, arg2, arg3 int, arg4 ...proton.ImportReq) (proton.ImportResStream, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ImportMessages", varargs...)
+	ret0, _ := ret[0].(proton.ImportResStream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ImportMessages indicates an expected call of ImportMessages.
+func (mr *MockClientMockRecorder) ImportMessages(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportMessages", reflect.TypeOf((*MockClient)(nil).ImportMessages), varargs...)
 }
 
 // MockRetryStrategy is a mock of RetryStrategy interface.

@@ -143,7 +143,7 @@ func (arc *AutoRetryClient) GetAttachmentInto(ctx context.Context, attachmentID 
 	})
 }
 
-func (arc *AutoRetryClient) ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (stream.Stream[proton.ImportRes], error) {
+func (arc *AutoRetryClient) ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (proton.ImportResStream, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (stream.Stream[proton.ImportRes], error) {
 		return client.ImportMessages(ctx, addrKR, workers, buffer, req...)
 	})

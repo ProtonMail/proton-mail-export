@@ -56,6 +56,10 @@ func NewRestoreTask(ctx context.Context, backupDir string, session *session.Sess
 	log := logrus.WithField("backup", "mail").WithField("userID", session.GetUser().ID)
 
 	addrKR, err := getUnlockedAddressKeyRing(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &RestoreTask{

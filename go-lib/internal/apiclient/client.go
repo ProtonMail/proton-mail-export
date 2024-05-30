@@ -23,7 +23,6 @@ import (
 
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/bradenaw/juniper/stream"
 )
 
 type Builder interface {
@@ -46,5 +45,5 @@ type Client interface {
 	GetMessage(ctx context.Context, messageID string) (proton.Message, error)
 	GetMessageMetadataPage(ctx context.Context, page, pageSize int, filter proton.MessageFilter) ([]proton.MessageMetadata, error)
 	GetAttachmentInto(ctx context.Context, attachmentID string, reader io.ReaderFrom) error
-	ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (stream.Stream[proton.ImportRes], error)
+	ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (proton.ImportResStream, error)
 }

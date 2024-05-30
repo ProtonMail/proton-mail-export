@@ -54,7 +54,6 @@ func (r *RestoreTask) importMails() error {
 		}
 		r.log.WithField("count", count).Info("Counting")
 		r.importMail(literal, metadata.Payload)
-
 	})
 }
 
@@ -75,19 +74,19 @@ func (r *RestoreTask) importMail(literal []byte, metadata proton.MessageMetadata
 
 	parser, err := parser.New(bytes.NewReader(literal))
 	if err != nil {
-		log.WithField(metadata.ID, metadata).WithError(err).Error("Failed to parse literal for message")
+		log.WithField(metadata.ID, metadata).WithError(err).Error("Failed to parse literal for message.")
 		return
 	}
 
 	addrKR, ok := r.addrKR.GetAddrKeyRing(r.addrID)
 	if !ok {
-		log.WithError(err).WithField("addressID", r.addrID).Error("unable to get keyring for address %s", r.addrID)
+		log.WithError(err).WithField("addressID", r.addrID).Error("unable to get keyring for address.")
 		return
 	}
 
 	primaryKey, err := addrKR.FirstKey()
 	if err != nil {
-		log.WithError(err).WithField("addressID", r.addrID).Error("unable to get primary key for address %s", r.addrID)
+		log.WithError(err).WithField("addressID", r.addrID).Error("unable to get primary key for address.")
 		return
 	}
 
@@ -118,7 +117,7 @@ func (r *RestoreTask) importMail(literal []byte, metadata proton.MessageMetadata
 }
 
 func (r *RestoreTask) backupLabelsToRemoteLabels(labels []string) ([]string, error) {
-	var result []string
+	var result = make([]string, 0, len(labels))
 	for _, label := range labels {
 		if !IsAcceptableLabel(label) {
 			continue
@@ -141,13 +140,12 @@ func IsAcceptableLabel(label string) bool {
 		proton.AllSentLabel,
 		proton.TrashLabel,
 		proton.SpamLabel,
-		//proton.AllMailLabel,
 		proton.ArchiveLabel,
 		proton.SentLabel,
 		proton.DraftsLabel,
 		proton.OutboxLabel,
 		proton.StarredLabel,
 		proton.AllScheduledLabel,
-	}
+	} // proton.AllMailLabel is discarded on purpose as it would cause import to fail.
 	return (len(label) > 4) || slices.Contains(acceptableLabel, label)
 }

@@ -20,6 +20,7 @@ package mail
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/go-proton-api"
@@ -78,12 +79,32 @@ func (r *RestoreTask) readLabelFile() ([]proton.Label, error) {
 }
 
 func (r *RestoreTask) recreateLabel(label proton.Label) (proton.Label, error) {
-	req := proton.CreateLabelReq{
-		Name:     label.Name,
-		Color:    label.Color,
-		Type:     label.Type,
-		ParentID: "",
+	return r.session.GetClient().CreateLabel(
+		r.ctx,
+		proton.CreateLabelReq{
+			Name:     label.Name,
+			Color:    label.Color,
+			Type:     label.Type,
+			ParentID: "",
+		},
+	)
+}
+
+func (r *RestoreTask) createImportLabel() error {
+	label, err := r.session.GetClient().CreateLabel(
+		r.ctx,
+		proton.CreateLabelReq{
+			Name:     "Import " + time.Now().Format("2006-01-02 15:04:05"),
+			Color:    "#f66",
+			Type:     proton.LabelTypeLabel,
+			ParentID: "",
+		},
+	)
+
+	if err != nil {
+		return err
 	}
 
-	return r.session.GetClient().CreateLabel(r.ctx, req)
+	r.importLabelID = label.ID
+	return nil
 }

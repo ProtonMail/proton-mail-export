@@ -59,7 +59,7 @@ func (r *RestoreTask) importMails() error {
 
 func (r *RestoreTask) importMail(literal []byte, metadata proton.MessageMetadata) {
 	log := r.log.WithField("messageID", metadata.AddressID)
-	labelIDs, err := r.backupLabelsToRemoteLabels(metadata.LabelIDs)
+	labelIDs, err := r.getLabelList(metadata.LabelIDs)
 	if err != nil {
 		log.WithField("messageID", metadata.ID).WithError(err).Error("Could not map label to remote labels.")
 		return
@@ -108,7 +108,7 @@ func (r *RestoreTask) importMail(literal []byte, metadata proton.MessageMetadata
 		return
 	}
 
-	res, err := stream.Collect(r.ctx, str)
+	res, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](str))
 	if err != nil {
 		log.WithError(err).Error("failed to import message")
 	}
@@ -116,8 +116,10 @@ func (r *RestoreTask) importMail(literal []byte, metadata proton.MessageMetadata
 	log.WithField("newMessageID", res[0].MessageID).Info("Message was imported.)")
 }
 
-func (r *RestoreTask) backupLabelsToRemoteLabels(labels []string) ([]string, error) {
-	var result = make([]string, 0, len(labels))
+func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {
+	var result = make([]string, 0, len(labels)+1)
+	result = append(result, r.importLabelID)
+
 	for _, label := range labels {
 		if !IsAcceptableLabel(label) {
 			continue

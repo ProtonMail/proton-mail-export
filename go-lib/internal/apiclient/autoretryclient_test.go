@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/go-proton-api"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAutoRetryClientRepetition(t *testing.T) {

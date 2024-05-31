@@ -9,9 +9,9 @@ import (
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/xmaps"
 	"github.com/bradenaw/juniper/xslices"
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestMetadataStage_Run(t *testing.T) {

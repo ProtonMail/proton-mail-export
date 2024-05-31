@@ -25,8 +25,8 @@ import (
 	"github.com/ProtonMail/export-tool/internal/reporter"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const TestUserEmail = "foo@bar.com"

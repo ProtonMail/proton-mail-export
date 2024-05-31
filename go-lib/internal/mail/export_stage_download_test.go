@@ -26,9 +26,9 @@ import (
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
-	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestDownloadMessageAndAttachments_NoAttachments(t *testing.T) {

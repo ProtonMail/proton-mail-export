@@ -43,7 +43,12 @@ func NewAutoRetryClientBuilder(builder Builder, retryBuilder RetryStrategyBuilde
 	}
 }
 
-func (a *AutoRetryClientBuilder) NewClient(ctx context.Context, username string, password []byte, hvToken *proton.APIHVDetails) (Client, proton.Auth, error) {
+func (a *AutoRetryClientBuilder) NewClient(
+	ctx context.Context,
+	username string,
+	password []byte,
+	hvToken *proton.APIHVDetails,
+) (Client, proton.Auth, error) {
 	retryStrategy := a.retryStrategyBuilder.NewRetryStrategy()
 	for {
 		client, auth, err := a.builder.NewClient(ctx, username, password, hvToken)
@@ -131,7 +136,11 @@ func (arc *AutoRetryClient) GetMessage(ctx context.Context, messageID string) (p
 	})
 }
 
-func (arc *AutoRetryClient) GetMessageMetadataPage(ctx context.Context, page, pageSize int, filter proton.MessageFilter) ([]proton.MessageMetadata, error) {
+func (arc *AutoRetryClient) GetMessageMetadataPage(
+	ctx context.Context,
+	page, pageSize int,
+	filter proton.MessageFilter,
+) ([]proton.MessageMetadata, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) ([]proton.MessageMetadata, error) {
 		return client.GetMessageMetadataPage(ctx, page, pageSize, filter)
 	})
@@ -143,7 +152,12 @@ func (arc *AutoRetryClient) GetAttachmentInto(ctx context.Context, attachmentID 
 	})
 }
 
-func (arc *AutoRetryClient) ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (proton.ImportResStream, error) {
+func (arc *AutoRetryClient) ImportMessages(
+	ctx context.Context,
+	addrKR *crypto.KeyRing,
+	workers, buffer int,
+	req ...proton.ImportReq,
+) (proton.ImportResStream, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (stream.Stream[proton.ImportRes], error) {
 		return client.ImportMessages(ctx, addrKR, workers, buffer, req...)
 	})

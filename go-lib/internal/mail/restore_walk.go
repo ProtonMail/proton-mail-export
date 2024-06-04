@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (r *RestoreTask) walkBackupDir(fn func(emlPath, metadataPath string)) error {
+func (r *RestoreTask) walkBackupDir(fn func(emlPath string)) error {
 	return filepath.Walk(r.backupDir, func(path string, info fs.FileInfo, err error) error {
 		select {
 		case <-r.ctx.Done():
@@ -32,16 +32,19 @@ func (r *RestoreTask) walkBackupDir(fn func(emlPath, metadataPath string)) error
 			return nil
 		}
 
-		metadataPath := strings.Trim(emlPath, emlExtension) + jsonMetadataExtension
-		if _, err := os.Stat(metadataPath); errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(emlToMetadataFilename(emlPath)); errors.Is(err, os.ErrNotExist) {
 			logrus.WithField("path", emlPath).Warn("Skipping EML file with no associated metadata file.")
 			return nil
 		}
 
-		fn(emlPath, metadataPath)
+		fn(emlPath)
 
 		return nil
 	})
+}
+
+func emlToMetadataFilename(emlPath string) string {
+	return strings.Trim(emlPath, emlExtension) + jsonMetadataExtension
 }
 
 func (r *RestoreTask) getTimestampedBackupDirs() ([]string, error) {

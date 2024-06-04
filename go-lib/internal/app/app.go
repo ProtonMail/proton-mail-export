@@ -11,8 +11,11 @@ import "C"
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sync"
 
 	"github.com/ProtonMail/export-tool/internal"
 	"github.com/ProtonMail/export-tool/internal/apiclient"
@@ -61,6 +64,17 @@ var (
 )
 
 func Run() {
+	folder, err := getDefaultOperationFolder()
+	if err != nil {
+		fatal(err)
+	}
+
+	if err := initApp(filepath.Join(folder, "logs"), func() {}); err != nil {
+		fatal(err)
+	}
+
+	defer closeApp()
+
 	app := &cli.App{
 		Name:   "proton-mail-export-cli",
 		Action: run,
@@ -75,8 +89,13 @@ func Run() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		logrus.WithError(err).Fatal("Fatal error")
+		fatal(err)
 	}
+}
+
+func fatal(err error) {
+	fmt.Printf("\nFatal error: %v\n", err)
+	logrus.WithError(err).Fatal("Fatal error")
 }
 
 func run(ctx *cli.Context) error {
@@ -123,8 +142,11 @@ func printHeader() {
 }
 
 func checkForNewVersion() {
+	fmt.Print("Checking for new version: ")
 	if internal.HasNewVersion() {
-		fmt.Println("A new version is available at: https://proton.me/support/proton-mail-export-tool")
+		fmt.Println("a new version is available at: https://proton.me/support/proton-mail-export-tool")
+	} else {
+		fmt.Println("your version is up to date")
 	}
 }
 
@@ -233,3 +255,67 @@ func runRestore(ctx context.Context, backupPath string, session *session.Session
 
 	return restoreTask.Run(newCliReporter())
 }
+
+func initApp(path string, onRecover func()) error {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+
+	if err := sentry.InitSentry(); err != nil {
+		return err
+	}
+
+	if state.file != nil {
+		return errors.New("application has already been initialized")
+	}
+
+	if err := os.MkdirAll(path, 0o700); err != nil {
+		return err
+	}
+
+	path = filepath.Join(path, internal.NewLogFileName())
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+
+	logrus.SetOutput(file)
+	logrus.SetFormatter(internal.NewLogFormatter())
+	internal.LogPrelude()
+
+	if onRecover != nil {
+		state.onRecover = onRecover
+	} else {
+		state.onRecover = func() {
+			os.Exit(-200)
+		}
+	}
+
+	state.reporter = sentry.NewReporter()
+
+	return nil
+}
+
+func closeApp() {
+	state.mutex.Lock()
+	defer state.mutex.Unlock()
+
+	if state.file != nil {
+		logrus.SetOutput(os.Stdout)
+		if err := state.file.Close(); err != nil {
+			logrus.WithError(err).Error("Failed to close log file")
+		} else {
+			state.file = nil
+		}
+	}
+}
+
+type globalState struct {
+	mutex     sync.Mutex
+	file      *os.File
+	logPath   string
+	onRecover func()
+	reporter  reporter.Reporter
+}
+
+//nolint:gochecknoglobals
+var state globalState

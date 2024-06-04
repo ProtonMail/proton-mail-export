@@ -206,7 +206,7 @@ func (m *mailExportReporter) SetMessageTotal(total uint64) {
 	m.totalMessageCount.Store(total)
 }
 
-func (m *mailExportReporter) SetMessageDownloaded(total uint64) {
+func (m *mailExportReporter) SetMessageProcessed(total uint64) {
 	m.currentMessageCount.Store(total)
 }
 

@@ -23,9 +23,11 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/session"
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,9 +35,8 @@ var mailFolderRegExp = regexp.MustCompile(`^mail_\d{8}_\d{6}$`)
 
 type RestoreTask struct {
 	ctx           context.Context
+	startTime     time.Time
 	ctxCancel     func()
-	addrKR        *apiclient.UnlockedKeyRing
-	addrID        string
 	backupDir     string
 	session       *session.Session
 	log           *logrus.Entry
@@ -49,25 +50,13 @@ func NewRestoreTask(ctx context.Context, backupDir string, session *session.Sess
 		return nil, err
 	}
 
-	addrID, err := getPrimaryAddressID(ctx, session)
-	if err != nil {
-		return nil, err
-	}
-
 	log := logrus.WithField("backup", "mail").WithField("userID", session.GetUser().ID)
-
-	addrKR, err := getUnlockedAddressKeyRing(ctx, session)
-	if err != nil {
-		return nil, err
-	}
 
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &RestoreTask{
 		ctx:          ctx,
 		ctxCancel:    cancel,
-		addrKR:       addrKR,
-		addrID:       addrID,
 		backupDir:    absPath,
 		session:      session,
 		log:          log,
@@ -75,15 +64,12 @@ func NewRestoreTask(ctx context.Context, backupDir string, session *session.Sess
 	}, nil
 }
 
-func (r *RestoreTask) Teardown() {
-	r.addrKR.Close()
-}
-
-func (r *RestoreTask) Run(_ Reporter) error {
-	defer r.log.Info("Finished")
+func (r *RestoreTask) Run(reporter Reporter) error {
+	r.startTime = time.Now()
+	defer func() { r.log.WithField("duration", time.Since(r.startTime)).Info("Finished") }()
 	r.log.WithField("backupDir", r.backupDir).Info("Starting")
 
-	if err := r.validateBackupDir(); err != nil {
+	if err := r.validateBackupDir(reporter); err != nil {
 		return err
 	}
 
@@ -95,49 +81,45 @@ func (r *RestoreTask) Run(_ Reporter) error {
 		return err
 	}
 
-	return r.importMails()
+	return r.importMails(reporter)
 }
 
-func getPrimaryAddressID(ctx context.Context, session *session.Session) (string, error) {
-	addresses, err := session.GetClient().GetAddresses(ctx)
-
+func (r *RestoreTask) withAddrKR(fn func(addrID string, addrKR *crypto.KeyRing) error) error {
+	client := r.session.GetClient()
+	addresses, err := client.GetAddresses(r.ctx)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if len(addresses) == 0 {
-		return "", errors.New("address list is empty")
+		return errors.New("address list is empty")
 	}
 
-	return addresses[0].ID, nil
-}
+	addrID := addresses[0].ID
+	user := r.session.GetUser()
+	salts := r.session.GetUserSalts()
 
-func getUnlockedAddressKeyRing(ctx context.Context, session *session.Session) (*apiclient.UnlockedKeyRing, error) {
-	client := session.GetClient()
-	user := session.GetUser()
-	salts := session.GetUserSalts()
-
-	saltedKeyPass, err := salts.SaltForKey(session.GetMailboxPassword(), user.Keys.Primary().ID)
+	saltedKeyPass, err := salts.SaltForKey(r.session.GetMailboxPassword(), user.Keys.Primary().ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to salt key password: %w", err)
+		return fmt.Errorf("failed to salt key password: %w", err)
 	}
 
 	if userKR, err := user.Keys.Unlock(saltedKeyPass, nil); err != nil {
-		return nil, fmt.Errorf("failed to unlock user keys: %w", err)
+		return fmt.Errorf("failed to unlock user keys: %w", err)
 	} else if userKR.CountDecryptionEntities() == 0 {
-		return nil, fmt.Errorf("failed to unlock user keys")
+		return fmt.Errorf("failed to unlock user keys")
 	}
 
-	// Get User addresses
-	addresses, err := client.GetAddresses(ctx)
+	unlockedKR, err := apiclient.NewUnlockedKeyRing(user, addresses, saltedKeyPass)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user addresses: %w", err)
+		return fmt.Errorf("failed to unlock user keyring:%w", err)
+	}
+	defer unlockedKR.Close()
+
+	addrKR, ok := unlockedKR.GetAddrKeyRing(addresses[0].ID)
+	if !ok {
+		return fmt.Errorf("failed to get primary address keyring")
 	}
 
-	addrKR, err := apiclient.NewUnlockedKeyRing(user, addresses, saltedKeyPass)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unlock user keyring:%w", err)
-	}
-
-	return addrKR, nil
+	return fn(addrID, addrKR)
 }

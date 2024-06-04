@@ -24,11 +24,11 @@ import (
 	"path/filepath"
 )
 
-func (r *RestoreTask) validateBackupDir() error {
+func (r *RestoreTask) validateBackupDir(reporter Reporter) error {
 	r.log.Info("Verifying backup folder")
 
-	var importableCount int
-	err := r.walkBackupDir(func(_, _ string) {
+	var importableCount uint64
+	err := r.walkBackupDir(func(_ string) {
 		importableCount++
 	})
 
@@ -42,6 +42,8 @@ func (r *RestoreTask) validateBackupDir() error {
 			return fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
 		}
 
+		reporter.SetMessageTotal(importableCount)
+		reporter.SetMessageProcessed(0)
 		r.log.WithField("messageCount", importableCount).Info("Found importable messages")
 		return nil
 	}
@@ -62,5 +64,5 @@ func (r *RestoreTask) validateBackupDir() error {
 	r.log.WithField("folderName", subDirs[0]).Info("A potential backup sub-folder has been found and will be inspected")
 	r.backupDir = subDirs[0]
 
-	return r.validateBackupDir()
+	return r.validateBackupDir(reporter)
 }

@@ -123,16 +123,16 @@ func (mr *MockReporterMockRecorder) OnProgress(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProgress", reflect.TypeOf((*MockReporter)(nil).OnProgress), arg0)
 }
 
-// SetMessageDownloaded mocks base method.
-func (m *MockReporter) SetMessageDownloaded(arg0 uint64) {
+// SetMessageProcessed mocks base method.
+func (m *MockReporter) SetMessageProcessed(arg0 uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetMessageDownloaded", arg0)
+	m.ctrl.Call(m, "SetMessageProcessed", arg0)
 }
 
-// SetMessageDownloaded indicates an expected call of SetMessageDownloaded.
-func (mr *MockReporterMockRecorder) SetMessageDownloaded(arg0 any) *gomock.Call {
+// SetMessageProcessed indicates an expected call of SetMessageProcessed.
+func (mr *MockReporterMockRecorder) SetMessageProcessed(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageDownloaded", reflect.TypeOf((*MockReporter)(nil).SetMessageDownloaded), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageProcessed", reflect.TypeOf((*MockReporter)(nil).SetMessageProcessed), arg0)
 }
 
 // SetMessageTotal mocks base method.

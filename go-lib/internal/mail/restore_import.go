@@ -40,7 +40,7 @@ const messageBatchSize = 10
 
 func (r *RestoreTask) importMails(reporter Reporter) error {
 	return r.withAddrKR(func(addrID string, addrKR *crypto.KeyRing) error {
-		acc := make([]Message, 0, messageBatchSize)
+		messages := make([]Message, 0, messageBatchSize)
 		err := r.walkBackupDir(func(emlPath string) {
 			literal, err := os.ReadFile(emlPath) //nolint:gosec
 			if err != nil {
@@ -60,22 +60,22 @@ func (r *RestoreTask) importMails(reporter Reporter) error {
 				return
 			}
 
-			acc = append(acc, Message{literal: literal, metadata: metadata.Payload})
-			if len(acc) >= messageBatchSize {
-				r.importMail(addrID, addrKR, acc, reporter)
-				acc = acc[:0]
+			messages = append(messages, Message{literal: literal, metadata: metadata.Payload})
+			if len(messages) >= messageBatchSize {
+				r.importMailBatch(addrID, addrKR, messages, reporter)
+				messages = messages[:0]
 			}
 		})
 
-		if len(acc) > 0 {
-			r.importMail(addrID, addrKR, acc, reporter)
+		if len(messages) > 0 {
+			r.importMailBatch(addrID, addrKR, messages, reporter)
 		}
 
 		return err
 	})
 }
 
-func (r *RestoreTask) importMail(addrID string, addrKR *crypto.KeyRing, messages []Message, reporter Reporter) {
+func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, messages []Message, reporter Reporter) {
 	reqs := make([]proton.ImportReq, 0, len(messages))
 	for _, message := range messages {
 		log := r.log.WithField("messageID", message.metadata.AddressID)

@@ -279,7 +279,13 @@ func initApp(path string, onRecover func()) error {
 	}
 
 	logrus.SetOutput(file)
-	logrus.SetFormatter(internal.NewLogFormatter())
+	logrus.SetFormatter(&logrus.TextFormatter{
+		DisableColors:    true,
+		ForceQuote:       true,
+		FullTimestamp:    true,
+		QuoteEmptyFields: true,
+		TimestampFormat:  "2006-01-02 15:04:05.000",
+	})
 	internal.LogPrelude()
 
 	if onRecover != nil {

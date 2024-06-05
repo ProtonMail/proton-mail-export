@@ -24,41 +24,41 @@ import (
 	"path/filepath"
 )
 
-func (r *RestoreTask) validateBackupDir(reporter Reporter) error {
+func (r *RestoreTask) validateBackupDir(reporter Reporter) (int64, error) {
 	r.log.Info("Verifying backup folder")
 
-	var importableCount uint64
+	var importableCount int64
 	err := r.walkBackupDir(func(_ string) {
 		importableCount++
 	})
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if importableCount > 0 {
 		labelsFilename := getLabelFileName()
 		if _, err := os.Stat(filepath.Join(r.backupDir, labelsFilename)); errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
+			return 0, fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
 		}
 
-		reporter.SetMessageTotal(importableCount)
+		reporter.SetMessageTotal(uint64(importableCount))
 		reporter.SetMessageProcessed(0)
 		r.log.WithField("messageCount", importableCount).Info("Found importable messages")
-		return nil
+		return importableCount, nil
 	}
 
 	subDirs, err := r.getTimestampedBackupDirs()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if len(subDirs) == 0 {
-		return errors.New("no importable mail found")
+		return 0, errors.New("no importable mail found")
 	}
 
 	if len(subDirs) > 1 {
-		return errors.New("the specified folder contains more than one backup sub-folder")
+		return 0, errors.New("the specified folder contains more than one backup sub-folder")
 	}
 
 	r.log.WithField("folderName", subDirs[0]).Info("A potential backup sub-folder has been found and will be inspected")

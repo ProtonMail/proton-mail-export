@@ -147,8 +147,8 @@ Session::LoginState Session::getLoginState() const {
 }
 
 ExportMail Session::newExportMail(const char* exportPath) const {
-    etExportMail* exportPtr = nullptr;
-    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportMail(ptr, exportPath, &exportPtr); });
+    etExportBackup* exportPtr = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportBackup(ptr, exportPath, &exportPtr); });
 
     return ExportMail(*this, exportPtr);
 }

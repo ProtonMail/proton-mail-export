@@ -1,27 +1,27 @@
-#ifndef ET_EXPORT_MAIL_H
-#define ET_EXPORT_MAIL_H
+#ifndef ET_EXPORT_BACKUP_H
+#define ET_EXPORT_BACKUP_H
 
 #include "etsession.h"
 
-typedef struct etExportMail etExportMail;
+typedef struct etExportBackup etExportBackup;
 
-typedef enum etExportMailStatus {
-	ET_EXPORT_MAIL_STATUS_OK,
-	ET_EXPORT_MAIL_STATUS_ERROR,
-	ET_EXPORT_MAIL_STATUS_INVALID,
-	ET_EXPORT_MAIL_STATUS_CANCELLED,
-} etExportMailStatus;
+typedef enum etExportBackupStatus {
+	ET_EXPORT_BACKUP_STATUS_OK,
+	ET_EXPORT_BACKUP_STATUS_ERROR,
+	ET_EXPORT_BACKUP_STATUS_INVALID,
+	ET_EXPORT_BACKUP_STATUS_CANCELLED,
+} etExportBackupStatus;
 
-typedef enum etExportMailMessageType {
-	ET_EXPORT_MAIL_MESSAGE_TYPE_PROGRESS,
-} etExportMailMessageType;
+typedef enum etExportBackupMessageType {
+	ET_EXPORT_BACKUP_MESSAGE_TYPE_PROGRESS,
+} etExportBackupMessageType;
 
-typedef struct etExportMailCallbacks {
+typedef struct etExportBackupCallbacks {
     void* ptr;
     void (*onProgress)(void* ptr, float progress);
-} etExportMailCallbacks;
+} etExportBackupCallbacks;
 
-#endif // ET_EXPORT_MAIL_H
+#endif // ET_EXPORT_BACKUP_H
 
 
 

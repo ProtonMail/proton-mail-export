@@ -22,53 +22,53 @@
 
 namespace etcpp {
 
-inline void mapETExportMailStatusToException(etExportMail* ptr, etExportMailStatus status) {
+inline void mapETExportMailStatusToException(etExportBackup* ptr, etExportBackupStatus status) {
     switch (status) {
-    case ET_EXPORT_MAIL_STATUS_INVALID:
+    case ET_EXPORT_BACKUP_STATUS_INVALID:
         throw SessionException("Invalid instance");
-    case ET_EXPORT_MAIL_STATUS_ERROR:
+    case ET_EXPORT_BACKUP_STATUS_ERROR:
     {
-        const char* lastErr = etExportMailGetLastError(ptr);
+        const char* lastErr = etExportBackupGetLastError(ptr);
         if (lastErr == nullptr) {
             lastErr = "unknown";
         }
         throw ExportMailException(lastErr);
     }
-    case ET_EXPORT_MAIL_STATUS_CANCELLED:
+    case ET_EXPORT_BACKUP_STATUS_CANCELLED:
         throw CancelledException();
-    case ET_EXPORT_MAIL_STATUS_OK:
+    case ET_EXPORT_BACKUP_STATUS_OK:
         break;
     }
 }
 
-etExportMailCallbacks makeETCallback(ExportMailCallback& cb) {
-    auto r = etExportMailCallbacks{};
+etExportBackupCallbacks makeETCallback(ExportMailCallback& cb) {
+    auto r = etExportBackupCallbacks{};
     r.ptr = &cb;
     r.onProgress = [](void* p, float progress) { reinterpret_cast<ExportMailCallback*>(p)->onProgress(progress); };
 
     return r;
 }
 
-ExportMail::ExportMail(const etcpp::Session& session, etExportMail* ptr) : mSession(session), mPtr(ptr) {}
+ExportMail::ExportMail(const etcpp::Session& session, etExportBackup* ptr) : mSession(session), mPtr(ptr) {}
 
 ExportMail::~ExportMail() {
-    wrapCCall([](etExportMail* ptr) { return etExportMailDelete(ptr); });
+    wrapCCall([](etExportBackup* ptr) { return etExportBackupDelete(ptr); });
 }
 
 void ExportMail::start(ExportMailCallback& cb) {
-    wrapCCall([&](etExportMail* ptr) {
+    wrapCCall([&](etExportBackup* ptr) {
         auto etCb = makeETCallback(cb);
-        return etExportMailStart(ptr, &etCb);
+        return etExportBackupStart(ptr, &etCb);
     });
 }
 
 void ExportMail::cancel() {
-    wrapCCall([&](etExportMail* ptr) { return etExportMailCancel(ptr); });
+    wrapCCall([&](etExportBackup* ptr) { return etExportBackupCancel(ptr); });
 }
 
 std::filesystem::path ExportMail::getExportPath() const {
     char* outPath = nullptr;
-    wrapCCall([&](etExportMail* ptr) { return etExportMailGetExportPath(ptr, &outPath); });
+    wrapCCall([&](etExportBackup* ptr) { return etExportBackupGetExportPath(ptr, &outPath); });
 
     auto result = std::filesystem::u8path(outPath);
     etFree(outPath);
@@ -78,19 +78,19 @@ std::filesystem::path ExportMail::getExportPath() const {
 
 std::uint64_t ExportMail::getExpectedDiskUsage() const {
     std::uint64_t usage = 0;
-    wrapCCall([&](etExportMail* ptr) { return etExportMailGetRequiredDiskSpaceEstimate(ptr, &usage); });
+    wrapCCall([&](etExportBackup* ptr) { return etExportBackupGetRequiredDiskSpaceEstimate(ptr, &usage); });
     return usage;
 }
 
 template<class F>
 void ExportMail::wrapCCall(F func) {
-    static_assert(std::is_invocable_r_v<etExportMailStatus, F, etExportMail*>, "invalid function/lambda signature");
+    static_assert(std::is_invocable_r_v<etExportBackupStatus, F, etExportBackup*>, "invalid function/lambda signature");
     mapETExportMailStatusToException(mPtr, func(mPtr));
 }
 
 template<class F>
 void ExportMail::wrapCCall(F func) const {
-    static_assert(std::is_invocable_r_v<etExportMailStatus, F, etExportMail*>, "invalid function/lambda signature");
+    static_assert(std::is_invocable_r_v<etExportBackupStatus, F, etExportBackup*>, "invalid function/lambda signature");
     mapETExportMailStatusToException(mPtr, func(mPtr));
 }
 

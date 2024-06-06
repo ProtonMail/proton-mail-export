@@ -24,7 +24,7 @@
 #include "etexception.hpp"
 
 extern "C" {
-struct etExportMail;
+struct etExportBackup;
 }
 
 namespace etcpp {
@@ -49,10 +49,10 @@ class ExportMail final {
 
 private:
     const Session& mSession;
-    etExportMail* mPtr;
+    etExportBackup* mPtr;
 
 protected:
-    ExportMail(const Session& session, etExportMail* ptr);
+    ExportMail(const Session& session, etExportBackup* ptr);
 
 public:
     ~ExportMail();

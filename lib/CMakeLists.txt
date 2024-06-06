@@ -10,7 +10,7 @@ add_library(etcpp STATIC include/etsession.hpp)
 
 target_sources(etcpp PRIVATE
         include/etsession.hpp
-        include/etexport_mail.hpp
+        include/etexport_backup.hpp
         include/etlog.hpp
         include/etutil.hpp
         include/et.hpp

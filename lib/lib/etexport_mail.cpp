@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "etexport_mail.hpp"
+#include "etexport_backup.hpp"
 
 #include <proton-mail-export.h>
 #include "etsession.hpp"

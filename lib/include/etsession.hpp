@@ -21,7 +21,7 @@
 #include <string>
 
 #include "etexception.hpp"
-#include "etexport_mail.hpp"
+#include "etexport_backup.hpp"
 
 extern "C" {
 struct etSession;

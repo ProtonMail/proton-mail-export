@@ -1,7 +1,7 @@
 #ifndef ET_EXPORT_MAIL_IMPL_H
 #define ET_EXPORT_MAIL_IMPL_H
 
-#include "etexport_mail.h"
+#include "etexport_backup.h"
 
 #ifdef ET_CGO
 

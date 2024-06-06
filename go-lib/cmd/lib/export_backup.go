@@ -19,8 +19,8 @@ package main
 
 // #cgo CFLAGS: -I "cgo_headers" -D "ET_CGO=1"
 /*
-#include "etexport_mail.h"
-#include "etexport_mail_impl.h"
+#include "etexport_backup.h"
+#include "etexport_backup_impl.h"
 */
 import "C"
 import (

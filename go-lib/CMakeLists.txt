@@ -46,8 +46,8 @@ function(build_go_exe)
         add_custom_command(
             OUTPUT ${EXE_PATH}
             DEPENDS "${GO_EXE_GO_SOURCES}"
-            COMMAND CGO_ENABLED=1 GOARCH=arm64 MACOSX_DEPLOYMENT_TARGET=11.0 ${go_bin} build -o "${EXE_PATH_ARM64}"
-            COMMAND CGO_ENABLED=1 GOARCH=amd64 MACOSX_DEPLOYMENT_TARGET=10.15 ${go_bin} build -o "${EXE_PATH_AMD64}"
+            COMMAND ${CMAKE_COMMAND} -E env "CGO_ENABLED=1" "GOARCH=arm64" "MACOSX_DEPLOYMENT_TARGET=11.0" ${go_bin} build -o "${EXE_PATH_ARM64}"
+            COMMAND ${CMAKE_COMMAND} -E env "CGO_ENABLED=1" "GOARCH=amd64" "MACOSX_DEPLOYMENT_TARGET=10.15" ${go_bin} build -o "${EXE_PATH_AMD64}"
             COMMAND lipo ${EXE_PATH_ARM64} ${EXE_PATH_AMD64} -create -output ${EXE_PATH}
             COMMAND rm -f ${EXE_PATH_ARM64} ${EXE_PATH_AMD64}
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmd/proton-mail-export"
@@ -56,7 +56,7 @@ function(build_go_exe)
         add_custom_command(
             OUTPUT ${EXE_PATH}
             DEPENDS "${GO_EXE_GO_SOURCES}"
-            COMMAND CGO_ENABLED=1 ${go_bin} build -o "${EXE_PATH}"
+            COMMAND ${CMAKE_COMMAND} -E env "CGO_ENABLED=1" ${go_bin} build -o "${EXE_PATH}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmd/proton-mail-export"
         )
     endif()

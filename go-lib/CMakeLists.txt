@@ -8,6 +8,16 @@ if (NOT go_bin)
     message(FATAL_ERROR "Could not find go binary")
 endif()
 
+if (APPLE)
+    find_program(lipo_bin lipo)
+
+    if (NOT lipo_bin)
+        message(FATAL_ERROR "Could not find lipo binary")
+    endif()
+endif()
+
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
 set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 set(GO_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
 set(GO_LIB "${CMAKE_CURRENT_BINARY_DIR}/proton-mail-export${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -19,6 +29,47 @@ file(GLOB_RECURSE go_files
     LIST_DIRECTORIES false
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.go"
+)
+
+function(build_go_exe)
+    cmake_parse_arguments(GO_EXE ""
+        "TARGET;NAME"
+        "GO_SOURCES"
+        ${ARGN}
+    )
+    set(EXE_PATH "${CMAKE_CURRENT_BINARY_DIR}/../go-exe/${GO_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX}")
+   set(ENV_MANIP)
+
+    if (APPLE)
+        set(EXE_PATH_AMD64 "${EXE_PATH}_amd64")
+        set(EXE_PATH_ARM64 "${EXE_PATH}_arm64")
+        add_custom_command(
+            OUTPUT ${EXE_PATH}
+            DEPENDS "${GO_EXE_GO_SOURCES}"
+            COMMAND CGO_ENABLED=1 GOARCH=arm64 MACOSX_DEPLOYMENT_TARGET=11.0 ${go_bin} build -o "${EXE_PATH_ARM64}"
+            COMMAND CGO_ENABLED=1 GOARCH=amd64 MACOSX_DEPLOYMENT_TARGET=10.15 ${go_bin} build -o "${EXE_PATH_AMD64}"
+            COMMAND lipo ${EXE_PATH_ARM64} ${EXE_PATH_AMD64} -create -output ${EXE_PATH}
+            COMMAND rm -f ${EXE_PATH_ARM64} ${EXE_PATH_AMD64}
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmd/proton-mail-export"
+        )
+    else()
+        add_custom_command(
+            OUTPUT ${EXE_PATH}
+            DEPENDS "${GO_EXE_GO_SOURCES}"
+            COMMAND CGO_ENABLED=1 ${go_bin} build -o "${EXE_PATH}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmd/proton-mail-export"
+        )
+    endif()
+
+    add_custom_target("${GO_EXE_TARGET}-build"
+        DEPENDS "${EXE_PATH}"
+    )
+endfunction()
+
+build_go_exe(
+    TARGET proton-mail-export-cli-go-exe
+    NAME proton-mail-export-cli
+    GO_SOURCES ${go_files}
 )
 
 function(build_cgo_lib)

@@ -27,7 +27,6 @@ func (c *credentials) nextAttempt() error {
 	if c.attemptCount++; c.attemptCount >= 5 {
 		return errors.New("failed to login: too many attempts")
 	}
-
 	c.username = ""
 	c.password = nil
 	c.totp = ""

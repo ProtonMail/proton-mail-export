@@ -73,8 +73,8 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 	if err != nil {
 		return err
 	}
+	r.log.WithField("messageCount", messageCount).Info("Found messages to import")
 
-	fmt.Println("Creating labels")
 	if err := r.restoreLabels(); err != nil {
 		return err
 	}
@@ -83,7 +83,6 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 		return err
 	}
 
-	fmt.Printf("Importing %d messages\n", messageCount)
 	return r.importMails(reporter)
 }
 

@@ -24,6 +24,7 @@ import (
 	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/session"
 	"github.com/ProtonMail/gluon/async"
+	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
@@ -99,11 +100,13 @@ func fatal(err error) {
 }
 
 func run(ctx *cli.Context) error {
+	panicHandler := sentry.NewPanicHandler(func() {})
+	defer async.HandlePanic(panicHandler)
+
 	printHeader()
 	checkForNewVersion()
 
-	panicHandler := sentry.NewPanicHandler(func() {})
-	defer async.HandlePanic(panicHandler)
+	fmt.Printf("\nSession log: %v\n\n", filepath.FromSlash(state.logPath))
 
 	session, err := newSession(panicHandler)
 	if err != nil {
@@ -137,16 +140,16 @@ func run(ctx *cli.Context) error {
 
 func printHeader() {
 	fmt.Printf("Proton Mail Export Tool (%v) (c) Proton AG, Switzerland\n", internal.ETVersionString)
-	fmt.Println("This program is licensed under the GNU General Public License v3")
-	fmt.Println("Get support at https://proton.me/support/proton-mail-export-tool")
+	fmt.Printf("This program is licensed under the GNU General Public License v3\n")
+	fmt.Printf("Get support at https://proton.me/support/proton-mail-export-tool\n\n")
 }
 
 func checkForNewVersion() {
-	fmt.Print("Checking for new version: ")
+	fmt.Print("Checking for new version... ")
 	if internal.HasNewVersion() {
-		fmt.Println("a new version is available at: https://proton.me/support/proton-mail-export-tool")
+		fmt.Println("A new version is available at: https://proton.me/support/proton-mail-export-tool")
 	} else {
-		fmt.Println("your version is up to date")
+		fmt.Println("Your version is up to date")
 	}
 }
 
@@ -192,6 +195,7 @@ func login(ctx *cli.Context, s *session.Session) error {
 				}
 			}
 			if err := s.Login(ctx.Context, creds.username, creds.password); err != nil {
+				printError(err)
 				if err := creds.nextAttempt(); err != nil {
 					return err
 				}
@@ -203,6 +207,7 @@ func login(ctx *cli.Context, s *session.Session) error {
 				}
 			}
 			if err := s.SubmitTOTP(ctx.Context, creds.totp); err != nil {
+				printError(err)
 				if err := creds.nextAttempt(); err != nil {
 					return err
 				}
@@ -218,7 +223,10 @@ func login(ctx *cli.Context, s *session.Session) error {
 				apiclient.NewProtonMailboxPasswordValidator(s.GetUser(), s.GetUserSalts()),
 				creds.mboxPassword,
 			); err != nil {
-				return err
+				printError(err)
+				if err := creds.nextAttempt(); err != nil {
+					return err
+				}
 			}
 		case session.LoginStateAwaitingHV:
 			url, err := s.GetHVSolveURL()
@@ -243,8 +251,13 @@ func login(ctx *cli.Context, s *session.Session) error {
 
 func runBackup(ctx context.Context, exportPath string, session *session.Session) error {
 	exportTask := mail.NewExportTask(ctx, exportPath, session)
+	fmt.Printf("Starting backup - Path=\"%v\"\n", filepath.FromSlash(exportTask.GetExportPath()))
+	err := exportTask.Run(ctx, newCliReporter())
+	if err == nil {
+		fmt.Println("Backup finished")
+	}
 
-	return exportTask.Run(ctx, newCliReporter())
+	return err
 }
 
 func runRestore(ctx context.Context, backupPath string, session *session.Session) error {
@@ -253,10 +266,16 @@ func runRestore(ctx context.Context, backupPath string, session *session.Session
 		return err
 	}
 
-	return restoreTask.Run(newCliReporter())
+	fmt.Println("Starting restore")
+	err = restoreTask.Run(newCliReporter())
+	if err == nil {
+		fmt.Println("Backup finished")
+	}
+
+	return err
 }
 
-func initApp(path string, onRecover func()) error {
+func initApp(defaultOperationPath string, onRecover func()) error {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
 
@@ -268,16 +287,15 @@ func initApp(path string, onRecover func()) error {
 		return errors.New("application has already been initialized")
 	}
 
-	if err := os.MkdirAll(path, 0o700); err != nil {
+	if err := os.MkdirAll(defaultOperationPath, 0o700); err != nil {
 		return err
 	}
 
-	path = filepath.Join(path, internal.NewLogFileName())
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	state.logPath = filepath.Join(defaultOperationPath, internal.NewLogFileName())
+	file, err := os.OpenFile(state.logPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
-
 	logrus.SetOutput(file)
 	logrus.SetFormatter(&logrus.TextFormatter{
 		DisableColors:    true,
@@ -313,6 +331,16 @@ func closeApp() {
 			state.file = nil
 		}
 	}
+}
+
+func printError(err error) {
+	var apiError *proton.APIError
+	if errors.As(err, &apiError) {
+		fmt.Println(apiError.Message)
+		return
+	}
+
+	fmt.Println(err)
 }
 
 type globalState struct {

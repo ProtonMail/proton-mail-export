@@ -23,20 +23,20 @@
 
 #include "gpa_server.hpp"
 
-class NullCallback final : public etcpp::ExportMailCallback {
+class NullCallback final : public etcpp::ExportBackupCallback {
 public:
     void onProgress(float) override {}
 };
 
-class ProgressCancelCallback final : public etcpp::ExportMailCallback {
+class ProgressCancelCallback final : public etcpp::ExportBackupCallback {
 private:
-    etcpp::ExportMail& mE;
+    etcpp::ExportBackup& mE;
     float mCancelPercentage;
     bool mCancelled = false;
 
 public:
-    explicit ProgressCancelCallback(etcpp::ExportMail& e, float cancelPercentage) :
-        etcpp::ExportMailCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
+    explicit ProgressCancelCallback(etcpp::ExportBackup& e, float cancelPercentage) :
+        etcpp::ExportBackupCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
 
     void onProgress(float p) override {
         if (p > mCancelPercentage && !mCancelled) {
@@ -77,7 +77,7 @@ TEST_CASE("MailExport") {
 
     std::filesystem::path exportDir{};
     {
-        auto exporter = session.newExportMail(tmpDir.u8string().c_str());
+        auto exporter = session.newExportBackup(tmpDir.u8string().c_str());
         exportDir = exporter.getExportPath();
         auto nullCallback = NullCallback();
         REQUIRE_NOTHROW(exporter.start(nullCallback));

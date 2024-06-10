@@ -550,9 +550,9 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        std::unique_ptr<MailTask> exportMail;
+        std::unique_ptr<BackupTask> exportMail;
         try {
-            exportMail = std::make_unique<MailTask>(session, exportPath);
+            exportMail = std::make_unique<BackupTask>(session, exportPath);
         } catch (const etcpp::SessionException& e) {
             etLogError("Failed to create export task: {}", e.what());
             std::cerr << "Failed to create export task: " << e.what() << std::endl;
@@ -562,7 +562,7 @@ int main(int argc, const char** argv) {
         uint64_t expectedSpace = 0;
         try {
             expectedSpace = exportMail->getExpectedDiskUsage();
-        } catch (const etcpp::ExportMailException& e) {
+        } catch (const etcpp::ExportBackupException& e) {
             std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
@@ -581,7 +581,7 @@ int main(int argc, const char** argv) {
         std::cout << "Starting Export - Path=" << exportMail->getExportPath() << std::endl;
         try {
             runTaskWithProgress(appState, *exportMail);
-        } catch (const etcpp::ExportMailException& e) {
+        } catch (const etcpp::ExportBackupException& e) {
             etcpp::logError("Failed to export : {}", e.what());
             std::cerr << "Failed to export: " << e.what() << std::endl;
             return EXIT_FAILURE;

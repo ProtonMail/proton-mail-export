@@ -19,21 +19,21 @@
 #include <etsession.hpp>
 #include <iostream>
 
-MailTask::MailTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
-    mExport(session.newExportMail(exportPath.u8string().c_str())) {}
+BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
+    mExport(session.newExportBackup(exportPath.u8string().c_str())) {}
 
-void MailTask::onProgress(float progress) {
+void BackupTask::onProgress(float progress) {
     updateProgress(progress);
 }
 
-void MailTask::run() {
+void BackupTask::run() {
     mExport.start(*this);
 }
 
-void MailTask::cancel() {
+void BackupTask::cancel() {
     mExport.cancel();
 }
 
-std::string_view MailTask::description() const {
+std::string_view BackupTask::description() const {
     return "Export Mail";
 }

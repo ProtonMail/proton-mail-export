@@ -9,16 +9,18 @@ find_package(Threads REQUIRED)
 add_library(etcpp STATIC include/etsession.hpp)
 
 target_sources(etcpp PRIVATE
-        include/etsession.hpp
-        include/etexport_backup.hpp
-        include/etlog.hpp
-        include/etutil.hpp
-        include/et.hpp
-        lib/etsession.cpp
-        lib/etexport_mail.cpp
-        lib/etlog.cpp
-        lib/etutil.cpp
-        lib/et.cpp
+    include/etsession.hpp
+    include/etexport_backup.hpp
+    include/etexport_restore.hpp
+    include/etlog.hpp
+    include/etutil.hpp
+    include/et.hpp
+    lib/etsession.cpp
+    lib/etexport_backup.cpp
+    lib/etexport_restore.cpp
+    lib/etlog.cpp
+    lib/etutil.cpp
+    lib/et.cpp
 )
 
 if (UNIX)

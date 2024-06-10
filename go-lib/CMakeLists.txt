@@ -156,7 +156,7 @@ build_cgo_lib(
     TARGET etcore
     NAME proton-mail-export
     GO_SOURCES ${go_files}
-    GO_EXPORTS export_session.go export_log.go export_backup.go export_globals.go
+    GO_EXPORTS export_session.go export_log.go export_backup.go export_globals.go export_restore.go
 )
 
 build_cgo_lib(

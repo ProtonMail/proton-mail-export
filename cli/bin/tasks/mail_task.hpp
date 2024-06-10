@@ -23,18 +23,18 @@
 #include "tasks/task.hpp"
 #include "tui_util.hpp"
 
-class MailTask final : public TaskWithProgress<void>, etcpp::ExportMailCallback {
+class BackupTask final : public TaskWithProgress<void>, etcpp::ExportBackupCallback {
 private:
-    etcpp::ExportMail mExport;
+    etcpp::ExportBackup mExport;
     CLIProgressBar mProgressBar;
 
 public:
-    MailTask(etcpp::Session& session, const std::filesystem::path& exportPath);
-    ~MailTask() override = default;
-    MailTask(const MailTask&) = delete;
-    MailTask(MailTask&&) = delete;
-    MailTask& operator=(const MailTask&) = delete;
-    MailTask& operator=(MailTask&&) = delete;
+    BackupTask(etcpp::Session& session, const std::filesystem::path& exportPath);
+    ~BackupTask() override = default;
+    BackupTask(const BackupTask&) = delete;
+    BackupTask(BackupTask&&) = delete;
+    BackupTask& operator=(const BackupTask&) = delete;
+    BackupTask& operator=(BackupTask&&) = delete;
 
     void run() override;
 

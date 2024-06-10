@@ -66,7 +66,7 @@ public:
     [[nodiscard]] std::string getHVSolveURL() const;
     [[nodiscard]] LoginState markHVSolved();
 
-    [[nodiscard]] ExportMail newExportMail(const char* exportPath) const;
+    [[nodiscard]] ExportBackup newExportBackup(const char* exportPath) const;
 
     void cancel();
 

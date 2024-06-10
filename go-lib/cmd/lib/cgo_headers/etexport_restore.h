@@ -15,35 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Mail Bridge. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ET_SESSION_H
-#define ET_SESSION_H
+#ifndef ET_EXPORT_RESTORE_H
+#define ET_EXPORT_RESTORE_H
 
-#include <stdint.h>
-#include <stdlib.h>
+#include "etsession.h"
 
-typedef const char cchar_t;
+typedef struct etExportRestore etExportRestore;
 
-typedef struct etSession etSession;
+typedef enum etExportRestoreStatus {
+	ET_EXPORT_RESTORE_STATUS_OK,
+	ET_EXPORT_RESTORE_STATUS_ERROR,
+	ET_EXPORT_RESTORE_STATUS_INVALID,
+	ET_EXPORT_RESTORE_STATUS_CANCELLED,
+} etExportRestoreStatus;
 
-typedef enum etSessionStatus {
-	ET_SESSION_STATUS_OK,
-	ET_SESSION_STATUS_ERROR,
-	ET_SESSION_STATUS_INVALID,
-	ET_SESSION_STATUS_CANCELLED,
-} etSessionStatus;
+typedef enum etExportRestoreMessageType {
+	ET_EXPORT_RESTORE_MESSAGE_TYPE_PROGRESS,
+} etExportRestoreMessageType;
 
-typedef enum etSessionLoginState {
-	ET_SESSION_LOGIN_STATE_LOGGED_OUT,
-	ET_SESSION_LOGIN_STATE_AWAITING_TOTP,
-	ET_SESSION_LOGIN_STATE_AWAITING_HV,
-	ET_SESSION_LOGIN_STATE_AWAITING_MAILBOX_PASSWORD,
-	ET_SESSION_LOGIN_STATE_LOGGED_IN,
-} etSessionLoginState;
+typedef struct etExportRestoreCallbacks {
+    void* ptr;
+    void (*onProgress)(void* ptr, float progress);
+} etExportRestoreCallbacks;
 
-typedef struct etSessionCallbacks {
-    void *ptr;
-    void (*onNetworkLost)(void*);
-    void (*onNetworkRestored)(void*);
-} etSessionCallbacks;
+#endif // ET_EXPORT_RESTORE_H
 
-#endif // ET_SESSION_H
+
+

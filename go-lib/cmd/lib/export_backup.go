@@ -40,29 +40,30 @@ import (
 
 //export etSessionNewExportBackup
 func etSessionNewExportBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, outExportBackup **C.etExportBackup) C.etSessionStatus {
-	csession, ok := resolveSession(sessionPtr)
+	cSession, ok := resolveSession(sessionPtr)
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
 	}
 
-	defer async.HandlePanic(csession.s.GetPanicHandler())
+	defer async.HandlePanic(cSession.s.GetPanicHandler())
 
-	if csession.s.LoginState() != session.LoginStateLoggedIn {
-		csession.setLastError(session.ErrInvalidLoginState)
+	if cSession.s.LoginState() != session.LoginStateLoggedIn {
+		cSession.setLastError(session.ErrInvalidLoginState)
 		return C.ET_SESSION_STATUS_ERROR
 	}
 
 	exportPath := C.GoString(cExportPath)
-	exportPath = filepath.Join(exportPath, csession.s.GetUser().Email)
+	exportPath = filepath.Join(exportPath, cSession.s.GetUser().Email)
 
-	mailExport := mail.NewExportTask(csession.ctx, exportPath, csession.s)
+	mailExport := mail.NewExportTask(cSession.ctx, exportPath, cSession.s)
 
 	h := internal.NewHandle(&cExportBackup{
-		csession: csession,
+		csession: cSession,
 		exporter: mailExport,
 	})
 
 	// Intentional misuse of unsafe pointer.
+	//goland:noinspection GoVetUnsafePointer
 	*outExportBackup = (*C.etExportBackup)(unsafe.Pointer(h)) //nolint:govet
 
 	return C.ET_SESSION_STATUS_OK
@@ -96,7 +97,7 @@ func etExportBackupStart(ptr *C.etExportBackup, callbacks *C.etExportBackupCallb
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
-	reporter := &backupExportReporter{
+	reporter := &backupReporter{
 		exporter:  ce.exporter,
 		callbacks: callbacks,
 	}
@@ -195,22 +196,22 @@ func resolveExportBackup(ptr *C.etExportBackup) (*cExportBackup, bool) {
 	return h.resolve()
 }
 
-type backupExportReporter struct {
+type backupReporter struct {
 	totalMessageCount   atomic.Uint64
 	currentMessageCount atomic.Uint64
 	callbacks           *C.etExportBackupCallbacks
 	exporter            *mail.ExportTask
 }
 
-func (m *backupExportReporter) SetMessageTotal(total uint64) {
+func (m *backupReporter) SetMessageTotal(total uint64) {
 	m.totalMessageCount.Store(total)
 }
 
-func (m *backupExportReporter) SetMessageProcessed(total uint64) {
+func (m *backupReporter) SetMessageProcessed(total uint64) {
 	m.currentMessageCount.Store(total)
 }
 
-func (m *backupExportReporter) OnProgress(delta int) {
+func (m *backupReporter) OnProgress(delta int) {
 	newMessageCount := m.currentMessageCount.Add(uint64(delta))
 
 	var progress float32

@@ -86,6 +86,18 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 	return r.importMails(reporter)
 }
 
+func (r *RestoreTask) Cancel() {
+	r.ctxCancel()
+}
+
+func (r *RestoreTask) Close() {
+	// Nothing to do so far.
+}
+
+func (r *RestoreTask) GetBackupPath() string {
+	return r.backupDir
+}
+
 func (r *RestoreTask) withAddrKR(fn func(addrID string, addrKR *crypto.KeyRing) error) error {
 	client := r.session.GetClient()
 	addresses, err := client.GetAddresses(r.ctx)

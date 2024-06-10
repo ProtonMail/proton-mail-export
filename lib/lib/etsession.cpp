@@ -146,11 +146,11 @@ Session::LoginState Session::getLoginState() const {
     return ls;
 }
 
-ExportMail Session::newExportMail(const char* exportPath) const {
+ExportBackup Session::newExportBackup(const char* exportPath) const {
     etExportBackup* exportPtr = nullptr;
     wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportBackup(ptr, exportPath, &exportPtr); });
 
-    return ExportMail(*this, exportPtr);
+    return ExportBackup(*this, exportPtr);
 }
 
 void Session::cancel() {

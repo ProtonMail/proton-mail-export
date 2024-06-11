@@ -1,0 +1,14 @@
+---
+
+lint:
+  tags:
+    - shared-medium
+  script:
+    - !reference [.script-config-git, script]
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.57.2
+    - !reference [.script-config-cmake-unix, script]
+    - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG -t go-lib-lint
+    - cmake
+      --build $CMAKE_BUILD_DIR
+      --config $CMAKE_BUILD_CONFIG
+      -t clang-format-check

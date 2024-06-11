@@ -1,0 +1,140 @@
+---
+
+image: gitlab.protontech.ch:4567/go/bridge-internal:test-go1.21-bullseye
+
+default:
+  tags:
+    - shared-small
+
+variables:
+  GOPRIVATE: gitlab.protontech.ch
+  GOMAXPROCS: $(( ${CI_TAG_CPU} / 2 ))
+  CMAKE_BUILD_DIR: $CI_PROJECT_DIR/cmake-build-release
+  CMAKE_INSTALL_DIR: $CI_PROJECT_DIR/cmake-install-release
+  CMAKE_INSTALL_DIR_MACOS_ARM64: $CI_PROJECT_DIR/cmake-install-release-arm64
+  CMAKE_INSTALL_DIR_MACOS_X64: $CI_PROJECT_DIR/cmake-install-release-x86_64
+  CMAKE_INSTALL_DIR_MACOS_UNIVERSAL: $CI_PROJECT_DIR/cmake-install-release-universal
+  ARCHIVE_NAME_MACOS: macos.zip
+  ARCHIVE_NAME_WINDOWS: windows_x86_64.zip
+  ARCHIVE_NAME_LINUX: linux_x86_64.tar.gz
+  CMAKE_BUILD_CONFIG: "Release"
+  CMAKE_SENTRY_OPTION: -DSENTRY_DNS=$SENTRY_DNS
+  ET_BIN_NAME: proton-mail-export-cli
+  ET_DLL_NAME: proton-mail-export
+  DEPLOY_DIR: $CI_PROJECT_DIR/deploy
+  # GIT_SUBMODULE_STRATEGY: recursive
+
+
+# ENV
+.env-windows:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: C:/${CI_PROJECT_DIR}/.cache
+    https_proxy: proxy.plabs.ch:3128
+    http_proxy: proxy.plabs.ch:3128
+    no_proxy: localhost,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,127.0.0.0/8,172.16.0.0/12,10.0.0.0/8
+  before_script:
+    - New-Item -ItemType Directory -Path $VCPKG_DEFAULT_BINARY_CACHE -Force ;
+    - $Env:Path = "C:\\\\Program Files\\CMake\\bin;" + $Env:Path
+    - $(Get-Command cmake).Source
+    - cmake --version
+  cache:
+    key: win-vcpkg
+    paths:
+      - .cache
+    when: 'always'
+  image: windows-2022-export-tool
+  tags:
+    - bridge-vbox-windows
+
+.env-darwin:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+  before_script:
+    - export PATH=/opt/homebrew/bin:$PATH
+    - export PATH=/opt/homebrew/opt/llvm/bin:$PATH
+    - export GOPATH=~/go
+    - export PATH="${GOPATH}/bin:$PATH"
+    - uname -a
+    - which ninja && ninja --version
+    - which cmake && cmake --version
+    - mkdir -p ${VCPKG_DEFAULT_BINARY_CACHE}
+  cache:
+    key: darwin-vcpkg
+    paths:
+      - .cache
+    when: 'always'
+  tags:
+    - bridge-tart
+  image: export-tool
+
+.env-linux-build:
+  variables:
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
+  cache:
+    key: linux-vcpkg-2
+    paths:
+      - .cache
+    when: 'always'
+  before_script:
+    - mkdir -p .cache/bin
+    - export BRIDGE_SYNC_FORCE_MINIMUM_SPEC=1
+    - export PATH=$(pwd)/.cache/bin:$PATH
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - export PATH=$PATH:$QT6DIR/bin
+    - export LC_ALL=en-US
+  tags:
+    - shared-large
+
+
+# SCRIPTS
+.script-config-git:
+  script:
+    - git config --global url.https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}.insteadOf https://${CI_SERVER_HOST}
+    - git submodule update --init --recursive
+
+.script-config-cmake-win:
+  script:
+    - cmake
+       -S . -B "$CMAKE_BUILD_DIR"
+       -G "Visual Studio 17 2022"
+       -DCMAKE_GENERATOR_PLATFORM=x64
+       -DCMAKE_CL_64=1
+       -A "x64"
+       -DMINGW_CACHE_PATH="$VCPKG_DEFAULT_BINARY_CACHE"
+       -DVCPKG_HOST_TRIPLET=x64-windows-static
+       -DVCPKG_TARGET_TRIPLET=x64-windows-static
+       -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+       $CMAKE_SENTRY_OPTION
+
+.script-config-cmake-unix:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" $CMAKE_SENTRY_OPTION
+
+.script-config-cmake-macos-arm64:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+        -DCMAKE_OSX_ARCHITECTURES=arm64
+        $CMAKE_SENTRY_OPTION
+
+.script-config-cmake-macos-x86_64:
+  script:
+     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+        -DCMAKE_OSX_ARCHITECTURES=x86_64
+        $CMAKE_SENTRY_OPTION
+
+.script-install:
+  script:
+     - cmake --install $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
+
+.script-build:
+  script:
+    - cmake --build $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
+
+.script-test:
+  extends:
+    - .script-build
+  script:
+    - !reference [.script-build, script]
+    - ctest --build-config $CMAKE_BUILD_CONFIG --test-dir $CMAKE_BUILD_DIR -V

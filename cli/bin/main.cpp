@@ -57,7 +57,9 @@ inline uint64_t toMB(uint64_t value) {
 
 class ReadInputException final : public etcpp::Exception {
 public:
-    explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
+    explicit ReadInputException(std::string_view what) :
+        etcpp::Exception(what) {
+    }
 };
 
 template<class C>
@@ -275,6 +277,54 @@ std::filesystem::path getOutputPath() {
 #endif
 }
 
+
+std::string getExampleDir() {
+#if defined(_WIN32)
+    return "%USERPROFILE%\\Documents";
+#else
+    return "~/Documents";
+#endif
+}
+
+std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, std::string_view const email, bool &outPathCameFromArg){
+    std::filesystem::path backupPath;
+    outPathCameFromArg = false;
+    bool promptEntry = false;
+    if (argParseResult.count("export-dir")) {
+        auto const argPath = argParseResult["export-dir"].as<std::string>();
+        if (!argPath.empty()) {
+            backupPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
+        }
+        outPathCameFromArg = true;
+    }
+
+    std::filesystem::path const outputPath = getOutputPath();
+    if (backupPath.empty()) {
+        const auto defaultPath = getOutputPath() / email;
+        std::cout << "\nBy default, the export will be made in:\n\n"
+            << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
+            << std::endl;
+
+        promptEntry = !readYesNo("Do you wish to proceed?");
+    }
+
+    while (true) {
+        if (promptEntry) {
+            std::cout << "Please input desired export path. E.g.: " << getExampleDir() << std::endl;
+            backupPath = readPath("Export Path");
+        } else if (backupPath.empty()) {
+            backupPath = outputPath;
+        }
+
+        if (backupPath.is_relative()) {
+            backupPath = outputPath / backupPath;
+        }
+
+        std::filesystem::create_directories(backupPath);
+        return backupPath;
+    }
+}
+
 int main(int argc, const char** argv) {
 #if defined(_WIN32)
     // Ensure Win32 Console correctly processes utf8 characters.
@@ -284,22 +334,22 @@ int main(int argc, const char** argv) {
 #endif
     auto appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
-              << "This program is licensed under the GNU General Public License v3\n"
-              << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
+        << "This program is licensed under the GNU General Public License v3\n"
+        << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path outputPath = getOutputPath();
 
     if (!registerCtrlCSignalHandler([]() {
-            if (!gShouldQuit) {
-                std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
-                gShouldQuit.store(true);
+        if (!gShouldQuit) {
+            std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
+            gShouldQuit.store(true);
 #if !defined(_WIN32)
-                // We need to reset the printing of chars by stdin here. As soon as we close stdin
-                // to force the input reading to exit, we can't apply any more changes.
-                setStdinEcho(true);
+            // We need to reset the printing of chars by stdin here. As soon as we close stdin
+            // to force the input reading to exit, we can't apply any more changes.
+            setStdinEcho(true);
 #endif
-                fclose(stdin);
-            }
-        })) {
+            fclose(stdin);
+        }
+    })) {
         std::cerr << "Failed to register signal handler";
         return EXIT_FAILURE;
     }
@@ -308,8 +358,8 @@ int main(int argc, const char** argv) {
         auto logDir = outputPath / "logs";
         auto globalScope = etcpp::GlobalScope(logDir, []() {
             std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
-                         "log for more details."
-                      << std::endl;
+                "log for more details."
+                << std::endl;
             exit(-1);
         });
 
@@ -338,8 +388,8 @@ int main(int argc, const char** argv) {
             auto task = NewVersionCheckTask(globalScope, "Checking for new version");
             if (runTask(appState, task)) {
                 std::cout << "A new version is available at: "
-                             "https://proton.me/support/proton-mail-export-tool"
-                          << std::endl;
+                    "https://proton.me/support/proton-mail-export-tool"
+                    << std::endl;
             }
         } catch (const std::exception&) {
         }
@@ -418,10 +468,10 @@ int main(int argc, const char** argv) {
                 const auto hvUrl = session.getHVSolveURL();
 
                 std::cout << "\nHuman Verification requested. Please open the URL below in a "
-                             "browser and"
-                          << " press ENTER when the challenge has been completed.\n\n"
-                          << hvUrl << '\n'
-                          << std::endl;
+                    "browser and"
+                    << " press ENTER when the challenge has been completed.\n\n"
+                    << hvUrl << '\n'
+                    << std::endl;
 
                 waitForEnter("Press ENTER to continue");
                 if (gShouldQuit) {
@@ -491,59 +541,21 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        std::filesystem::path exportPath;
-        {
-            bool pathCameFromArg = false;
-            bool promptEntry = false;
-            if (argParseResult.count("export-dir")) {
-                auto argPath = argParseResult["export-dir"].as<std::string>();
-                if (!argPath.empty()) {
-                    exportPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
-                }
-                pathCameFromArg = true;
-            }
-            if (exportPath.empty()) {
-                const auto defaultPath = outputPath / session.getEmail();
-                std::cout << "\nBy default, the export will be made in:\n\n"
-                          << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
-                          << std::endl;
-
-                promptEntry = !readYesNo("Do you wish to proceed?");
-            }
-
-            while (true) {
-                if (promptEntry) {
-#if defined(_WIN32)
-                    const std::string_view exampleDir = "%USERPROFILE%\\Documents";
-#else
-                    const std::string_view exampleDir = "~/Documents";
-#endif
-                    std::cout << "Please input desired export path. E.g.: " << exampleDir << std::endl;
-                    exportPath = readPath("Export Path");
-                } else if (exportPath.empty()) {
-                    exportPath = outputPath;
-                }
-
-                if (exportPath.is_relative()) {
-                    exportPath = outputPath / exportPath;
-                }
-
-                try {
-                    std::filesystem::create_directories(exportPath);
-                    break;
-                } catch (const std::exception& e) {
-                    etcpp::logError("Failed to create export directory '{}': {}", exportPath.u8string(), e.what());
-                    std::cerr << "Failed to create export directory '" << exportPath << "': " << e.what() << std::endl;
-                    if (pathCameFromArg) {
-                        return EXIT_FAILURE;
-                    }
-                }
+        std::filesystem::path backupPath;
+        bool pathCameFromArgs = false;
+        try {
+            backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
+        } catch (std::exception const& e) {
+            etcpp::logError("Failed to create export directory '{}': {}", backupPath.u8string(), e.what());
+            std::cerr << "Failed to create export directory '" << backupPath << "': " << e.what() << std::endl;
+            if (pathCameFromArgs) {
+                return EXIT_FAILURE;
             }
         }
 
         std::filesystem::space_info spaceInfo{};
         try {
-            spaceInfo = std::filesystem::space(exportPath);
+            spaceInfo = std::filesystem::space(backupPath);
         } catch (const std::exception& e) {
             etcpp::logError("Failed to get free space info: {}", e.what());
             std::cerr << "Failed to get free space info: " << e.what() << std::endl;
@@ -552,7 +564,7 @@ int main(int argc, const char** argv) {
 
         std::unique_ptr<BackupTask> exportMail;
         try {
-            exportMail = std::make_unique<BackupTask>(session, exportPath);
+            exportMail = std::make_unique<BackupTask>(session, backupPath);
         } catch (const etcpp::SessionException& e) {
             etLogError("Failed to create export task: {}", e.what());
             std::cerr << "Failed to create export task: " << e.what() << std::endl;
@@ -569,9 +581,9 @@ int main(int argc, const char** argv) {
 
         if (expectedSpace > spaceInfo.available) {
             std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
-                      << toMB(spaceInfo.available) << " MB available. " << std::endl
-                      << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
-                      << std::endl;
+                << toMB(spaceInfo.available) << " MB available. " << std::endl
+                << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+                << std::endl;
 
             if (!readYesNo("Do you wish to proceed?")) {
                 return EXIT_SUCCESS;

@@ -26,7 +26,6 @@ import "C"
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"runtime/cgo"
 	"sync/atomic"
 	"unsafe"
@@ -53,8 +52,6 @@ func etSessionNewExportRestore(sessionPtr *C.etSession, cRestorePath *C.cchar_t,
 	}
 
 	restorePath := C.GoString(cRestorePath)
-	restorePath = filepath.Join(restorePath, cSession.s.GetUser().Email)
-
 	restoreTask, err := mail.NewRestoreTask(cSession.ctx, restorePath, cSession.s)
 	if err != nil {
 		cSession.setLastError(err)

@@ -153,6 +153,13 @@ ExportBackup Session::newExportBackup(const char* exportPath) const {
     return ExportBackup(*this, exportPtr);
 }
 
+ExportRestore Session::newExportRestore(const char* backupPath) const {
+    etExportRestore* restorePtr = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportRestore(ptr, backupPath, &restorePtr); });
+
+    return ExportRestore(*this, restorePtr);
+}
+
 void Session::cancel() {
     wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }

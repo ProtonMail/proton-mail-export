@@ -22,6 +22,7 @@
 
 #include "etexception.hpp"
 #include "etexport_backup.hpp"
+#include "etexport_restore.hpp"
 
 extern "C" {
 struct etSession;
@@ -67,6 +68,7 @@ public:
     [[nodiscard]] LoginState markHVSolved();
 
     [[nodiscard]] ExportBackup newExportBackup(const char* exportPath) const;
+    [[nodiscard]] ExportRestore newExportRestore(const char* backupPath) const;
 
     void cancel();
 

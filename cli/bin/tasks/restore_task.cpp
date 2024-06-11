@@ -15,25 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "tasks/mail_task.hpp"
+#include "tasks/restore_task.hpp"
 #include <etsession.hpp>
 #include <iostream>
 
-BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
-    mExport(session.newExportBackup(exportPath.u8string().c_str())) {}
+RestoreTask::RestoreTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
+    mRestore(session.newExportRestore(exportPath.u8string().c_str())) {}
 
-void BackupTask::onProgress(float progress) {
+void RestoreTask::onProgress(float progress) {
     updateProgress(progress);
 }
 
-void BackupTask::run() {
-    mExport.start(*this);
+void RestoreTask::run() {
+    mRestore.start(*this);
 }
 
-void BackupTask::cancel() {
-    mExport.cancel();
+void RestoreTask::cancel() {
+    mRestore.cancel();
 }
 
-std::string_view BackupTask::description() const {
-    return "Export Mail";
+std::string_view RestoreTask::description() const {
+    return "Restore Mail";
 }

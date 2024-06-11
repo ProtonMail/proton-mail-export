@@ -38,7 +38,8 @@
 #include "operation.h"
 #include "task_runner.hpp"
 #include "tasks/global_task.hpp"
-#include "tasks/mail_task.hpp"
+#include "tasks/backup_task.hpp"
+#include "tasks/restore_task.hpp"
 #include "tasks/session_task.hpp"
 #include "tui_util.hpp"
 
@@ -286,12 +287,12 @@ std::string getExampleDir() {
 #endif
 }
 
-std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, std::string_view const email, bool &outPathCameFromArg){
+std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, std::string_view const email, bool& outPathCameFromArg) {
     std::filesystem::path backupPath;
     outPathCameFromArg = false;
     bool promptEntry = false;
-    if (argParseResult.count("export-dir")) {
-        auto const argPath = argParseResult["export-dir"].as<std::string>();
+    if (argParseResult.count("dir")) {
+        auto const argPath = argParseResult["dir"].as<std::string>();
         if (!argPath.empty()) {
             backupPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
         }
@@ -325,6 +326,271 @@ std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, 
     }
 }
 
+std::filesystem::path getRestorePath(cxxopts::ParseResult const& argParseResult, bool& outPathCameFromArg) {
+    std::filesystem::path backupPath;
+    outPathCameFromArg = false;
+    if (argParseResult.count("dir")) {
+        auto const argPath = argParseResult["dir"].as<std::string>();
+        if (!argPath.empty()) {
+            backupPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
+        }
+        outPathCameFromArg = true;
+    }
+
+    while (true) {
+        std::cout << "Please specify the path of the backup folder. E.g.: " << getExampleDir() << std::endl;
+        backupPath = readPath("Backup Path");
+
+        if (backupPath.is_relative()) {
+            backupPath = getOutputPath() / backupPath;
+        }
+
+        if (!std::filesystem::exists(backupPath)) {
+            std::cerr << "The specified path does not exists" << std::endl;
+            continue;
+        }
+
+        if (!std::filesystem::is_directory(backupPath)) {
+            std::cerr << "The specified path is not a directory" << std::endl;
+            continue;
+        }
+
+        return backupPath;
+    }
+}
+
+std::optional<int> performLogin(etcpp::Session& session, cxxopts::ParseResult& argParseResult, CLIAppState& appState) {
+    etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;
+
+    constexpr int kMaxNumLoginAttempts = 3;
+    int numLoginAttempts = 0;
+
+    std::string loginUsername;
+    std::string loginPassword;
+
+    while (loginState != etcpp::Session::LoginState::LoggedIn) {
+        if (gShouldQuit) {
+            return EXIT_SUCCESS;
+        }
+
+        if (numLoginAttempts >= kMaxNumLoginAttempts) {
+            std::cerr << "Failed to login: Max attempts reached" << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        switch (loginState) {
+        case etcpp::Session::LoginState::LoggedOut:
+        {
+            auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL", []() { return readText("Username"); });
+            if (gShouldQuit) {
+                return EXIT_SUCCESS;
+            }
+
+            auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD", []() { return readSecret("Password"); });
+
+            try {
+                auto task = LoginSessionTask(
+                    session, "Logging In", [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(username.c_str(), password); });
+                loginState = runTask(appState, task);
+                loginUsername = std::move(username);
+                loginPassword = std::move(password);
+            } catch (const etcpp::SessionException& e) {
+                std::cerr << "Failed to login: " << e.what() << std::endl;
+                numLoginAttempts += 1;
+                continue;
+            }
+
+            numLoginAttempts = 0;
+            break;
+        }
+        case etcpp::Session::LoginState::AwaitingTOTP:
+        {
+            const auto totp =
+                getCLIValue(argParseResult, "totp", "ET_TOTP_CODE", []() { return readSecret("Enter the code from your authenticator app"); });
+            if (gShouldQuit) {
+                return EXIT_SUCCESS;
+            }
+            try {
+                auto task = LoginSessionTask(session, "Submitting 2FA Code",
+                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.loginTOTP(totp.c_str()); });
+                loginState = runTask(appState, task);
+            } catch (const etcpp::SessionException& e) {
+                std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
+                numLoginAttempts += 1;
+                continue;
+            }
+
+            numLoginAttempts = 0;
+            break;
+        }
+        case etcpp::Session::LoginState::AwaitingHV:
+        {
+            const auto hvUrl = session.getHVSolveURL();
+
+            std::cout << "\nHuman Verification requested. Please open the URL below in a "
+                "browser and"
+                << " press ENTER when the challenge has been completed.\n\n"
+                << hvUrl << '\n'
+                << std::endl;
+
+            waitForEnter("Press ENTER to continue");
+            if (gShouldQuit) {
+                return EXIT_SUCCESS;
+            }
+
+            try {
+                loginState = session.markHVSolved();
+                // Auto-retry login with existing information if the HV was triggered during
+                // login.
+                if (loginState == etcpp::Session::LoginState::LoggedOut) {
+                    auto task = LoginSessionTask(
+                        session, "Retrying login after Human Verification request",
+                        [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(loginUsername.c_str(), loginPassword); });
+                    loginState = runTask(appState, task);
+                }
+                if (loginState == etcpp::Session::LoginState::AwaitingHV) {
+                    numLoginAttempts += 1;
+                    continue;
+                }
+            } catch (const etcpp::SessionException& e) {
+                std::cerr << "Failed to login: " << e.what() << std::endl;
+                numLoginAttempts += 1;
+                continue;
+            }
+
+            numLoginAttempts = 0;
+            break;
+        }
+        case etcpp::Session::LoginState::AwaitingMailboxPassword:
+        {
+            const auto mboxPassword =
+                getCLIValue(argParseResult, "mbox-password", "ET_USER_MAILBOX_PASSWORD", []() { return readSecret("Mailbox Password"); });
+            if (gShouldQuit) {
+                return EXIT_SUCCESS;
+            }
+
+            try {
+                loginState = session.loginMailboxPassword(mboxPassword);
+            } catch (const etcpp::SessionException& e) {
+                std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
+                numLoginAttempts += 1;
+                continue;
+            }
+
+            numLoginAttempts = 0;
+            break;
+        }
+        default:
+        {
+            const auto msg = fmt::format("Encountered unexpected login state: {:x}", static_cast<uint32_t>(loginState));
+            etcpp::GlobalScope::reportError(kReportTag, msg.c_str());
+            std::cerr << msg << std::endl;
+            return EXIT_FAILURE;
+        }
+        }
+    }
+    return std::nullopt;
+}
+
+
+int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseResult, CLIAppState const& appState) {
+    std::filesystem::path backupPath;
+    bool pathCameFromArgs = false;
+    try {
+        backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
+    } catch (std::exception const& e) {
+        etcpp::logError("Failed to create export directory '{}': {}", backupPath.u8string(), e.what());
+        std::cerr << "Failed to create export directory '" << backupPath << "': " << e.what() << std::endl;
+        if (pathCameFromArgs) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    std::filesystem::space_info spaceInfo{};
+    try {
+        spaceInfo = std::filesystem::space(backupPath);
+    } catch (const std::exception& e) {
+        etcpp::logError("Failed to get free space info: {}", e.what());
+        std::cerr << "Failed to get free space info: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::unique_ptr<BackupTask> backupTask;
+    try {
+        backupTask = std::make_unique<BackupTask>(session, backupPath);
+    } catch (const etcpp::SessionException& e) {
+        etLogError("Failed to create export task: {}", e.what());
+        std::cerr << "Failed to create export task: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    uint64_t expectedSpace = 0;
+    try {
+        expectedSpace = backupTask->getExpectedDiskUsage();
+    } catch (const etcpp::ExportBackupException& e) {
+        std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (expectedSpace > spaceInfo.available) {
+        std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
+            << toMB(spaceInfo.available) << " MB available. " << std::endl
+            << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+            << std::endl;
+
+        if (!readYesNo("Do you wish to proceed?")) {
+            return EXIT_SUCCESS;
+        }
+    }
+
+    std::cout << "Starting Export - Path=" << backupTask->getExportPath() << std::endl;
+    try {
+        runTaskWithProgress(appState, *backupTask);
+    } catch (const etcpp::ExportBackupException& e) {
+        etcpp::logError("Failed to export : {}", e.what());
+        std::cerr << "Failed to export: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Export Finished" << std::endl;
+    return EXIT_SUCCESS;
+}
+
+int performRestore(etcpp::Session& session, cxxopts::ParseResult const& argParseResult, CLIAppState const& appState) {
+    std::filesystem::path backupPath;
+    bool pathCameFromArgs = false;
+    try {
+        backupPath = getRestorePath(argParseResult, pathCameFromArgs);
+    } catch (std::exception const& e) {
+        etcpp::logError("Failed to access backup directory '{}': {}", backupPath.u8string(), e.what());
+        std::cerr << "Failed to access backup directory '" << backupPath << "': " << e.what() << std::endl;
+        if (pathCameFromArgs) {
+            return EXIT_FAILURE;
+        }
+    }
+
+    std::unique_ptr<RestoreTask> restoreTask;
+    try {
+        std::cout << "backupPath: " << backupPath;
+        restoreTask = std::make_unique<RestoreTask>(session, backupPath);
+    } catch (const etcpp::SessionException& e) {
+        etLogError("Failed to create export task: {}", e.what());
+        std::cerr << "Failed to create export task: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Starting Restore - Path=" << restoreTask->getExportPath() << std::endl;
+
+    try {
+        runTaskWithProgress(appState, *restoreTask);
+    } catch (const etcpp::ExportRestoreException& e) {
+        etcpp::logError("Failed to restore : {}", e.what());
+        std::cerr << "Failed to restore: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Restore Finished" << std::endl;
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, const char** argv) {
 #if defined(_WIN32)
     // Ensure Win32 Console correctly processes utf8 characters.
@@ -332,7 +598,7 @@ int main(int argc, const char** argv) {
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    auto appState = CLIAppState();
+    CLIAppState appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
         << "This program is licensed under the GNU General Public License v3\n"
         << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
@@ -398,136 +664,10 @@ int main(int argc, const char** argv) {
             std::cout << "\nSession Log: " << *logPath << '\n' << std::endl;
         }
 
-        auto session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());
-
-        etcpp::Session::LoginState loginState = etcpp::Session::LoginState::LoggedOut;
-
-        constexpr int kMaxNumLoginAttempts = 3;
-        int numLoginAttempts = 0;
-
-        std::string loginUsername;
-        std::string loginPassword;
-
-        while (loginState != etcpp::Session::LoginState::LoggedIn) {
-            if (gShouldQuit) {
-                return EXIT_SUCCESS;
-            }
-
-            if (numLoginAttempts >= kMaxNumLoginAttempts) {
-                std::cerr << "Failed to login: Max attempts reached" << std::endl;
-                return EXIT_FAILURE;
-            }
-
-            switch (loginState) {
-            case etcpp::Session::LoginState::LoggedOut:
-            {
-                auto username = getCLIValue(argParseResult, "user", "ET_USER_EMAIL", []() { return readText("Username"); });
-                if (gShouldQuit) {
-                    return EXIT_SUCCESS;
-                }
-
-                auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD", []() { return readSecret("Password"); });
-
-                try {
-                    auto task = LoginSessionTask(
-                        session, "Logging In", [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(username.c_str(), password); });
-                    loginState = runTask(appState, task);
-                    loginUsername = std::move(username);
-                    loginPassword = std::move(password);
-                } catch (const etcpp::SessionException& e) {
-                    std::cerr << "Failed to login: " << e.what() << std::endl;
-                    numLoginAttempts += 1;
-                    continue;
-                }
-
-                numLoginAttempts = 0;
-                break;
-            }
-            case etcpp::Session::LoginState::AwaitingTOTP:
-            {
-                const auto totp =
-                    getCLIValue(argParseResult, "totp", "ET_TOTP_CODE", []() { return readSecret("Enter the code from your authenticator app"); });
-                if (gShouldQuit) {
-                    return EXIT_SUCCESS;
-                }
-                try {
-                    auto task = LoginSessionTask(session, "Submitting 2FA Code",
-                                                 [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.loginTOTP(totp.c_str()); });
-                    loginState = runTask(appState, task);
-                } catch (const etcpp::SessionException& e) {
-                    std::cerr << "Failed to submit 2FA code: " << e.what() << std::endl;
-                    numLoginAttempts += 1;
-                    continue;
-                }
-
-                numLoginAttempts = 0;
-                break;
-            }
-            case etcpp::Session::LoginState::AwaitingHV:
-            {
-                const auto hvUrl = session.getHVSolveURL();
-
-                std::cout << "\nHuman Verification requested. Please open the URL below in a "
-                    "browser and"
-                    << " press ENTER when the challenge has been completed.\n\n"
-                    << hvUrl << '\n'
-                    << std::endl;
-
-                waitForEnter("Press ENTER to continue");
-                if (gShouldQuit) {
-                    return EXIT_SUCCESS;
-                }
-
-                try {
-                    loginState = session.markHVSolved();
-                    // Auto-retry login with existing information if the HV was triggered during
-                    // login.
-                    if (loginState == etcpp::Session::LoginState::LoggedOut) {
-                        auto task = LoginSessionTask(
-                            session, "Retrying login after Human Verification request",
-                            [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(loginUsername.c_str(), loginPassword); });
-                        loginState = runTask(appState, task);
-                    }
-                    if (loginState == etcpp::Session::LoginState::AwaitingHV) {
-                        numLoginAttempts += 1;
-                        continue;
-                    }
-                } catch (const etcpp::SessionException& e) {
-                    std::cerr << "Failed to login: " << e.what() << std::endl;
-                    numLoginAttempts += 1;
-                    continue;
-                }
-
-                numLoginAttempts = 0;
-                break;
-            }
-            case etcpp::Session::LoginState::AwaitingMailboxPassword:
-            {
-                const auto mboxPassword =
-                    getCLIValue(argParseResult, "mbox-password", "ET_USER_MAILBOX_PASSWORD", []() { return readSecret("Mailbox Password"); });
-                if (gShouldQuit) {
-                    return EXIT_SUCCESS;
-                }
-
-                try {
-                    loginState = session.loginMailboxPassword(mboxPassword);
-                } catch (const etcpp::SessionException& e) {
-                    std::cerr << "Failed to set mailbox password: " << e.what() << std::endl;
-                    numLoginAttempts += 1;
-                    continue;
-                }
-
-                numLoginAttempts = 0;
-                break;
-            }
-            default:
-            {
-                const auto msg = fmt::format("Encountered unexpected login state: {:x}", static_cast<uint32_t>(loginState));
-                etcpp::GlobalScope::reportError(kReportTag, msg.c_str());
-                std::cerr << msg << std::endl;
-                return EXIT_FAILURE;
-            }
-            }
+        etcpp::Session session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());
+        std::optional<int> exitCode = performLogin(session, argParseResult, appState);
+        if (exitCode.has_value()) {
+            return *exitCode;
         }
 
         std::string operationStr =
@@ -541,64 +681,16 @@ int main(int argc, const char** argv) {
             return EXIT_FAILURE;
         }
 
-        std::filesystem::path backupPath;
-        bool pathCameFromArgs = false;
-        try {
-            backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
-        } catch (std::exception const& e) {
-            etcpp::logError("Failed to create export directory '{}': {}", backupPath.u8string(), e.what());
-            std::cerr << "Failed to create export directory '" << backupPath << "': " << e.what() << std::endl;
-            if (pathCameFromArgs) {
-                return EXIT_FAILURE;
-            }
+        switch (operation) {
+        case EOperation::Backup:
+            return performBackup(session, argParseResult, appState);
+            break;
+        case EOperation::Restore:
+            return performRestore(session, argParseResult, appState);
+            break;
+        default:
+            throw etcpp::Exception("Could not determine operation to perform (" + operationStr + ")");
         }
-
-        std::filesystem::space_info spaceInfo{};
-        try {
-            spaceInfo = std::filesystem::space(backupPath);
-        } catch (const std::exception& e) {
-            etcpp::logError("Failed to get free space info: {}", e.what());
-            std::cerr << "Failed to get free space info: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        std::unique_ptr<BackupTask> exportMail;
-        try {
-            exportMail = std::make_unique<BackupTask>(session, backupPath);
-        } catch (const etcpp::SessionException& e) {
-            etLogError("Failed to create export task: {}", e.what());
-            std::cerr << "Failed to create export task: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        uint64_t expectedSpace = 0;
-        try {
-            expectedSpace = exportMail->getExpectedDiskUsage();
-        } catch (const etcpp::ExportBackupException& e) {
-            std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        if (expectedSpace > spaceInfo.available) {
-            std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
-                << toMB(spaceInfo.available) << " MB available. " << std::endl
-                << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
-                << std::endl;
-
-            if (!readYesNo("Do you wish to proceed?")) {
-                return EXIT_SUCCESS;
-            }
-        }
-
-        std::cout << "Starting Export - Path=" << exportMail->getExportPath() << std::endl;
-        try {
-            runTaskWithProgress(appState, *exportMail);
-        } catch (const etcpp::ExportBackupException& e) {
-            etcpp::logError("Failed to export : {}", e.what());
-            std::cerr << "Failed to export: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-        std::cout << "Export Finished" << std::endl;
     } catch (const etcpp::CancelledException&) {
         return EXIT_SUCCESS;
     } catch (const ReadInputException& e) {
@@ -611,6 +703,5 @@ int main(int argc, const char** argv) {
         std::cerr << str << std::endl;
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }

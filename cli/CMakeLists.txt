@@ -19,8 +19,10 @@ target_sources(proton-mail-export-cli PRIVATE
         bin/tui_util.hpp
         bin/task_runner.hpp
         bin/tasks/task.hpp
-        bin/tasks/mail_task.cpp
-        bin/tasks/mail_task.hpp
+        bin/tasks/backup_task.cpp
+        bin/tasks/backup_task.hpp
+        bin/tasks/restore_task.cpp
+        bin/tasks/restore_task.hpp
         bin/tasks/session_task.hpp
         bin/tasks/global_task.cpp
         bin/tasks/global_task.hpp

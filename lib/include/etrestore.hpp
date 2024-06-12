@@ -24,50 +24,48 @@
 #include "etexception.hpp"
 
 extern "C" {
-struct etExportBackup;
+struct etRestore;
 }
 
 namespace etcpp {
 
 class Session;
 
-class ExportBackupException final : public Exception {
+class RestoreException final : public Exception {
 public:
-    explicit ExportBackupException(std::string_view what) : Exception(what) {}
+    explicit RestoreException(std::string_view what) : Exception(what) {}
 };
 
-class ExportBackupCallback {
+class RestoreCallback {
 public:
-    ExportBackupCallback() = default;
-    virtual ~ExportBackupCallback() = default;
+    RestoreCallback() = default;
+    virtual ~RestoreCallback() = default;
 
     virtual void onProgress(float progress) = 0;
 };
 
-class ExportBackup final {
+class Restore final {
     friend class Session;
 
 private:
     const Session& mSession;
-    etExportBackup* mPtr;
+    etRestore* mPtr;
 
 protected:
-    ExportBackup(const Session& session, etExportBackup* ptr);
+    Restore(const Session& session, etRestore* ptr);
 
 public:
-    ~ExportBackup();
-    ExportBackup(const ExportBackup&) = delete;
-    ExportBackup(ExportBackup&&) noexcept = delete;
-    ExportBackup& operator=(const ExportBackup&) = delete;
-    ExportBackup& operator=(ExportBackup&& rhs) noexcept = delete;
+    ~Restore();
+    Restore(const Restore&) = delete;
+    Restore(Restore&&) noexcept = delete;
+    Restore& operator=(const Restore&) = delete;
+    Restore& operator=(Restore&& rhs) noexcept = delete;
 
-    void start(ExportBackupCallback& cb);
+    void start(RestoreCallback& cb);
 
     void cancel();
 
-    std::filesystem::path getExportPath() const;
-
-    std::uint64_t getExpectedDiskUsage() const;
+    std::filesystem::path getBackupPath() const;
 
 private:
     template<class F>

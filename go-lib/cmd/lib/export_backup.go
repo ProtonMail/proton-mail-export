@@ -19,8 +19,8 @@ package main
 
 // #cgo CFLAGS: -I "cgo_headers" -D "ET_CGO=1"
 /*
-#include "etexport_backup.h"
-#include "etexport_backup_impl.h"
+#include "etbackup.h"
+#include "etbackup_impl.h"
 */
 import "C"
 import (
@@ -38,8 +38,8 @@ import (
 	"github.com/ProtonMail/gluon/async"
 )
 
-//export etSessionNewExportBackup
-func etSessionNewExportBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, outExportBackup **C.etExportBackup) C.etSessionStatus {
+//export etSessionNewBackup
+func etSessionNewBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, outBackup **C.etBackup) C.etSessionStatus {
 	cSession, ok := resolveSession(sessionPtr)
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
@@ -57,25 +57,25 @@ func etSessionNewExportBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, o
 
 	mailExport := mail.NewExportTask(cSession.ctx, exportPath, cSession.s)
 
-	h := internal.NewHandle(&cExportBackup{
+	h := internal.NewHandle(&cBackup{
 		csession: cSession,
 		exporter: mailExport,
 	})
 
 	// Intentional misuse of unsafe pointer.
 	//goland:noinspection GoVetUnsafePointer
-	*outExportBackup = (*C.etExportBackup)(unsafe.Pointer(h)) //nolint:govet
+	*outBackup = (*C.etBackup)(unsafe.Pointer(h)) //nolint:govet
 
 	return C.ET_SESSION_STATUS_OK
 }
 
-//export etExportBackupDelete
-func etExportBackupDelete(ptr *C.etExportBackup) C.etExportBackupStatus {
-	h := exportMailPtrToHandle(ptr)
+//export etBackupDelete
+func etBackupDelete(ptr *C.etBackup) C.etBackupStatus {
+	h := backupPtrToHandle(ptr)
 
 	s, ok := h.resolve()
 	if !ok {
-		return C.ET_EXPORT_BACKUP_STATUS_INVALID
+		return C.ET_BACKUP_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(s.csession.s.GetPanicHandler())
@@ -85,14 +85,14 @@ func etExportBackupDelete(ptr *C.etExportBackup) C.etExportBackupStatus {
 
 	h.Delete()
 
-	return C.ET_EXPORT_BACKUP_STATUS_OK
+	return C.ET_BACKUP_STATUS_OK
 }
 
-//export etExportBackupStart
-func etExportBackupStart(ptr *C.etExportBackup, callbacks *C.etExportBackupCallbacks) C.etExportBackupStatus {
-	ce, ok := resolveExportBackup(ptr)
+//export etBackupStart
+func etBackupStart(ptr *C.etBackup, callbacks *C.etBackupCallbacks) C.etBackupStatus {
+	ce, ok := resolveBackup(ptr)
 	if !ok {
-		return C.ET_EXPORT_BACKUP_STATUS_INVALID
+		return C.ET_BACKUP_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
@@ -104,33 +104,33 @@ func etExportBackupStart(ptr *C.etExportBackup, callbacks *C.etExportBackupCallb
 
 	if err := ce.exporter.Run(ce.csession.ctx, reporter); err != nil {
 		if errors.Is(err, context.Canceled) {
-			return C.ET_EXPORT_BACKUP_STATUS_CANCELLED
+			return C.ET_BACKUP_STATUS_CANCELLED
 		}
 
 		ce.lastError.Set(internal.MapError(err))
-		return C.ET_EXPORT_BACKUP_STATUS_ERROR
+		return C.ET_BACKUP_STATUS_ERROR
 	}
 
-	return C.ET_EXPORT_BACKUP_STATUS_OK
+	return C.ET_BACKUP_STATUS_OK
 }
 
-//export etExportBackupCancel
-func etExportBackupCancel(ptr *C.etExportBackup) C.etExportBackupStatus {
-	ce, ok := resolveExportBackup(ptr)
+//export etBackupCancel
+func etBackupCancel(ptr *C.etBackup) C.etBackupStatus {
+	ce, ok := resolveBackup(ptr)
 	if !ok {
-		return C.ET_EXPORT_BACKUP_STATUS_INVALID
+		return C.ET_BACKUP_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	ce.exporter.Cancel()
 
-	return C.ET_EXPORT_BACKUP_STATUS_OK
+	return C.ET_BACKUP_STATUS_OK
 }
 
-//export etExportBackupGetLastError
-func etExportBackupGetLastError(ptr *C.etExportBackup) *C.cchar_t {
-	ce, ok := resolveExportBackup(ptr)
+//export etBackupGetLastError
+func etBackupGetLastError(ptr *C.etBackup) *C.cchar_t {
+	ce, ok := resolveBackup(ptr)
 	if !ok {
 		return nil
 	}
@@ -138,11 +138,11 @@ func etExportBackupGetLastError(ptr *C.etExportBackup) *C.cchar_t {
 	return (*C.cchar_t)(ce.lastError.GetErr())
 }
 
-//export etExportBackupGetRequiredDiskSpaceEstimate
-func etExportBackupGetRequiredDiskSpaceEstimate(ptr *C.etExportBackup, outSpace *C.uint64_t) C.etExportBackupStatus {
-	ce, ok := resolveExportBackup(ptr)
+//export etBackupGetRequiredDiskSpaceEstimate
+func etBackupGetRequiredDiskSpaceEstimate(ptr *C.etBackup, outSpace *C.uint64_t) C.etBackupStatus {
+	ce, ok := resolveBackup(ptr)
 	if !ok {
-		return C.ET_EXPORT_BACKUP_STATUS_INVALID
+		return C.ET_BACKUP_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
@@ -150,48 +150,48 @@ func etExportBackupGetRequiredDiskSpaceEstimate(ptr *C.etExportBackup, outSpace 
 	space, err := ce.exporter.GetRequiredDiskSpaceEstimate(ce.csession.ctx)
 	if err != nil {
 		ce.lastError.Set(internal.MapError(err))
-		return C.ET_EXPORT_BACKUP_STATUS_ERROR
+		return C.ET_BACKUP_STATUS_ERROR
 	}
 
 	*outSpace = C.uint64_t(space)
 
-	return C.ET_EXPORT_BACKUP_STATUS_OK
+	return C.ET_BACKUP_STATUS_OK
 }
 
-//export etExportBackupGetExportPath
-func etExportBackupGetExportPath(ptr *C.etExportBackup, outPath **C.char) C.etExportBackupStatus {
-	ce, ok := resolveExportBackup(ptr)
+//export etBackupGetExportPath
+func etBackupGetExportPath(ptr *C.etBackup, outPath **C.char) C.etBackupStatus {
+	ce, ok := resolveBackup(ptr)
 	if !ok {
-		return C.ET_EXPORT_BACKUP_STATUS_INVALID
+		return C.ET_BACKUP_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	*outPath = C.CString(ce.exporter.GetExportPath())
 
-	return C.ET_EXPORT_BACKUP_STATUS_OK
+	return C.ET_BACKUP_STATUS_OK
 }
 
-type cExportBackup struct {
+type cBackup struct {
 	csession  *csession
 	exporter  *mail.ExportTask
 	lastError utils.CLastError
 }
 
-type ExportBackupHandle struct {
+type BackupHandle struct {
 	internal.Handle
 }
 
-func (h ExportBackupHandle) resolve() (*cExportBackup, bool) {
-	return internal.ResolveHandle[cExportBackup](h.Handle)
+func (h BackupHandle) resolve() (*cBackup, bool) {
+	return internal.ResolveHandle[cBackup](h.Handle)
 }
 
-func exportMailPtrToHandle(ptr *C.etExportBackup) ExportBackupHandle {
-	return ExportBackupHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
+func backupPtrToHandle(ptr *C.etBackup) BackupHandle {
+	return BackupHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
 }
 
-func resolveExportBackup(ptr *C.etExportBackup) (*cExportBackup, bool) {
-	h := exportMailPtrToHandle(ptr)
+func resolveBackup(ptr *C.etBackup) (*cBackup, bool) {
+	h := backupPtrToHandle(ptr)
 
 	return h.resolve()
 }
@@ -199,7 +199,7 @@ func resolveExportBackup(ptr *C.etExportBackup) (*cExportBackup, bool) {
 type backupReporter struct {
 	totalMessageCount   atomic.Uint64
 	currentMessageCount atomic.Uint64
-	callbacks           *C.etExportBackupCallbacks
+	callbacks           *C.etBackupCallbacks
 	exporter            *mail.ExportTask
 }
 
@@ -222,5 +222,5 @@ func (m *backupReporter) OnProgress(delta int) {
 		progress = float32(0.0)
 	}
 
-	C.etExportBackupCallbackOnProgress(m.callbacks, C.float(progress))
+	C.etBackupCallbackOnProgress(m.callbacks, C.float(progress))
 }

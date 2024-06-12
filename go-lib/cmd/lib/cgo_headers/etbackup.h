@@ -15,30 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Mail Bridge. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ET_EXPORT_BACKUP_H
-#define ET_EXPORT_BACKUP_H
+#ifndef ET_BACKUP_H
+#define ET_BACKUP_H
 
 #include "etsession.h"
 
-typedef struct etExportBackup etExportBackup;
+typedef struct etBackup etBackup;
 
-typedef enum etExportBackupStatus {
-	ET_EXPORT_BACKUP_STATUS_OK,
-	ET_EXPORT_BACKUP_STATUS_ERROR,
-	ET_EXPORT_BACKUP_STATUS_INVALID,
-	ET_EXPORT_BACKUP_STATUS_CANCELLED,
-} etExportBackupStatus;
+typedef enum etBackupStatus {
+	ET_BACKUP_STATUS_OK,
+	ET_BACKUP_STATUS_ERROR,
+	ET_BACKUP_STATUS_INVALID,
+	ET_BACKUP_STATUS_CANCELLED,
+} etBackupStatus;
 
-typedef enum etExportBackupMessageType {
-	ET_EXPORT_BACKUP_MESSAGE_TYPE_PROGRESS,
-} etExportBackupMessageType;
+typedef enum etBackupMessageType {
+	ET_BACKUP_MESSAGE_TYPE_PROGRESS,
+} etBackupMessageType;
 
-typedef struct etExportBackupCallbacks {
+typedef struct etBackupCallbacks {
     void* ptr;
     void (*onProgress)(void* ptr, float progress);
-} etExportBackupCallbacks;
+} etBackupCallbacks;
 
-#endif // ET_EXPORT_BACKUP_H
+#endif // ET_BACKUP_H
 
 
 

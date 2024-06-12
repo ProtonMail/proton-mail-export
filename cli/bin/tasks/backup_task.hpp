@@ -17,19 +17,19 @@
 
 #pragma once
 
-#include <etexport_backup.hpp>
+#include <etbackup.hpp>
 #include <filesystem>
 
 #include "tasks/task.hpp"
 #include "tui_util.hpp"
 
-class BackupTask final : public TaskWithProgress<void>, etcpp::ExportBackupCallback {
+class BackupTask final : public TaskWithProgress<void>, etcpp::BackupCallback {
 private:
-    etcpp::ExportBackup mExport;
+    etcpp::Backup mBackup;
     CLIProgressBar mProgressBar;
 
 public:
-    BackupTask(etcpp::Session& session, const std::filesystem::path& exportPath);
+    BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath);
     ~BackupTask() override = default;
     BackupTask(const BackupTask&) = delete;
     BackupTask(BackupTask&&) = delete;
@@ -42,9 +42,9 @@ public:
 
     std::string_view description() const override;
 
-    inline std::filesystem::path getExportPath() const { return mExport.getExportPath(); }
+    inline std::filesystem::path getExportPath() const { return mBackup.getExportPath(); }
 
-    inline uint64_t getExpectedDiskUsage() const { return mExport.getExpectedDiskUsage(); }
+    inline uint64_t getExpectedDiskUsage() const { return mBackup.getExpectedDiskUsage(); }
 
 private:
     void onProgress(float progress) override;

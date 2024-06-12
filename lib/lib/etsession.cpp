@@ -16,8 +16,6 @@
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <etsession.hpp>
-
-#include <etconfig.hpp>
 #include <proton-mail-export.h>
 
 namespace etcpp {
@@ -146,18 +144,18 @@ Session::LoginState Session::getLoginState() const {
     return ls;
 }
 
-ExportBackup Session::newExportBackup(const char* exportPath) const {
-    etExportBackup* exportPtr = nullptr;
-    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportBackup(ptr, exportPath, &exportPtr); });
+Backup Session::newBackup(const char* exportPath) const {
+    etBackup* exportPtr = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewBackup(ptr, exportPath, &exportPtr); });
 
-    return ExportBackup(*this, exportPtr);
+    return Backup(*this, exportPtr);
 }
 
-ExportRestore Session::newExportRestore(const char* backupPath) const {
-    etExportRestore* restorePtr = nullptr;
-    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewExportRestore(ptr, backupPath, &restorePtr); });
+Restore Session::newRestore(const char* backupPath) const {
+    etRestore* restorePtr = nullptr;
+    wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionNewRestore(ptr, backupPath, &restorePtr); });
 
-    return ExportRestore(*this, restorePtr);
+    return Restore(*this, restorePtr);
 }
 
 void Session::cancel() {

@@ -17,15 +17,15 @@
 
 #pragma once
 
-#include <etexport_restore.hpp>
+#include <etrestore.hpp>
 #include <filesystem>
 
 #include "tasks/task.hpp"
 #include "tui_util.hpp"
 
-class RestoreTask final : public TaskWithProgress<void>, etcpp::ExportRestoreCallback {
+class RestoreTask final : public TaskWithProgress<void>, etcpp::RestoreCallback {
 private:
-    etcpp::ExportRestore mRestore;
+    etcpp::Restore mRestore;
     CLIProgressBar mProgressBar;
 
 public:

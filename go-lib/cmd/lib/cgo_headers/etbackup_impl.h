@@ -15,17 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Mail Bridge. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ET_EXPORT_BACKUP_IMPL_H
-#define ET_EXPORT_BACKUP_IMPL_H
+#ifndef ET_BACKUP_IMPL_H
+#define ET_BACKUP_IMPL_H
 
-#include "etexport_backup.h"
+#include "etbackup.h"
 
 #ifdef ET_CGO
 
-inline void etExportBackupCallbackOnProgress(etExportBackupCallbacks* cb, float progress) {
+inline void etBackupCallbackOnProgress(etBackupCallbacks* cb, float progress) {
     cb->onProgress(cb->ptr, progress);
 }
 
 #endif // ET_CGO
 
-#endif // ET_EXPORT_MAIL_IMPL_H
+#endif // ET_BACKUP_IMPL_H

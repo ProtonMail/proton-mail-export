@@ -19,19 +19,19 @@
 #include <etsession.hpp>
 #include <iostream>
 
-BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
-    mExport(session.newExportBackup(exportPath.u8string().c_str())) {}
+BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath) :
+    mBackup(session.newBackup(backupPath.u8string().c_str())) {}
 
 void BackupTask::onProgress(float progress) {
     updateProgress(progress);
 }
 
 void BackupTask::run() {
-    mExport.start(*this);
+    mBackup.start(*this);
 }
 
 void BackupTask::cancel() {
-    mExport.cancel();
+    mBackup.cancel();
 }
 
 std::string_view BackupTask::description() const {

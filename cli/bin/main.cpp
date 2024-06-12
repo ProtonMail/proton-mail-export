@@ -527,7 +527,7 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
     uint64_t expectedSpace = 0;
     try {
         expectedSpace = backupTask->getExpectedDiskUsage();
-    } catch (const etcpp::ExportBackupException& e) {
+    } catch (const etcpp::BackupException& e) {
         std::cerr << "Could not get expected disk usage: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
@@ -546,7 +546,7 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
     std::cout << "Starting Export - Path=" << backupTask->getExportPath() << std::endl;
     try {
         runTaskWithProgress(appState, *backupTask);
-    } catch (const etcpp::ExportBackupException& e) {
+    } catch (const etcpp::BackupException& e) {
         etcpp::logError("Failed to export : {}", e.what());
         std::cerr << "Failed to export: " << e.what() << std::endl;
         return EXIT_FAILURE;
@@ -582,7 +582,7 @@ int performRestore(etcpp::Session& session, cxxopts::ParseResult const& argParse
 
     try {
         runTaskWithProgress(appState, *restoreTask);
-    } catch (const etcpp::ExportRestoreException& e) {
+    } catch (const etcpp::RestoreException& e) {
         etcpp::logError("Failed to restore : {}", e.what());
         std::cerr << "Failed to restore: " << e.what() << std::endl;
         return EXIT_FAILURE;

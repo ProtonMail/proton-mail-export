@@ -20,7 +20,7 @@
 #include <iostream>
 
 RestoreTask::RestoreTask(etcpp::Session& session, const std::filesystem::path& exportPath) :
-    mRestore(session.newExportRestore(exportPath.u8string().c_str())) {}
+    mRestore(session.newRestore(exportPath.u8string().c_str())) {}
 
 void RestoreTask::onProgress(float progress) {
     updateProgress(progress);

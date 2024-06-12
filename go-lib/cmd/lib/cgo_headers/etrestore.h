@@ -15,30 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Proton Mail Bridge. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ET_EXPORT_RESTORE_H
-#define ET_EXPORT_RESTORE_H
+#ifndef ET_RESTORE_H
+#define ET_RESTORE_H
 
 #include "etsession.h"
 
-typedef struct etExportRestore etExportRestore;
+typedef struct etRestore etRestore;
 
-typedef enum etExportRestoreStatus {
-	ET_EXPORT_RESTORE_STATUS_OK,
-	ET_EXPORT_RESTORE_STATUS_ERROR,
-	ET_EXPORT_RESTORE_STATUS_INVALID,
-	ET_EXPORT_RESTORE_STATUS_CANCELLED,
-} etExportRestoreStatus;
+typedef enum etRestoreStatus {
+	ET_RESTORE_STATUS_OK,
+	ET_RESTORE_STATUS_ERROR,
+	ET_RESTORE_STATUS_INVALID,
+	ET_RESTORE_STATUS_CANCELLED,
+} etRestoreStatus;
 
-typedef enum etExportRestoreMessageType {
-	ET_EXPORT_RESTORE_MESSAGE_TYPE_PROGRESS,
-} etExportRestoreMessageType;
+typedef enum etRestoreMessageType {
+	ET_RESTORE_MESSAGE_TYPE_PROGRESS,
+} etRestoreMessageType;
 
-typedef struct etExportRestoreCallbacks {
+typedef struct etRestoreCallbacks {
     void* ptr;
     void (*onProgress)(void* ptr, float progress);
-} etExportRestoreCallbacks;
+} etRestoreCallbacks;
 
-#endif // ET_EXPORT_RESTORE_H
+#endif // ET_RESTORE_H
 
 
 

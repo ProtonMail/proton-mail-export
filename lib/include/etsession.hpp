@@ -21,8 +21,8 @@
 #include <string>
 
 #include "etexception.hpp"
-#include "etexport_backup.hpp"
-#include "etexport_restore.hpp"
+#include "etbackup.hpp"
+#include "etrestore.hpp"
 
 extern "C" {
 struct etSession;
@@ -67,8 +67,8 @@ public:
     [[nodiscard]] std::string getHVSolveURL() const;
     [[nodiscard]] LoginState markHVSolved();
 
-    [[nodiscard]] ExportBackup newExportBackup(const char* exportPath) const;
-    [[nodiscard]] ExportRestore newExportRestore(const char* backupPath) const;
+    [[nodiscard]] Backup newBackup(const char* exportPath) const;
+    [[nodiscard]] Restore newRestore(const char* backupPath) const;
 
     void cancel();
 

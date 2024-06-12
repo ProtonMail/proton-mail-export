@@ -19,8 +19,8 @@ package main
 
 // #cgo CFLAGS: -I "cgo_headers" -D "ET_CGO=1"
 /*
-#include "etexport_restore.h"
-#include "etexport_restore_impl.h"
+#include "etrestore.h"
+#include "etrestore_impl.h"
 */
 import "C"
 import (
@@ -37,8 +37,8 @@ import (
 	"github.com/ProtonMail/gluon/async"
 )
 
-//export etSessionNewExportRestore
-func etSessionNewExportRestore(sessionPtr *C.etSession, cRestorePath *C.cchar_t, outExportRestore **C.etExportRestore) C.etSessionStatus {
+//export etSessionNewRestore
+func etSessionNewRestore(sessionPtr *C.etSession, cRestorePath *C.cchar_t, outRestore **C.etRestore) C.etSessionStatus {
 	cSession, ok := resolveSession(sessionPtr)
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
@@ -58,25 +58,25 @@ func etSessionNewExportRestore(sessionPtr *C.etSession, cRestorePath *C.cchar_t,
 		return C.ET_SESSION_STATUS_ERROR
 	}
 
-	h := internal.NewHandle(&cExportRestore{
+	h := internal.NewHandle(&cRestore{
 		csession: cSession,
 		restorer: restoreTask,
 	})
 
 	// Intentional misuse of unsafe pointer.
 	//goland:noinspection GoVetUnsafePointer
-	*outExportRestore = (*C.etExportRestore)(unsafe.Pointer(h)) //nolint:govet
+	*outRestore = (*C.etRestore)(unsafe.Pointer(h)) //nolint:govet
 
 	return C.ET_SESSION_STATUS_OK
 }
 
-//export etExportRestoreDelete
-func etExportRestoreDelete(ptr *C.etExportRestore) C.etExportRestoreStatus {
-	h := exportRestorePtrToHandle(ptr)
+//export etRestoreDelete
+func etRestoreDelete(ptr *C.etRestore) C.etRestoreStatus {
+	h := restorePtrToHandle(ptr)
 
 	s, ok := h.resolve()
 	if !ok {
-		return C.ET_EXPORT_RESTORE_STATUS_INVALID
+		return C.ET_RESTORE_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(s.csession.s.GetPanicHandler())
@@ -86,14 +86,14 @@ func etExportRestoreDelete(ptr *C.etExportRestore) C.etExportRestoreStatus {
 
 	h.Delete()
 
-	return C.ET_EXPORT_RESTORE_STATUS_OK
+	return C.ET_RESTORE_STATUS_OK
 }
 
-//export etExportRestoreStart
-func etExportRestoreStart(ptr *C.etExportRestore, callbacks *C.etExportRestoreCallbacks) C.etExportRestoreStatus {
-	ce, ok := resolveExportRestore(ptr)
+//export etRestoreStart
+func etRestoreStart(ptr *C.etRestore, callbacks *C.etRestoreCallbacks) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
 	if !ok {
-		return C.ET_EXPORT_RESTORE_STATUS_INVALID
+		return C.ET_RESTORE_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
@@ -105,33 +105,33 @@ func etExportRestoreStart(ptr *C.etExportRestore, callbacks *C.etExportRestoreCa
 
 	if err := ce.restorer.Run(reporter); err != nil {
 		if errors.Is(err, context.Canceled) {
-			return C.ET_EXPORT_RESTORE_STATUS_CANCELLED
+			return C.ET_RESTORE_STATUS_CANCELLED
 		}
 
 		ce.lastError.Set(internal.MapError(err))
-		return C.ET_EXPORT_RESTORE_STATUS_ERROR
+		return C.ET_RESTORE_STATUS_ERROR
 	}
 
-	return C.ET_EXPORT_RESTORE_STATUS_OK
+	return C.ET_RESTORE_STATUS_OK
 }
 
-//export etExportRestoreCancel
-func etExportRestoreCancel(ptr *C.etExportRestore) C.etExportRestoreStatus {
-	ce, ok := resolveExportRestore(ptr)
+//export etRestoreCancel
+func etRestoreCancel(ptr *C.etRestore) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
 	if !ok {
-		return C.ET_EXPORT_RESTORE_STATUS_INVALID
+		return C.ET_RESTORE_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	ce.restorer.Cancel()
 
-	return C.ET_EXPORT_RESTORE_STATUS_OK
+	return C.ET_RESTORE_STATUS_OK
 }
 
-//export etExportRestoreGetLastError
-func etExportRestoreGetLastError(ptr *C.etExportRestore) *C.cchar_t {
-	ce, ok := resolveExportRestore(ptr)
+//export etRestoreGetLastError
+func etRestoreGetLastError(ptr *C.etRestore) *C.cchar_t {
+	ce, ok := resolveRestore(ptr)
 	if !ok {
 		return nil
 	}
@@ -139,40 +139,40 @@ func etExportRestoreGetLastError(ptr *C.etExportRestore) *C.cchar_t {
 	return (*C.cchar_t)(ce.lastError.GetErr())
 }
 
-//export etExportRestoreGetBackupPath
-func etExportRestoreGetBackupPath(ptr *C.etExportRestore, outPath **C.char) C.etExportRestoreStatus {
-	ce, ok := resolveExportRestore(ptr)
+//export etRestoreGetBackupPath
+func etRestoreGetBackupPath(ptr *C.etRestore, outPath **C.char) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
 	if !ok {
-		return C.ET_EXPORT_RESTORE_STATUS_INVALID
+		return C.ET_RESTORE_STATUS_INVALID
 	}
 
 	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
 
 	*outPath = C.CString(ce.restorer.GetBackupPath())
 
-	return C.ET_EXPORT_RESTORE_STATUS_OK
+	return C.ET_RESTORE_STATUS_OK
 }
 
-type cExportRestore struct {
+type cRestore struct {
 	csession  *csession
 	restorer  *mail.RestoreTask
 	lastError utils.CLastError
 }
 
-type ExportRestoreHandle struct {
+type RestoreHandle struct {
 	internal.Handle
 }
 
-func (h ExportRestoreHandle) resolve() (*cExportRestore, bool) {
-	return internal.ResolveHandle[cExportRestore](h.Handle)
+func (h RestoreHandle) resolve() (*cRestore, bool) {
+	return internal.ResolveHandle[cRestore](h.Handle)
 }
 
-func exportRestorePtrToHandle(ptr *C.etExportRestore) ExportRestoreHandle {
-	return ExportRestoreHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
+func restorePtrToHandle(ptr *C.etRestore) RestoreHandle {
+	return RestoreHandle{Handle: cgo.Handle(unsafe.Pointer(ptr))}
 }
 
-func resolveExportRestore(ptr *C.etExportRestore) (*cExportRestore, bool) {
-	h := exportRestorePtrToHandle(ptr)
+func resolveRestore(ptr *C.etRestore) (*cRestore, bool) {
+	h := restorePtrToHandle(ptr)
 
 	return h.resolve()
 }
@@ -180,7 +180,7 @@ func resolveExportRestore(ptr *C.etExportRestore) (*cExportRestore, bool) {
 type restoreReporter struct {
 	totalMessageCount   atomic.Uint64
 	currentMessageCount atomic.Uint64
-	callbacks           *C.etExportRestoreCallbacks
+	callbacks           *C.etRestoreCallbacks
 	restorer            *mail.RestoreTask
 }
 
@@ -203,5 +203,5 @@ func (m *restoreReporter) OnProgress(delta int) {
 		progress = float32(0.0)
 	}
 
-	C.etExportRestoreCallbackOnProgress(m.callbacks, C.float(progress))
+	C.etRestoreCallbackOnProgress(m.callbacks, C.float(progress))
 }

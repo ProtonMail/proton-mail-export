@@ -1,23 +1,5 @@
 ---
 
-.nexus-stage:
-  after_script:
-    - './scripts/nexus_push.sh cp --recursive $DEPLOY_DIR :bridge:/export-tool/${CI_COMMIT_TAG}/'
-
-.nexus-cache-darwin:
-  cache:
-    key: nexus-darwin
-    paths:
-      - nexus-client
-    when: 'always'
-
-.nexus-cache-linux:
-  cache:
-    key: nexus-linux
-    paths:
-      - nexus-client
-    when: 'always'
-
 sign-and-pack-darwin:
   stage: installer
   needs: ["build-darwin-universal"]

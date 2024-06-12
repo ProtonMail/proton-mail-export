@@ -3,7 +3,9 @@
 set -eo pipefail
 
 config_from_env() {
-    echo "${NEXUS_CONFIG}" | base64 -d > ~/.nexus-client.json
+    if ! [ -f "~/.nexus_client.json" ]; then
+        echo "${NEXUS_CONFIG}" | base64 -d > ~/.nexus-client.json
+    fi
 }
 
 download_client() {
@@ -26,6 +28,7 @@ download_client() {
 }
 
 upload() {
+    echo "nexus-client $*"
     ./nexus-client "$@"
 }
 

@@ -1,0 +1,161 @@
+---
+
+.component:
+    rel_cand: &include_release_candidate "gitlab.protontech.ch/proton/devops/\
+                        cicd-components/tools/artifactlift/\
+                        release-candidate@0.1.13"
+    rel: &include_release "gitlab.protontech.ch/proton/devops/\
+              cicd-components/tools/artifactlift/\
+              release@0.1.13"
+
+.check_deployer:
+    script:
+        - |
+          echo "job: $CI_JOB_NAME"
+          echo "deploy job: $DEPLOY_JOB"
+          echo "user: $GITLAB_USER_LOGIN"
+          echo "et tag: $ET_TAG"
+        - |
+          [ -z "$GITLAB_USER_LOGIN" ] && \
+          [[ "jcuth gmeszaros xmichelon" =~ "(^| )$GITLAB_USER_LOGIN( |$)" ]]
+
+stages:
+    - generate
+    - deploy
+
+include:
+    - component: *include_release_candidate
+      inputs:
+          product: inbox
+          platform: linux
+          artifact_list: "*"
+          job_prefix: 'linux:'
+    - component: *include_release
+      inputs:
+          product: inbox
+          platform: linux
+          artifact_list: "*"
+          job_prefix: 'linux:'
+          artifact_metadata_path: "linux"
+    - component: *include_release_candidate
+      inputs:
+          product: inbox
+          platform: windows
+          artifact_list: "*"
+          job_prefix: 'windows:'
+    - component: *include_release
+      inputs:
+          product: inbox
+          platform: windows
+          artifact_list: "*"
+          job_prefix: 'windows:'
+          artifact_metadata_path: "windows"
+    - component: *include_release_candidate
+      inputs:
+          product: inbox
+          platform: macos
+          artifact_list: "*"
+          job_prefix: 'macos:'
+    - component: *include_release
+      inputs:
+          product: inbox
+          platform: macos
+          artifact_list: "*"
+          job_prefix: 'macos:'
+          artifact_metadata_path: "macos"
+
+.generate:
+    tags:
+        - shared-small
+    image: gitlab.protontech.ch:4567/go/bridge-internal:release
+    stage: generate
+    script:
+        - !reference [.check_deployer, script]
+        - ./scripts/deploy.sh "${ET_TAG}" "${CI_JOB_NAME}"
+    allow_failure: false
+    artifacts:
+        reports:
+            dotenv: release.env
+        paths:
+            - ./build/*
+
+
+linux:generate:
+    extends:
+        - .generate
+linux:artifactlift-release-candidate-artifacts:
+    needs:
+        - job: linux:generate
+          artifacts: true
+    rules:
+        - when: on_success
+linux:artifactlift-release-artifacts:
+    needs:
+        - job: linux:generate
+          artifacts: true
+        - job: linux:artifactlift-release-candidate-artifacts
+          artifacts: true
+    rules:
+        - when: on_success
+linux:artifactlift-release-metadata:
+    needs:
+        - job: linux:generate
+          artifacts: true
+        - job: linux:artifactlift-release-artifacts
+          artifacts: true
+    rules:
+        - when: on_success
+
+
+windows:generate:
+    extends:
+        - .generate
+windows:artifactlift-release-candidate-artifacts:
+    needs:
+        - job: windows:generate
+          artifacts: true
+    rules:
+        - when: on_success
+windows:artifactlift-release-artifacts:
+    needs:
+        - job: windows:generate
+          artifacts: true
+        - job: windows:artifactlift-release-candidate-artifacts
+          artifacts: true
+    rules:
+        - when: on_success
+windows:artifactlift-release-metadata:
+    needs:
+        - job: windows:generate
+          artifacts: true
+        - job: windows:artifactlift-release-artifacts
+          artifacts: true
+    rules:
+        - when: on_success
+
+
+macos:generate:
+    extends:
+        - .generate
+macos:artifactlift-release-candidate-artifacts:
+    needs:
+        - job: macos:generate
+          artifacts: true
+    rules:
+        - when: on_success
+macos:artifactlift-release-artifacts:
+    needs:
+        - job: macos:generate
+          artifacts: true
+        - job: macos:artifactlift-release-candidate-artifacts
+          artifacts: true
+    rules:
+        - when: on_success
+macos:artifactlift-release-metadata:
+    needs:
+        - job: macos:generate
+          artifacts: true
+        - job: macos:artifactlift-release-artifacts
+          artifacts: true
+    rules:
+        - when: on_success

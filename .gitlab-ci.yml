@@ -6,18 +6,30 @@ variables:
     description: "Control pipeline workflow"
     options:
       - default
+      - build
       - installers
+      - deploy
 
 stages:
   - test
   - build
   - installer
+  - production
 
 include:
   - local: /ci/setup.yml
   - local: /ci/test.yml
   - local: /ci/build.yml
+    rules:
+      - if: $WORKFLOW == "build"
+      - if: $WORKFLOW == "installers"
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      - if: $CI_COMMIT_TAG =~ /^et-\d+/
   - local: /ci/installers.yml
     rules:
       - if: $WORKFLOW == "installers"
+      - if: $CI_COMMIT_TAG =~ /^et-\d+/
+  - local: /ci/deploy.yml
+    rules:
+      - if: $WORKFLOW == "deploy"
       - if: $CI_COMMIT_TAG =~ /^et-\d+/

@@ -122,7 +122,7 @@ TEST_CASE("MailRestore") {
     std::cout << dir.getPath();
     createTestBackup(dir.getPath());
 
-    etcpp::Restore restore = session.newRestore(dir.getPath().c_str());
+    etcpp::Restore restore = session.newRestore(dir.getPath().u8string().c_str());
     NullRestoreCallback nullCallback = NullRestoreCallback();
     REQUIRE_NOTHROW(restore.start(nullCallback));
 }

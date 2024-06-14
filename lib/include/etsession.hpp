@@ -20,8 +20,8 @@
 #include <memory>
 #include <string>
 
-#include "etexception.hpp"
 #include "etbackup.hpp"
+#include "etexception.hpp"
 #include "etrestore.hpp"
 
 extern "C" {

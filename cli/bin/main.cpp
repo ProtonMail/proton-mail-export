@@ -37,8 +37,8 @@
 
 #include "operation.h"
 #include "task_runner.hpp"
-#include "tasks/global_task.hpp"
 #include "tasks/backup_task.hpp"
+#include "tasks/global_task.hpp"
 #include "tasks/restore_task.hpp"
 #include "tasks/session_task.hpp"
 #include "tui_util.hpp"
@@ -58,9 +58,7 @@ inline uint64_t toMB(uint64_t value) {
 
 class ReadInputException final : public etcpp::Exception {
 public:
-    explicit ReadInputException(std::string_view what) :
-        etcpp::Exception(what) {
-    }
+    explicit ReadInputException(std::string_view what) : etcpp::Exception(what) {}
 };
 
 template<class C>
@@ -303,8 +301,8 @@ std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, 
     if (backupPath.empty()) {
         const auto defaultPath = getOutputPath() / email;
         std::cout << "\nBy default, the export will be made in:\n\n"
-            << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
-            << std::endl;
+                  << defaultPath << "\n\nType 'Yes' to continue or 'No' to specify another path.\n"
+                  << std::endl;
 
         promptEntry = !readYesNo("Do you wish to proceed?");
     }
@@ -389,8 +387,8 @@ std::optional<int> performLogin(etcpp::Session& session, cxxopts::ParseResult& a
             auto password = getCLIValue(argParseResult, "password", "ET_USER_PASSWORD", []() { return readSecret("Password"); });
 
             try {
-                auto task = LoginSessionTask(
-                    session, "Logging In", [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(username.c_str(), password); });
+                auto task = LoginSessionTask(session, "Logging In",
+                                             [&](etcpp::Session& s) -> etcpp::Session::LoginState { return s.login(username.c_str(), password); });
                 loginState = runTask(appState, task);
                 loginUsername = std::move(username);
                 loginPassword = std::move(password);
@@ -428,10 +426,10 @@ std::optional<int> performLogin(etcpp::Session& session, cxxopts::ParseResult& a
             const auto hvUrl = session.getHVSolveURL();
 
             std::cout << "\nHuman Verification requested. Please open the URL below in a "
-                "browser and"
-                << " press ENTER when the challenge has been completed.\n\n"
-                << hvUrl << '\n'
-                << std::endl;
+                         "browser and"
+                      << " press ENTER when the challenge has been completed.\n\n"
+                      << hvUrl << '\n'
+                      << std::endl;
 
             waitForEnter("Press ENTER to continue");
             if (gShouldQuit) {
@@ -534,9 +532,9 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
 
     if (expectedSpace > spaceInfo.available) {
         std::cout << "\nThis operation requires at least " << toMB(expectedSpace) << " MB of free space, but the destination volume only has "
-            << toMB(spaceInfo.available) << " MB available. " << std::endl
-            << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
-            << std::endl;
+                  << toMB(spaceInfo.available) << " MB available. " << std::endl
+                  << "Type 'Yes' to continue or 'No' to abort in the prompt below.\n"
+                  << std::endl;
 
         if (!readYesNo("Do you wish to proceed?")) {
             return EXIT_SUCCESS;
@@ -600,22 +598,22 @@ int main(int argc, const char** argv) {
 #endif
     CLIAppState appState = CLIAppState();
     std::cout << "Proton Mail Export Tool (" << et::VERSION_STR << ") (c) Proton AG, Switzerland\n"
-        << "This program is licensed under the GNU General Public License v3\n"
-        << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
+              << "This program is licensed under the GNU General Public License v3\n"
+              << "Get support at https://proton.me/support/proton-mail-export-tool" << std::endl;
     std::filesystem::path outputPath = getOutputPath();
 
     if (!registerCtrlCSignalHandler([]() {
-        if (!gShouldQuit) {
-            std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
-            gShouldQuit.store(true);
+            if (!gShouldQuit) {
+                std::cout << std::endl << "Received Ctrl+C, exiting as soon as possible" << std::endl;
+                gShouldQuit.store(true);
 #if !defined(_WIN32)
-            // We need to reset the printing of chars by stdin here. As soon as we close stdin
-            // to force the input reading to exit, we can't apply any more changes.
-            setStdinEcho(true);
+                // We need to reset the printing of chars by stdin here. As soon as we close stdin
+                // to force the input reading to exit, we can't apply any more changes.
+                setStdinEcho(true);
 #endif
-            fclose(stdin);
-        }
-    })) {
+                fclose(stdin);
+            }
+        })) {
         std::cerr << "Failed to register signal handler";
         return EXIT_FAILURE;
     }
@@ -624,8 +622,8 @@ int main(int argc, const char** argv) {
         auto logDir = outputPath / "logs";
         auto globalScope = etcpp::GlobalScope(logDir, []() {
             std::cerr << "\n\nThe application ran into an unrecoverable error, please consult the "
-                "log for more details."
-                << std::endl;
+                         "log for more details."
+                      << std::endl;
             exit(-1);
         });
 
@@ -654,8 +652,8 @@ int main(int argc, const char** argv) {
             auto task = NewVersionCheckTask(globalScope, "Checking for new version");
             if (runTask(appState, task)) {
                 std::cout << "A new version is available at: "
-                    "https://proton.me/support/proton-mail-export-tool"
-                    << std::endl;
+                             "https://proton.me/support/proton-mail-export-tool"
+                          << std::endl;
             }
         } catch (const std::exception&) {
         }

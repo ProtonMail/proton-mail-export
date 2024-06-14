@@ -16,14 +16,16 @@
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <catch2/catch_test_macros.hpp>
-
 #include <etsession.hpp>
 #include <filesystem>
 #include <fmt/format.h>
+#include <iostream>
 
 #include "gpa_server.hpp"
+#include "test_data/ExportedData.h"
+#include "test_utils.h"
 
-class NullCallback final : public etcpp::BackupCallback {
+class NullBackupCallback final : public etcpp::BackupCallback {
 public:
     void onProgress(float) override {}
 };
@@ -35,8 +37,7 @@ private:
     bool mCancelled = false;
 
 public:
-    explicit ProgressCancelCallback(etcpp::Backup& e, float cancelPercentage) :
-        etcpp::BackupCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
+    explicit ProgressCancelCallback(etcpp::Backup& e, float cancelPercentage) : etcpp::BackupCallback(), mE(e), mCancelPercentage(cancelPercentage) {}
 
     void onProgress(float p) override {
         if (p > mCancelPercentage && !mCancelled) {
@@ -77,10 +78,10 @@ TEST_CASE("MailExport") {
 
     std::filesystem::path exportDir{};
     {
-        auto exporter = session.newBackup(tmpDir.u8string().c_str());
-        exportDir = exporter.getExportPath();
-        auto nullCallback = NullCallback();
-        REQUIRE_NOTHROW(exporter.start(nullCallback));
+        auto backup = session.newBackup(tmpDir.u8string().c_str());
+        exportDir = backup.getExportPath();
+        auto nullCallback = NullBackupCallback();
+        REQUIRE_NOTHROW(backup.start(nullCallback));
     }
 
     for (const auto& msgID: messageIDs) {
@@ -91,4 +92,37 @@ TEST_CASE("MailExport") {
     }
 
     REQUIRE_FALSE(std::filesystem::exists(exportDir / "exportProgress.json"));
+}
+
+
+class NullRestoreCallback final : public etcpp::RestoreCallback {
+public:
+    void onProgress(float) override {}
+};
+
+TEST_CASE("MailRestore") {
+    GPAServer server;
+
+    const char* userEmail = "hello";
+    const char* userPassword = "12345";
+
+    std::string addrID;
+    std::string const userID = server.createUser(userEmail, userPassword, addrID);
+    std::string const url = server.url();
+
+    auto session = etcpp::Session(url.c_str());
+    auto loginState = session.getLoginState();
+
+    REQUIRE(loginState == etcpp::Session::LoginState::LoggedOut);
+
+    loginState = session.login(userEmail, userPassword);
+    REQUIRE(loginState == etcpp::Session::LoginState::LoggedIn);
+
+    ScopedTempFolder dir;
+    std::cout << dir.getPath();
+    createTestBackup(dir.getPath());
+
+    etcpp::Restore restore = session.newRestore(dir.getPath().c_str());
+    NullRestoreCallback nullCallback = NullRestoreCallback();
+    REQUIRE_NOTHROW(restore.start(nullCallback));
 }

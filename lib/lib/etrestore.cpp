@@ -48,9 +48,7 @@ etRestoreCallbacks makeETRestoreCallback(RestoreCallback& cb) {
     return r;
 }
 
-Restore::Restore(const etcpp::Session& session, etRestore* ptr) :
-    mSession(session), mPtr(ptr) {
-}
+Restore::Restore(const etcpp::Session& session, etRestore* ptr) : mSession(session), mPtr(ptr) {}
 
 Restore::~Restore() {
     wrapCCall([](etRestore* ptr) { return etRestoreDelete(ptr); });

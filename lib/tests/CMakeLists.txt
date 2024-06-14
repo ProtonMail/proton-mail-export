@@ -4,7 +4,12 @@
 
 find_package(Catch2 CONFIG REQUIRED)
 
-add_executable(etcpp_test)
+add_executable(etcpp_test
+    test_utils.cpp
+    test_utils.h
+    test_data/ExportedData.cpp
+    test_data/ExportedData.h
+)
 
 target_sources(etcpp_test PRIVATE
     main.cpp

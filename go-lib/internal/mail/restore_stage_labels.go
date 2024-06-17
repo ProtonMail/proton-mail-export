@@ -18,6 +18,8 @@
 package mail
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -28,8 +30,15 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var errCircularLabelReference = errors.New("unable to sort labels because of a circular reference1")
+
 func (r *RestoreTask) restoreLabels() error {
 	backupLabels, err := r.readLabelFile()
+	if err != nil {
+		return err
+	}
+
+	backupLabels, err = sortLabels(backupLabels)
 	if err != nil {
 		return err
 	}
@@ -79,13 +88,23 @@ func (r *RestoreTask) readLabelFile() ([]proton.Label, error) {
 }
 
 func (r *RestoreTask) recreateLabel(label proton.Label) (proton.Label, error) {
+	var remoteParentID string
+	if len(label.ParentID) > 0 {
+		var ok bool
+		remoteParentID, ok = r.labelMapping[label.ParentID]
+		if !ok {
+			// this should not happen has we have sorted the label beforehand.
+			return proton.Label{}, fmt.Errorf("could not find parent label for %s", label.ID)
+		}
+	}
+
 	return r.session.GetClient().CreateLabel(
 		r.ctx,
 		proton.CreateLabelReq{
 			Name:     label.Name,
 			Color:    label.Color,
 			Type:     label.Type,
-			ParentID: "",
+			ParentID: remoteParentID,
 		},
 	)
 }
@@ -107,4 +126,51 @@ func (r *RestoreTask) createImportLabel() error {
 
 	r.importLabelID = label.ID
 	return nil
+}
+
+// sortLabels Sorts the labels ensuring that parent labels are listed before their children.
+func sortLabels(labels []proton.Label) ([]proton.Label, error) {
+	result := make([]proton.Label, 0, len(labels))
+	remaining := make([]proton.Label, 0)
+
+	for _, label := range labels {
+		// if a label has no parent, no problem
+		if len(label.ParentID) == 0 {
+			result = append(result, label)
+			continue
+		}
+
+		// if the parent is already in the result list, no problem, otherwise we queue it for later processing.
+		if slices.ContainsFunc(result, func(sortedLabel proton.Label) bool {
+			return sortedLabel.ID == label.ParentID
+		}) {
+			result = append(result, label)
+			continue
+		}
+		remaining = append(remaining, label)
+	}
+
+	// we retry the remaining labels until everything is processed.
+	// if we cannot processed at least one remaining item per loop, we're stuck. It should not happen.
+	for len(remaining) > 0 {
+		var newRemaining []proton.Label
+		for _, label := range remaining {
+			if slices.ContainsFunc(result, func(sortedLabel proton.Label) bool {
+				return sortedLabel.ID == label.ParentID
+			}) {
+				result = append(result, label)
+				continue
+			}
+
+			newRemaining = append(newRemaining, label)
+		}
+
+		if len(remaining) == len(newRemaining) {
+			return nil, errCircularLabelReference
+		}
+
+		remaining = newRemaining
+	}
+
+	return result, nil
 }

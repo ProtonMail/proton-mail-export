@@ -18,6 +18,8 @@
 package mail
 
 import (
+	"strings"
+
 	"github.com/ProtonMail/go-proton-api"
 )
 
@@ -58,4 +60,9 @@ func chunkMemLimit[T any](batch []T, maxMemory uint64, stageMultiplier uint64, g
 	}
 
 	return chunks
+}
+
+func emlToMetadataFilename(emlPath string) string {
+	result, _ := strings.CutSuffix(emlPath, emlExtension)
+	return result + jsonMetadataExtension
 }

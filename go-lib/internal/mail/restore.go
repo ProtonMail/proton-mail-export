@@ -69,11 +69,11 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 	defer func() { r.log.WithField("duration", time.Since(r.startTime)).Info("Finished") }()
 	r.log.WithField("backupDir", r.backupDir).Info("Starting")
 
-	messageCount, err := r.validateBackupDir(reporter)
+	messageInfoList, err := r.validateBackupDir(reporter)
 	if err != nil {
 		return err
 	}
-	r.log.WithField("messageCount", messageCount).Info("Found messages to import")
+	r.log.WithField("messageCount", len(messageInfoList)).Info("Found messages to import")
 
 	if err := r.restoreLabels(); err != nil {
 		return err
@@ -83,7 +83,7 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 		return err
 	}
 
-	return r.importMails(reporter)
+	return r.importMails(messageInfoList, reporter)
 }
 
 func (r *RestoreTask) Cancel() {

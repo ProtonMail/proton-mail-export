@@ -22,43 +22,60 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/exp/slices"
 )
 
-func (r *RestoreTask) validateBackupDir(reporter Reporter) (int64, error) {
+type messageInfo struct {
+	messageID string
+	timestamp int64
+}
+
+func (r *RestoreTask) validateBackupDir(reporter Reporter) ([]messageInfo, error) {
 	r.log.Info("Verifying backup folder")
 
-	var importableCount int64
-	err := r.walkBackupDir(func(_ string) {
-		importableCount++
+	messageList := make([]messageInfo, 0)
+	err := r.walkBackupDir(func(path string) {
+		metadata, err := loadMetadataFile(emlToMetadataFilename(path))
+		if err == nil {
+			messageList = append(messageList, messageInfo{
+				messageID: metadata.ID,
+				timestamp: metadata.Time,
+			})
+		}
 	})
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	if importableCount > 0 {
+	messageCount := len(messageList)
+	if messageCount > 0 {
 		labelsFilename := getLabelFileName()
 		if _, err := os.Stat(filepath.Join(r.backupDir, labelsFilename)); errors.Is(err, os.ErrNotExist) {
-			return 0, fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
+			return nil, fmt.Errorf("the labels file '%v' could not be found", labelsFilename)
 		}
 
-		reporter.SetMessageTotal(uint64(importableCount))
+		reporter.SetMessageTotal(uint64(messageCount))
 		reporter.SetMessageProcessed(0)
-		r.log.WithField("messageCount", importableCount).Info("Found importable messages")
-		return importableCount, nil
+		r.log.WithField("messageCount", messageCount).Info("Found importable messages")
+
+		slices.SortFunc(messageList, func(lhs, rhs messageInfo) bool { return lhs.timestamp < rhs.timestamp })
+
+		return messageList, nil
 	}
 
 	subDirs, err := r.getTimestampedBackupDirs()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if len(subDirs) == 0 {
-		return 0, errors.New("no importable mail found")
+		return nil, errors.New("no importable mail found")
 	}
 
 	if len(subDirs) > 1 {
-		return 0, errors.New("the specified folder contains more than one backup sub-folder")
+		return nil, errors.New("the specified folder contains more than one backup sub-folder")
 	}
 
 	r.log.WithField("folderName", subDirs[0]).Info("A potential backup sub-folder has been found and will be inspected")

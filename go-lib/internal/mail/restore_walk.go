@@ -43,10 +43,6 @@ func (r *RestoreTask) walkBackupDir(fn func(emlPath string)) error {
 	})
 }
 
-func emlToMetadataFilename(emlPath string) string {
-	return strings.Trim(emlPath, emlExtension) + jsonMetadataExtension
-}
-
 func (r *RestoreTask) getTimestampedBackupDirs() ([]string, error) {
 	var result []string
 	err := filepath.Walk(r.backupDir, func(path string, info fs.FileInfo, err error) error {

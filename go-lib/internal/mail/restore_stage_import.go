@@ -21,8 +21,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/ProtonMail/proton-bridge/v3/pkg/message/parser"
@@ -38,40 +38,35 @@ type Message struct {
 
 const messageBatchSize = 10
 
-func (r *RestoreTask) importMails(reporter Reporter) error {
+func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Reporter) error {
 	return r.withAddrKR(func(addrID string, addrKR *crypto.KeyRing) error {
 		messages := make([]Message, 0, messageBatchSize)
-		err := r.walkBackupDir(func(emlPath string) {
+		for _, info := range messageInfoList {
+			emlPath := filepath.Join(r.backupDir, info.messageID+emlExtension)
 			literal, err := os.ReadFile(emlPath) //nolint:gosec
 			if err != nil {
 				logrus.WithField("path", emlPath).Error("Could not read EML file. Skipping.")
-				return
+				continue
 			}
 
-			metadataBytes, err := os.ReadFile(emlToMetadataFilename(emlPath)) //nolint:gosec
+			metadataPath := emlToMetadataFilename(emlPath)
+			metadata, err := loadMetadataFile(metadataPath)
 			if err != nil {
-				logrus.WithField("path", emlPath).Error("Could not read JSON metadata file. Skipping.")
-				return
+				logrus.WithField("path", metadataPath).Error("Could not load metadata file. Skipping.")
 			}
 
-			metadata, err := utils.NewVersionedJSON[proton.MessageMetadata](MessageMetadataVersion, metadataBytes)
-			if err != nil {
-				logrus.WithError(err).WithField("path", emlPath).Error("Message metadata is invalid.")
-				return
-			}
-
-			messages = append(messages, Message{literal: literal, metadata: metadata.Payload})
+			messages = append(messages, Message{literal: literal, metadata: metadata.MessageMetadata})
 			if len(messages) >= messageBatchSize {
 				r.importMailBatch(addrID, addrKR, messages, reporter)
 				messages = messages[:0]
 			}
-		})
+		}
 
 		if len(messages) > 0 {
 			r.importMailBatch(addrID, addrKR, messages, reporter)
 		}
 
-		return err
+		return nil
 	})
 }
 

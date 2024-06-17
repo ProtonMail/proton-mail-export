@@ -51,3 +51,9 @@ func TestSyncChunkBuilderBatch(t *testing.T) {
 
 	require.Equal(t, totalMessagesInChunks, totalMessageCount)
 }
+
+func TestEmlToMetadataFilename(t *testing.T) {
+	require.Equal(t, "/dummy/path/filename.metadata.json", emlToMetadataFilename("/dummy/path/filename.eml"))
+	require.Equal(t, emlToMetadataFilename("filename.eml"), "filename.metadata.json")
+	require.Equal(t, emlToMetadataFilename("filename.exe"), "filename.exe.metadata.json")
+}

@@ -58,6 +58,7 @@ func (r *RestoreTask) validateBackupDir(reporter Reporter) ([]messageInfo, error
 
 		reporter.SetMessageTotal(uint64(messageCount))
 		reporter.SetMessageProcessed(0)
+		r.importableCount = int64(messageCount)
 		r.log.WithField("messageCount", messageCount).Info("Found importable messages")
 
 		slices.SortFunc(messageList, func(lhs, rhs messageInfo) bool { return lhs.timestamp < rhs.timestamp })

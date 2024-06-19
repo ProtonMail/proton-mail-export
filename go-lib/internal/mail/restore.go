@@ -34,14 +34,17 @@ import (
 var mailFolderRegExp = regexp.MustCompile(`^mail_\d{8}_\d{6}$`)
 
 type RestoreTask struct {
-	ctx           context.Context
-	startTime     time.Time
-	ctxCancel     func()
-	backupDir     string
-	session       *session.Session
-	log           *logrus.Entry
-	labelMapping  map[string]string // map of [backup labelIDs] to remoteLabelIDs
-	importLabelID string
+	ctx             context.Context
+	startTime       time.Time
+	ctxCancel       func()
+	backupDir       string
+	session         *session.Session
+	log             *logrus.Entry
+	labelMapping    map[string]string // map of [backup labelIDs] to remoteLabelIDs
+	importLabelID   string
+	importableCount int64
+	importedCount   int64
+	failedCount     int64
 }
 
 func NewRestoreTask(ctx context.Context, backupDir string, session *session.Session) (*RestoreTask, error) {
@@ -96,6 +99,22 @@ func (r *RestoreTask) Close() {
 
 func (r *RestoreTask) GetBackupPath() string {
 	return r.backupDir
+}
+
+func (r *RestoreTask) GetImportableCount() int64 {
+	return r.importableCount
+}
+
+func (r *RestoreTask) GetImportedCount() int64 {
+	return r.importedCount
+}
+
+func (r *RestoreTask) GetFailedCount() int64 {
+	return r.failedCount
+}
+
+func (r *RestoreTask) GetSkippedCount() int64 {
+	return r.importableCount - r.importedCount - r.failedCount
 }
 
 func (r *RestoreTask) withAddrKR(fn func(addrID string, addrKR *crypto.KeyRing) error) error {

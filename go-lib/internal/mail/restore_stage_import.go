@@ -130,8 +130,10 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 	for _, result := range results {
 		if result.Code != 1000 {
 			r.log.WithError(result.APIError).Error("Failed to import message")
+			r.failedCount++
 		} else {
 			r.log.WithField("newMessageID", result.MessageID).Info("Message was imported.")
+			r.importedCount++
 		}
 	}
 	reporter.OnProgress(len(results))

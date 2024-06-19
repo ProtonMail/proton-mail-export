@@ -269,10 +269,17 @@ func runRestore(ctx context.Context, backupPath string, session *session.Session
 	fmt.Println("Starting restore")
 	err = restoreTask.Run(newCliReporter())
 	if err == nil {
-		fmt.Println("Backup finished")
+		fmt.Println("Restore finished")
 	}
-
+	printRestoreTaskSummary(restoreTask)
 	return err
+}
+
+func printRestoreTaskSummary(task *mail.RestoreTask) {
+	fmt.Printf("Importable emails: %v\n", task.GetImportableCount())
+	fmt.Printf("Successful imports: %v\n", task.GetImportedCount())
+	fmt.Printf("Failed imports: %v\n", task.GetFailedCount())
+	fmt.Printf("Skipped imports: %v\n", task.GetSkippedCount())
 }
 
 func initApp(defaultOperationPath string, onRecover func()) error {

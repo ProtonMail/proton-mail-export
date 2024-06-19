@@ -69,7 +69,6 @@ func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Report
 				return err
 			}
 		}
-
 		return nil
 	})
 }
@@ -163,8 +162,6 @@ func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {
 func IsAcceptableLabel(label string) bool {
 	var acceptableLabel = []string{
 		proton.InboxLabel,
-		proton.AllDraftsLabel,
-		proton.AllSentLabel,
 		proton.TrashLabel,
 		proton.SpamLabel,
 		proton.ArchiveLabel,
@@ -172,7 +169,6 @@ func IsAcceptableLabel(label string) bool {
 		proton.DraftsLabel,
 		proton.OutboxLabel,
 		proton.StarredLabel,
-		proton.AllScheduledLabel,
 	} // proton.AllMailLabel is discarded on purpose as it would cause import to fail.
 	return (len(label) > 4) || slices.Contains(acceptableLabel, label)
 }

@@ -75,6 +75,34 @@ std::filesystem::path Restore::getBackupPath() const {
     return result;
 }
 
+int64_t Restore::getImportableCount() const {
+    int64_t result = 0;
+    wrapCCall([&](etRestore* ptr) { return etRestoreGetImportableCount(ptr, &result); });
+
+    return result;
+}
+
+int64_t Restore::getImportedCount() const {
+    int64_t result = 0;
+    wrapCCall([&](etRestore* ptr) { return etRestoreGetImportedCount(ptr, &result); });
+
+    return result;
+}
+
+int64_t Restore::getFailedCount() const {
+    int64_t result = 0;
+    wrapCCall([&](etRestore* ptr) { return etRestoreGetFailedCount(ptr, &result); });
+
+    return result;
+}
+
+int64_t Restore::getSkippedCount() const {
+    int64_t result = 0;
+    wrapCCall([&](etRestore* ptr) { return etRestoreGetSkippedCount(ptr, &result); });
+
+    return result;
+}
+
 template<class F>
 void Restore::wrapCCall(F func) {
     static_assert(std::is_invocable_r_v<etRestoreStatus, F, etRestore*>, "invalid function/lambda signature");

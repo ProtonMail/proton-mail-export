@@ -324,15 +324,25 @@ std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, 
     }
 }
 
-std::filesystem::path getRestorePath(cxxopts::ParseResult const& argParseResult, bool& outPathCameFromArg) {
+std::filesystem::path getRestorePath(cxxopts::ParseResult const& argParseResult, bool& outPathCameFromArgOrEnv) {
     std::filesystem::path backupPath;
-    outPathCameFromArg = false;
+    outPathCameFromArgOrEnv = false;
+    std::string argPath;
     if (argParseResult.count("dir")) {
-        auto const argPath = argParseResult["dir"].as<std::string>();
-        if (!argPath.empty()) {
-            backupPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
+        argPath = argParseResult["dir"].as<std::string>();
+    }
+
+    if (argPath.empty()) {
+        const auto envVar = std::getenv("ET_DIR");
+        if (envVar != nullptr && std::strlen(envVar) != 0) {
+            argPath = std::string(envVar);
         }
-        outPathCameFromArg = true;
+    }
+
+    if (!argPath.empty()) {
+        backupPath = etcpp::expandCLIPath(std::filesystem::u8path(argPath));
+        outPathCameFromArgOrEnv = true;
+        return backupPath;
     }
 
     while (true) {
@@ -553,6 +563,13 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
     return EXIT_SUCCESS;
 }
 
+void printRestoreStats(RestoreTask const& task) {
+    std::cout << "Importable emails: " << task.getImportableCount() << std::endl;
+    std::cout << "Successful imports: " << task.getImportedCount() << std::endl;
+    std::cout << "Failed imports: " << task.getFailedCount() << std::endl;
+    std::cout << "Skipped imports: " << task.getSkippedCount() << std::endl;
+}
+
 int performRestore(etcpp::Session& session, cxxopts::ParseResult const& argParseResult, CLIAppState const& appState) {
     std::filesystem::path backupPath;
     bool pathCameFromArgs = false;
@@ -568,7 +585,6 @@ int performRestore(etcpp::Session& session, cxxopts::ParseResult const& argParse
 
     std::unique_ptr<RestoreTask> restoreTask;
     try {
-        std::cout << "backupPath: " << backupPath;
         restoreTask = std::make_unique<RestoreTask>(session, backupPath);
     } catch (const etcpp::SessionException& e) {
         etLogError("Failed to create export task: {}", e.what());
@@ -586,6 +602,7 @@ int performRestore(etcpp::Session& session, cxxopts::ParseResult const& argParse
         return EXIT_FAILURE;
     }
     std::cout << "Restore Finished" << std::endl;
+    printRestoreStats(*restoreTask);
     return EXIT_SUCCESS;
 }
 
@@ -633,9 +650,7 @@ int main(int argc, const char** argv) {
                               cxxopts::value<std::string>())("d,dir", "Backup/restore directory (can also be set with env var ET_DIR)",
                                                              cxxopts::value<std::string>())(
             "p,password", "User's password (can also be set with env var ET_USER_PASSWORD)", cxxopts::value<std::string>())(
-            "m,mbox-password",
-            "User's mailbox password when using 2 Password Mode (can also be set with env var "
-            "ET_USER_MAILBOX_PASSWORD)",
+            "m,mbox-password", "User's mailbox password when using 2 Password Mode (can also be set with env var ET_USER_MAILBOX_PASSWORD)",
             cxxopts::value<std::string>())("t,totp", "User's TOTP 2FA code (can also be set with env var ET_TOTP_CODE)",
                                            cxxopts::value<std::string>())(
             "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL", cxxopts::value<std::string>())("h,help", "Show help");

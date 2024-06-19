@@ -66,6 +66,10 @@ public:
     void cancel();
 
     std::filesystem::path getBackupPath() const;
+    int64_t getImportableCount() const;
+    int64_t getImportedCount() const;
+    int64_t getFailedCount() const;
+    int64_t getSkippedCount() const;
 
 private:
     template<class F>

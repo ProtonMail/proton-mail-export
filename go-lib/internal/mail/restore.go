@@ -86,7 +86,16 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 		return err
 	}
 
-	return r.importMails(messageInfoList, reporter)
+	err = r.importMails(messageInfoList, reporter)
+
+	r.log.WithFields(logrus.Fields{
+		"importable": r.GetImportableCount(),
+		"imported":   r.GetImportedCount(),
+		"failed":     r.GetFailedCount(),
+		"skipped":    r.GetSkippedCount(),
+	}).Info("Report")
+
+	return err
 }
 
 func (r *RestoreTask) Cancel() {

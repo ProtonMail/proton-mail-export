@@ -42,7 +42,11 @@ public:
 
     std::string_view description() const override;
 
-    inline std::filesystem::path getExportPath() const { return mRestore.getBackupPath(); }
+    std::filesystem::path getExportPath() const { return mRestore.getBackupPath(); }
+    uint64_t getImportableCount() const { return mRestore.getImportableCount(); }
+    uint64_t getImportedCount() const { return mRestore.getImportedCount(); }
+    uint64_t getFailedCount() const { return mRestore.getFailedCount(); }
+    uint64_t getSkippedCount() const { return mRestore.getSkippedCount(); }
 
 private:
     void onProgress(float progress) override;

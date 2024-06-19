@@ -19,6 +19,7 @@
 #define ET_RESTORE_H
 
 #include "etsession.h"
+#include <stdint.h>
 
 typedef struct etRestore etRestore;
 

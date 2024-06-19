@@ -153,6 +153,62 @@ func etRestoreGetBackupPath(ptr *C.etRestore, outPath **C.char) C.etRestoreStatu
 	return C.ET_RESTORE_STATUS_OK
 }
 
+//export etRestoreGetImportableCount
+func etRestoreGetImportableCount(ptr *C.etRestore, count *C.int64_t) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
+	if !ok {
+		return C.ET_RESTORE_STATUS_INVALID
+	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
+	*count = C.int64_t(ce.restorer.GetImportableCount())
+
+	return C.ET_RESTORE_STATUS_OK
+}
+
+//export etRestoreGetImportedCount
+func etRestoreGetImportedCount(ptr *C.etRestore, count *C.int64_t) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
+	if !ok {
+		return C.ET_RESTORE_STATUS_INVALID
+	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
+	*count = C.int64_t(ce.restorer.GetImportedCount())
+
+	return C.ET_RESTORE_STATUS_OK
+}
+
+//export etRestoreGetFailedCount
+func etRestoreGetFailedCount(ptr *C.etRestore, count *C.int64_t) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
+	if !ok {
+		return C.ET_RESTORE_STATUS_INVALID
+	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
+	*count = C.int64_t(ce.restorer.GetFailedCount())
+
+	return C.ET_RESTORE_STATUS_OK
+}
+
+//export etRestoreGetSkippedCount
+func etRestoreGetSkippedCount(ptr *C.etRestore, count *C.int64_t) C.etRestoreStatus {
+	ce, ok := resolveRestore(ptr)
+	if !ok {
+		return C.ET_RESTORE_STATUS_INVALID
+	}
+
+	defer async.HandlePanic(ce.csession.s.GetPanicHandler())
+
+	*count = C.int64_t(ce.restorer.GetSkippedCount())
+
+	return C.ET_RESTORE_STATUS_OK
+}
+
 type cRestore struct {
 	csession  *csession
 	restorer  *mail.RestoreTask

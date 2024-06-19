@@ -57,20 +57,24 @@ func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Report
 
 			messages = append(messages, Message{literal: literal, metadata: metadata.MessageMetadata})
 			if len(messages) >= messageBatchSize {
-				r.importMailBatch(addrID, addrKR, messages, reporter)
+				if err := r.importMailBatch(addrID, addrKR, messages, reporter); err != nil {
+					return err
+				}
 				messages = messages[:0]
 			}
 		}
 
 		if len(messages) > 0 {
-			r.importMailBatch(addrID, addrKR, messages, reporter)
+			if err := r.importMailBatch(addrID, addrKR, messages, reporter); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
 }
 
-func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, messages []Message, reporter Reporter) {
+func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, messages []Message, reporter Reporter) error {
 	reqs := make([]proton.ImportReq, 0, len(messages))
 	for _, message := range messages {
 		log := r.log.WithField("messageID", message.metadata.AddressID)
@@ -108,23 +112,31 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 	}
 
 	if len(reqs) == 0 {
-		return
+		return nil
 	}
+
 	str, err := r.session.GetClient().ImportMessages(r.ctx, addrKR, -1, -1, reqs...)
 	if err != nil {
 		r.log.WithError(err).Error("failed to prepare message batch for import")
-		return
+		return err
 	}
 
 	results, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](str))
-	reporter.OnProgress(len(results))
-	for _, result := range results {
-		if err != nil {
-			r.log.WithField("messageID", result.MessageID).WithError(err).Error("failed to import message")
-		}
-
-		r.log.WithField("messageID", result.MessageID).WithField("newMessageID", result.MessageID).Info("Message was imported.)")
+	if err != nil {
+		r.log.WithError(err).Error("A fatal error occurred during import")
+		return err
 	}
+
+	for _, result := range results {
+		if result.Code != 1000 {
+			r.log.WithError(result.APIError).Error("Failed to import message")
+		} else {
+			r.log.WithField("newMessageID", result.MessageID).Info("Message was imported.")
+		}
+	}
+	reporter.OnProgress(len(results))
+
+	return nil
 }
 
 func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {

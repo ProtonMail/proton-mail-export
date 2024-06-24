@@ -36,7 +36,7 @@ type Message struct {
 	metadata proton.MessageMetadata
 }
 
-const messageBatchSize = 10
+const messageBatchSize = 10 // max batch size supported by go-proton-api (larger batches will be split).
 
 func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Reporter) error {
 	return r.withAddrKR(func(addrID string, addrKR *crypto.KeyRing) error {
@@ -126,12 +126,12 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 		return err
 	}
 
-	for _, result := range results {
+	for i, result := range results {
 		if result.Code != 1000 {
-			r.log.WithError(result.APIError).Error("Failed to import message")
+			r.log.WithField("messageID", messages[i].metadata.ID).WithError(result.APIError).Error("Failed to import message")
 			r.failedCount++
 		} else {
-			r.log.WithField("newMessageID", result.MessageID).Info("Message was imported.")
+			r.log.WithFields(logrus.Fields{"oldMessageID": messages[i].metadata.ID, "newMessageID": result.MessageID}).Info("Message was imported.")
 			r.importedCount++
 		}
 	}

@@ -9,7 +9,7 @@ Proton Mail Export allows you to export your emails as eml files.
   * GCC/Clang (Linux/Mac)
   * MSVC 2022 (Windows)
 * CMake >= 3.23
-* Go >= 1.20
+* Go >= 1.21
 
 ## Fetch submodules
 

@@ -319,8 +319,16 @@ std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, 
             backupPath = outputPath / backupPath;
         }
 
-        std::filesystem::create_directories(backupPath);
-        return backupPath;
+        try {
+            std::filesystem::create_directories(backupPath);
+            return backupPath;
+        } catch (const std::exception& e) {
+            etcpp::logError("Failed to create export directory '{}': {}", backupPath.u8string(), e.what());
+            std::cerr << "Failed to create export directory '" << backupPath << "': " << e.what() << std::endl;
+            if (outPathCameFromArg) {
+                return {};
+            }
+        }
     }
 }
 
@@ -502,16 +510,10 @@ std::optional<int> performLogin(etcpp::Session& session, cxxopts::ParseResult& a
 
 
 int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseResult, CLIAppState const& appState) {
-    std::filesystem::path backupPath;
     bool pathCameFromArgs = false;
-    try {
-        backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
-    } catch (std::exception const& e) {
-        etcpp::logError("Failed to create export directory '{}': {}", backupPath.u8string(), e.what());
-        std::cerr << "Failed to create export directory '" << backupPath << "': " << e.what() << std::endl;
-        if (pathCameFromArgs) {
-            return EXIT_FAILURE;
-        }
+    std::filesystem::path const backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
+    if (backupPath.empty()) {
+        return EXIT_FAILURE;
     }
 
     std::filesystem::space_info spaceInfo{};

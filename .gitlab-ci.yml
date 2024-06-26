@@ -14,7 +14,7 @@ stages:
   - test
   - build
   - installer
-  - production
+  - deploy
 
 include:
   - local: /ci/setup.yml

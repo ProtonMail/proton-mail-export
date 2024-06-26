@@ -33,7 +33,7 @@ main(){
     done
 
     mkdir -p "$(dirname "$TARGET_ZIP")"
-    zip a -tzip "$TARGET_ZIP" ./*
+    7z a -tzip "$TARGET_ZIP" ./*
 
     popd
 }

@@ -156,3 +156,32 @@ variables:
   script:
     - !reference [.script-build, script]
     - ctest --build-config $CMAKE_BUILD_CONFIG --test-dir $CMAKE_BUILD_DIR -V
+
+.linux-keys:
+  before_script:
+    - mkdir -p ~/.gnupg
+    - chmod 700 ~/.gnupg
+    - export GPG_TTY=$(tty)
+    - echo "TTY $GPG_TTY"
+    - echo "default-key E2C75D68E6234B07"
+      >> ~/.gnupg/gpg.conf
+    - echo "weak-digest SHA1"
+      >> ~/.gnupg/gpg.conf
+    - echo "digest-algo SHA256"
+      >> ~/.gnupg/gpg.conf
+    - chmod 600 ~/.gnupg/*
+    - if [ -z $GPG_PASSPHRASE_BRIDGE ];
+      then echo -ne '*\n*\n*\nSIGNING KEY NOT AVAILABLE\n*\n*\n*\n';
+      fi;
+    - gpg-agent --daemon --allow-preset-passphrase --max-cache-ttl 3153600000
+    - echo "$GPG_PASSPHRASE_BRIDGE" | base64 -d |
+      /usr/lib/gnupg/gpg-preset-passphrase
+      --preset E2C75D68E6234B07
+    - echo "$GPG_PASSPHRASE_BRIDGE" | base64 -d |
+      /usr/lib/gnupg/gpg-preset-passphrase
+      --preset 9AFA004CD15D32A920353A116FD6B29133593AA3
+    - echo "$GPG_PRIVATE_KEY_BRIDGE" | base64 -d | gpg -v --batch --import
+    - echo "$GPG_PASSPHRASE_BRIDGE" | base64 -d |
+      gpg -v --batch --always-trust --yes
+      --passphrase-fd 0 --pinentry-mode=loopback -s $(mktemp)
+    - gpg -v --detach-sign $(mktemp)

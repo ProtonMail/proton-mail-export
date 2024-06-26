@@ -91,6 +91,9 @@ prepare_metadata() {
     version_json=imex_version.json
     cp ./version.json  "${DEPLOY_DIR}/${version_json}"
     printf "%s " "$version_json" >>tmp.metadata
+
+    sign_file "${DEPLOY_DIR}/${version_json}"
+    printf "%s.sig " "$version_json" >>tmp.metadata
 }
 
 prepare_installer_files() {
@@ -111,6 +114,10 @@ download_installer_file() {
     $nexus_client cp "${BUILD_NEXUS_PATH}/${1}" "${DEPLOY_DIR}/${1}"
     printf "%s " "${1// /\\ }" >>tmp.files
     printf "%s " "${1// /\\ }" >>tmp.metadata
+
+    sign_file "${DEPLOY_DIR}/${1}"
+    printf "%s.sig " "${1// /\\ }" >>tmp.files
+    printf "%s.sig " "${1// /\\ }" >>tmp.metadata
 }
 
 
@@ -122,5 +129,11 @@ release_env() {
         echo "VERSION=${BUILD_VERSION}"
     } >${RELEASE_ENV}
 }
+
+sign_file() {
+    gpg --local-user E2C75D68E6234B07 --detach-sign "$1"
+}
+
+
 
 main "$@"

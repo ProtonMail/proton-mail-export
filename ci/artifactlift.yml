@@ -3,10 +3,10 @@
 .component:
     rel_cand: &include_release_candidate "gitlab.protontech.ch/proton/devops/\
                         cicd-components/tools/artifactlift/\
-                        release-candidate@0.1.13"
+                        release-candidate@0.1.15"
     rel: &include_release "gitlab.protontech.ch/proton/devops/\
               cicd-components/tools/artifactlift/\
-              release@0.1.13"
+              release@0.1.15"
 
 .check_deployer:
     script:
@@ -63,6 +63,7 @@ include:
           artifact_list: "*"
           job_prefix: 'macos:'
           artifact_metadata_path: "macos"
+    - local: /ci/setup.yml
 
 .generate:
     tags:
@@ -70,6 +71,7 @@ include:
     image: gitlab.protontech.ch:4567/go/bridge-internal:release
     stage: generate
     script:
+        - !reference [.linux-keys, before_script]
         - !reference [.check_deployer, script]
         - ./scripts/deploy.sh "${ET_TAG}" "${CI_JOB_NAME}"
     allow_failure: false

@@ -19,8 +19,8 @@ main(){
     APP_PATH="$(eval realpath "$SRC_DIR/*.app")"
     FILE_TO_NOTARIZE="$(realpath "$SRC_DIR/../to_notarize.zip")"
 
-    if [ -z "${APPLEUID}" ] || [ -z "${APPLEPASSW}" ]; then
-        echo "ERROR: missing apple UID or password"
+    if [ -z "${APPLETEAMID}" ] ||  [ -z "${APPLEUID}" ] || [ -z "${APPLEPASSW}" ]; then
+        echo "ERROR: missing team ID, apple UID or password"
         exit 1
     fi
 
@@ -31,8 +31,7 @@ main(){
 }
 
 sign(){
-    TEAMID="6UN54H93QT"
-    SIGNACCOUNT="Developer ID Application: Proton Technologies AG ($TEAMID)"
+    SIGNACCOUNT="Developer ID Application: Proton Technologies AG ($APPLETEAMID)"
     CODESIGN="codesign --force --verbose --deep --options runtime --timestamp --sign"
 
     echo -e "\nSigning ${APP_PATH}..."
@@ -50,7 +49,7 @@ notarize() {
     echo -e "\nSubmiting notarization ${FILE_TO_NOTARIZE}..."
     xcrun notarytool submit \
         "${FILE_TO_NOTARIZE}" \
-        --apple-id "${APPLEUID}" --team-id "$TEAMID" --password "${APPLEPASSW}" \
+        --apple-id "${APPLEUID}" --team-id "$APPLETEAMID" --password "${APPLEPASSW}" \
         --wait | tee submit.log
 
 
@@ -66,7 +65,7 @@ notarize() {
     # https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow#3087732
     NOTARIZATIONID=$(grep id: submit.log | head -1 | cut -d: -f2 | xargs)
     xcrun notarytool log "${NOTARIZATIONID}" \
-        --apple-id "${APPLEUID}" --team-id "$TEAMID" --password "${APPLEPASSW}" \
+        --apple-id "${APPLEUID}" --team-id "$APPLETEAMID" --password "${APPLEPASSW}" \
         notarization.json
 
     jq < notarization.json

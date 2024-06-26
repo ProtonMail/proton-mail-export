@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ProtonMail/export-tool/internal/utils"
@@ -56,7 +57,7 @@ func (r *RestoreTask) restoreLabels() error {
 		}
 
 		matchIndex := slices.IndexFunc(remoteLabels, func(remoteLabel proton.Label) bool {
-			return (label.ID == remoteLabel.ID) || (label.Name == remoteLabel.Name)
+			return (label.ID == remoteLabel.ID) || strings.EqualFold(label.Name, remoteLabel.Name)
 		})
 		if matchIndex != -1 {
 			r.labelMapping[label.ID] = remoteLabels[matchIndex].ID

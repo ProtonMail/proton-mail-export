@@ -175,12 +175,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/constants.go.in
 
 install(IMPORTED_RUNTIME_ARTIFACTS etcore DESTINATION bin)
 
-if (NOT WIN32)
-    add_test(NAME go-lib-test
-        COMMAND go test -v ./...
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif ()
+add_test(NAME go-lib-test
+    COMMAND go test -v ./...
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 add_custom_target(go-lib-lint
     COMMAND golangci-lint run ./...

@@ -1,14 +1,5 @@
 package app
 
-/*
-#include <stdlib.h>
-void etExportMailCallbackOnProgress() {}
-void etCallOnRecover() {}
-void etSessionCallbackOnNetworkLost() {}
-void etSessionCallbackOnNetworkRestored() {}
-*/
-import "C"
-
 import (
 	"context"
 	"errors"
@@ -157,7 +148,7 @@ func newSession(panicHandler async.PanicHandler) (*session.Session, error) {
 	sessionCb := CliCallback{}
 	builder, err := apiclient.NewProtonAPIClientBuilder(internal.ETDefaultAPIURL, panicHandler, sessionCb)
 	if err != nil {
-		logrus.WithError(err).Fatal("Fatal error")
+		return nil, err
 	}
 
 	clientBuilder := apiclient.NewAutoRetryClientBuilder(

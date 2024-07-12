@@ -83,16 +83,16 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 			continue
 		}
 
-		parser, err := parser.New(bytes.NewReader(message.literal))
+		msgParser, err := parser.New(bytes.NewReader(message.literal))
 		if err != nil {
 			log.WithField(message.metadata.ID, message.metadata).WithError(err).Error("Failed to parse literal for message.")
 			continue
 		}
 
 		// multipart body requires at least one text part to be properly encrypted.
-		if parser.AttachEmptyTextPartIfNoneExists() {
+		if msgParser.AttachEmptyTextPartIfNoneExists() {
 			buf := new(bytes.Buffer)
-			if err := parser.NewWriter().Write(buf); err != nil {
+			if err := msgParser.NewWriter().Write(buf); err != nil {
 				log.WithError(err).Error("failed to add an empty text body.")
 				continue
 			}
@@ -122,8 +122,9 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 
 	results, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](str))
 	if err != nil {
-		r.log.WithError(err).Error("A fatal error occurred during import")
-		return err
+		r.log.WithError(err).Error("An error occurred while importing a batch of messages. Retrying one by one.")
+		r.importOneByOne(reqs, messages, addrKR, reporter)
+		return nil
 	}
 
 	for i, result := range results {
@@ -131,13 +132,38 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 			r.log.WithField("messageID", messages[i].metadata.ID).WithError(result.APIError).Error("Failed to import message")
 			r.failedCount++
 		} else {
-			r.log.WithFields(logrus.Fields{"oldMessageID": messages[i].metadata.ID, "newMessageID": result.MessageID}).Info("Message was imported.")
 			r.importedCount++
 		}
 	}
 	reporter.OnProgress(len(results))
 
 	return nil
+}
+
+func (r *RestoreTask) importOneByOne(requests []proton.ImportReq, messages []Message, addrKR *crypto.KeyRing, reporter Reporter) {
+	for i, request := range requests {
+		resultStream, err := r.session.GetClient().ImportMessages(r.ctx, addrKR, -1, -1, request)
+		if err != nil {
+			r.log.WithError(err).WithField("messageID", messages[i].metadata.ID).Error("Failed to import message")
+			r.failedCount++
+			continue
+		}
+
+		results, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](resultStream))
+		if err != nil {
+			r.log.WithError(err).WithField("messageID", messages[i].metadata.ID).Error("Failed to import message")
+			r.failedCount++
+			continue
+		}
+
+		if results[0].Code != 1000 {
+			r.log.WithField("messageID", messages[i].metadata.ID).WithError(results[0].APIError).Error("Failed to import message")
+			r.failedCount++
+		} else {
+			r.importedCount++
+		}
+	}
+	reporter.OnProgress(len(requests))
 }
 
 func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {

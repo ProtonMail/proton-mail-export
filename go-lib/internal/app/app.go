@@ -49,9 +49,9 @@ var (
 		EnvVars: []string{"ET_OPERATION"},
 	}
 	flagFolder = &cli.StringFlag{ //nolint:gochecknoglobals
-		Name:    "folder",
+		Name:    "dir",
 		Aliases: []string{"f"},
-		EnvVars: []string{"ET_FOLDER"},
+		EnvVars: []string{"ET_DIR"},
 	}
 )
 

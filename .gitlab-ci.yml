@@ -11,7 +11,7 @@ variables:
       - deploy
 
 stages:
-  - scan 
+  - analyse
   - test
   - build
   - installer
@@ -34,6 +34,6 @@ include:
     rules:
       - if: $WORKFLOW == "deploy"
       - if: $CI_COMMIT_TAG =~ /^et-\d+/
-  - component: gitlab.protontech.ch/proton/devops/cicd-components/kits/devsecops/go@0.0.5
+  - component: gitlab.protontech.ch/proton/devops/cicd-components/kits/devsecops/go@~latest
     inputs:
-      stage: scan
+      stage: analyse

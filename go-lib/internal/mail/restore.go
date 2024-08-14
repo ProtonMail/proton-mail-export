@@ -163,5 +163,10 @@ func (r *RestoreTask) withAddrKR(fn func(addrID string, addrKR *crypto.KeyRing) 
 		return fmt.Errorf("failed to get primary address keyring")
 	}
 
-	return fn(addrID, addrKR)
+	primaryKR, err := addrKR.FirstKey()
+	if err != nil {
+		return fmt.Errorf("failed to get primary key: %w", err)
+	}
+
+	return fn(addrID, primaryKR)
 }

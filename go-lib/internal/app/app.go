@@ -144,9 +144,18 @@ func checkForNewVersion() {
 	}
 }
 
+func getAPIURL() string {
+	url := os.Getenv("ET_API_URL")
+	if len(url) == 0 {
+		url = internal.ETDefaultAPIURL
+	}
+
+	return url
+}
+
 func newSession(panicHandler async.PanicHandler) (*session.Session, error) {
 	sessionCb := CliCallback{}
-	builder, err := apiclient.NewProtonAPIClientBuilder(internal.ETDefaultAPIURL, panicHandler, sessionCb)
+	builder, err := apiclient.NewProtonAPIClientBuilder(getAPIURL(), panicHandler, sessionCb)
 	if err != nil {
 		return nil, err
 	}

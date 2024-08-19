@@ -185,7 +185,7 @@ func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {
 	return result, nil
 }
 
-func IsAcceptableLabel(label string) bool {
+func IsAcceptableLabel(labelID string) bool {
 	var acceptableLabel = []string{
 		proton.InboxLabel,
 		proton.TrashLabel,
@@ -196,5 +196,5 @@ func IsAcceptableLabel(label string) bool {
 		proton.OutboxLabel,
 		proton.StarredLabel,
 	} // proton.AllMailLabel is discarded on purpose as it would cause import to fail.
-	return (len(label) > 4) || slices.Contains(acceptableLabel, label)
+	return (!isSystemLabel(labelID)) || slices.Contains(acceptableLabel, labelID)
 }

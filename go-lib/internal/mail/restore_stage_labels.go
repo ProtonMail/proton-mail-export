@@ -31,7 +31,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var errCircularLabelReference = errors.New("unable to sort labels because of a circular reference1")
+var errCircularLabelReference = errors.New("unable to sort labels because of a circular reference")
 
 func (r *RestoreTask) restoreLabels() error {
 	backupLabels, err := r.readLabelFile()
@@ -56,22 +56,46 @@ func (r *RestoreTask) restoreLabels() error {
 		default:
 		}
 
-		matchIndex := slices.IndexFunc(remoteLabels, func(remoteLabel proton.Label) bool {
-			return (label.ID == remoteLabel.ID) || strings.EqualFold(label.Name, remoteLabel.Name)
-		})
-		if matchIndex != -1 {
-			r.labelMapping[label.ID] = remoteLabels[matchIndex].ID
-		} else {
-			newLabel, err := r.recreateLabel(label)
-			if err != nil {
-				return err
-			}
-			r.labelMapping[label.ID] = newLabel.ID
-			r.log.WithFields(logrus.Fields{"backupLabelID": label.ID, "remoteLabelID": newLabel.ID}).Info("Recreated remote folder")
+		labelID, name := matchLocalLabelWithRemote(label, remoteLabels)
+		if len(labelID) > 0 {
+			r.labelMapping[label.ID] = labelID
+			continue
+		}
+
+		label.Name = name
+		if err = r.createAndMapLabel(label); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+// matchLocalLabelWithRemote match a label from a backup with remote labels.
+// if a label of the same name and type is found, its labelID and returned, otherwise and empty labelID and the name of the matching
+// label to create on the server is returned as newName. The name of the label to create will be the name of the label in the backup, unless
+// a label of the same name but different type already exists, in which case a number in appended at the end of the name.
+func matchLocalLabelWithRemote(label proton.Label, remoteLabels []proton.Label) (labelID, newName string) {
+	if isSystemLabel(label.ID) {
+		return label.ID, ""
+	}
+
+	index := slices.IndexFunc(remoteLabels, func(remoteLabel proton.Label) bool {
+		return (label.ID == remoteLabel.ID) || strings.EqualFold(label.Name, remoteLabel.Name)
+	})
+
+	// label does not exist.
+	if index == -1 {
+		return "", label.Name
+	}
+
+	// label exists remotely and is of the correct type. We map it.
+	if remoteLabels[index].Type == label.Type {
+		return remoteLabels[index].ID, ""
+	}
+
+	// label exists remotely but not of the right type, we need a new name
+	return "", findFirstAvailableLabelIncrementalName(label.Name, remoteLabels)
 }
 
 func (r *RestoreTask) readLabelFile() ([]proton.Label, error) {
@@ -88,18 +112,19 @@ func (r *RestoreTask) readLabelFile() ([]proton.Label, error) {
 	return versionedLabels.Payload, nil
 }
 
-func (r *RestoreTask) recreateLabel(label proton.Label) (proton.Label, error) {
+// createAndMapLabel create the given label and adds the mapping of its remote ID to r.labelMappings.
+func (r *RestoreTask) createAndMapLabel(label proton.Label) error {
 	var remoteParentID string
 	if len(label.ParentID) > 0 {
 		var ok bool
 		remoteParentID, ok = r.labelMapping[label.ParentID]
 		if !ok {
 			// this should not happen has we have sorted the label beforehand.
-			return proton.Label{}, fmt.Errorf("could not find parent label for %s", label.ID)
+			return fmt.Errorf("could not find parent label for %s", label.ID)
 		}
 	}
 
-	return r.session.GetClient().CreateLabel(
+	newLabel, err := r.session.GetClient().CreateLabel(
 		r.ctx,
 		proton.CreateLabelReq{
 			Name:     label.Name,
@@ -108,6 +133,13 @@ func (r *RestoreTask) recreateLabel(label proton.Label) (proton.Label, error) {
 			ParentID: remoteParentID,
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	r.labelMapping[label.ID] = newLabel.ID
+	r.log.WithFields(logrus.Fields{"backupLabelID": label.ID, "remoteLabelID": newLabel.ID}).Info("Recreated remote label")
+	return nil
 }
 
 func (r *RestoreTask) createImportLabel() error {
@@ -174,4 +206,16 @@ func sortLabels(labels []proton.Label) ([]proton.Label, error) {
 	}
 
 	return result, nil
+}
+
+// findFirstAvailableLabelIncrementalName return a variant of name that is not in the remoteLabels list, ensuring uniqueness by append
+// a number between parenthesis to the name. For instance if the list contains 'Folder' and 'Folder (1)', the function will return 'Folder (2)'.
+func findFirstAvailableLabelIncrementalName(name string, remoteLabels []proton.Label) string {
+	for i := 1; ; i++ {
+		candidate := fmt.Sprintf("%s (%d)", name, i)
+		index := slices.IndexFunc(remoteLabels, func(label proton.Label) bool { return strings.EqualFold(label.Name, candidate) })
+		if index == -1 {
+			return candidate
+		}
+	}
 }

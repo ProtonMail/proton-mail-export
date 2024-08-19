@@ -57,3 +57,8 @@ func TestEmlToMetadataFilename(t *testing.T) {
 	require.Equal(t, emlToMetadataFilename("filename.eml"), "filename.metadata.json")
 	require.Equal(t, emlToMetadataFilename("filename.exe"), "filename.exe.metadata.json")
 }
+
+func TestIsBuiltInLabelID(t *testing.T) {
+	require.True(t, isSystemLabel("9"))
+	require.False(t, isSystemLabel("gsVqILI4QCrON8IzLeJxjh3cNoVjZD0ftjgnAGbsGjj72c4HoI8YI0WQzKdmHdXF-d0srNExQkEfflWm134z8w=="))
+}

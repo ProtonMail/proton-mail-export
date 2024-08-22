@@ -116,8 +116,9 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 
 	str, err := r.session.GetClient().ImportMessages(r.ctx, addrKR, -1, -1, reqs...)
 	if err != nil {
-		r.log.WithError(err).Error("failed to prepare message batch for import")
-		return err
+		r.log.WithError(err).Error("Failed to prepare message batch for import. Retrying one by one.")
+		r.importOneByOne(reqs, messages, addrKR, reporter)
+		return nil
 	}
 
 	results, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](str))

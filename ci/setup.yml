@@ -173,7 +173,7 @@ variables:
     - if [ -z $GPG_PASSPHRASE_BRIDGE ];
       then echo -ne '*\n*\n*\nSIGNING KEY NOT AVAILABLE\n*\n*\n*\n';
       fi;
-    - gpg-agent --daemon --allow-preset-passphrase --max-cache-ttl 3153600000
+    - gpg-agent --daemon --allow-preset-passphrase --max-cache-ttl 3153600000 # gitleaks:allow
     - echo "$GPG_PASSPHRASE_BRIDGE" | base64 -d |
       /usr/lib/gnupg/gpg-preset-passphrase
       --preset E2C75D68E6234B07

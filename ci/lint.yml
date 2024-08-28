@@ -1,6 +1,7 @@
 ---
 
 lint:
+  stage: lint
   tags:
     - shared-medium
   script:

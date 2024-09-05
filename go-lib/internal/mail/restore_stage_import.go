@@ -46,6 +46,7 @@ func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Report
 			literal, err := os.ReadFile(emlPath) //nolint:gosec
 			if err != nil {
 				logrus.WithField("path", emlPath).Error("Could not read EML file. Skipping.")
+				reporter.OnProgress(1)
 				continue
 			}
 
@@ -53,6 +54,7 @@ func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Report
 			metadata, err := loadMetadataFile(metadataPath)
 			if err != nil {
 				logrus.WithField("path", metadataPath).Error("Could not load metadata file. Skipping.")
+				reporter.OnProgress(1)
 			}
 
 			messages = append(messages, Message{literal: literal, metadata: metadata.MessageMetadata})
@@ -74,18 +76,22 @@ func (r *RestoreTask) importMails(messageInfoList []messageInfo, reporter Report
 }
 
 func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, messages []Message, reporter Reporter) error {
+	defer reporter.OnProgress(len(messages))
+
 	reqs := make([]proton.ImportReq, 0, len(messages))
 	for _, message := range messages {
 		log := r.log.WithField("messageID", message.metadata.AddressID)
 		labelIDs, err := r.getLabelList(message.metadata.LabelIDs)
 		if err != nil {
 			log.WithField("messageID", message.metadata.ID).WithError(err).Error("Could not map label to remote labels.")
+			r.failedCount++
 			continue
 		}
 
 		msgParser, err := parser.New(bytes.NewReader(message.literal))
 		if err != nil {
 			log.WithField(message.metadata.ID, message.metadata).WithError(err).Error("Failed to parse literal for message.")
+			r.failedCount++
 			continue
 		}
 
@@ -117,14 +123,14 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 	str, err := r.session.GetClient().ImportMessages(r.ctx, addrKR, -1, -1, reqs...)
 	if err != nil {
 		r.log.WithError(err).Error("Failed to prepare message batch for import. Retrying one by one.")
-		r.importOneByOne(reqs, messages, addrKR, reporter)
+		r.importOneByOne(reqs, messages, addrKR)
 		return nil
 	}
 
 	results, err := stream.Collect(r.ctx, stream.Stream[proton.ImportRes](str))
 	if err != nil {
 		r.log.WithError(err).Error("An error occurred while importing a batch of messages. Retrying one by one.")
-		r.importOneByOne(reqs, messages, addrKR, reporter)
+		r.importOneByOne(reqs, messages, addrKR)
 		return nil
 	}
 
@@ -136,12 +142,11 @@ func (r *RestoreTask) importMailBatch(addrID string, addrKR *crypto.KeyRing, mes
 			r.importedCount++
 		}
 	}
-	reporter.OnProgress(len(results))
 
 	return nil
 }
 
-func (r *RestoreTask) importOneByOne(requests []proton.ImportReq, messages []Message, addrKR *crypto.KeyRing, reporter Reporter) {
+func (r *RestoreTask) importOneByOne(requests []proton.ImportReq, messages []Message, addrKR *crypto.KeyRing) {
 	for i, request := range requests {
 		resultStream, err := r.session.GetClient().ImportMessages(r.ctx, addrKR, -1, -1, request)
 		if err != nil {
@@ -164,7 +169,6 @@ func (r *RestoreTask) importOneByOne(requests []proton.ImportReq, messages []Mes
 			r.importedCount++
 		}
 	}
-	reporter.OnProgress(len(requests))
 }
 
 func (r *RestoreTask) getLabelList(labels []string) ([]string, error) {

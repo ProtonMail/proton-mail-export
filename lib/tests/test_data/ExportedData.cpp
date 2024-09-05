@@ -13,83 +13,11 @@ void writeFile(std::filesystem::path const& path, std::string const& content) {
 }
 
 //****************************************************************************************************************************************************
-/// One we decide to switch to C++23, we can replace this with binaryr resource inclusion: see https://en.cppreference.com/w/c/preprocessor/embed
+/// Once we decide to switch to C++23, we can replace this with binary resource inclusion: see https://en.cppreference.com/w/c/preprocessor/embed
 ///
 /// \param[in] dir The folder path. The folder must exist.
 //****************************************************************************************************************************************************
 void createTestBackup(std::filesystem::path const& dir) {
-    writeFile(dir / "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==.eml",
-              R"(Content-Transfer-Encoding: quoted-printable
-Content-Type: text/html; charset=utf-8
-References: <2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==@protonmail.internalid>
-X-Pm-Date: Fri, 14 Jun 2024 06:02:54 +0000
-X-Pm-External-Id: <RA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch>
-X-Pm-Internal-Id: 2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==
-To: "Test @ Michelon" <test@michelon.ch>
-Reply-To: "Dev" <dev@michelon.ch>
-From: "Dev" <dev@michelon.ch>
-Subject: Act 3 - Scene 1
-Delivered-To: test@michelon.ch
-Return-Path: <dev@michelon.ch>
-X-Original-To: test@michelon.ch
-Received: from mail.protonmail.ch by mail.protonmail.ch; Fri, 14 Jun 2024 06:02:59 +0000
-X-Pm-Spamscore: 0
-Message-Id: <RA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch>
-Mime-Version: 1.0
-Date: Fri, 14 Jun 2024 06:02:54 +0000
-X-Pm-Origin: internal
-X-Pm-Content-Encryption: end-to-end
-
-<span>CASSIO</span><div><span>Masters, play here (I will content your pains=
-)</span></div><div><span>Something that's brief; and bid "Good morrow,</spa=
-n></div><span>general."	[They play.]</span>)");
-
-    writeFile(dir / "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==.metadata.json",
-              R"({
-  "Version": 1,
-  "Payload": {
-    "ID": "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==",
-    "AddressID": "o1NktWYlte9s3miWOwimQSV1nVsJX36FlBRfX25E48SPeHTSO2YrWn3K5nd9cR-1jdmxkxExZ3DlaiNnk7XA2g==",
-    "LabelIDs": [
-      "5",
-      "15",
-      "UD2CCpFokJimuXRGM91VglWoj4eOLCevCs0JIfVDcmlLmlqUxVcqWW_6UMyz7D17XBbcqK4SDxUBO66KY8LlCw=="
-    ],
-    "ExternalID": "RA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch",
-    "Subject": "Act 3 - Scene 1",
-    "Sender": {
-      "Name": "Dev",
-      "Address": "dev@michelon.ch"
-    },
-    "ToList": [
-      {
-        "Name": "Test @ Michelon",
-        "Address": "test@michelon.ch"
-      }
-    ],
-    "CCList": [],
-    "BCCList": [],
-    "ReplyTos": [
-      {
-        "Name": "Dev",
-        "Address": "dev@michelon.ch"
-      }
-    ],
-    "Flags": 9229,
-    "Time": 1718344974,
-    "Size": 380,
-    "Unread": 0,
-    "IsReplied": 0,
-    "IsRepliedAll": 0,
-    "IsForwarded": 0,
-    "NumAttachments": 0,
-    "Attachments": [],
-    "MIMEType": "text/html",
-    "Headers": "X-Pm-Content-Encryption: end-to-end\r\nX-Pm-Origin: internal\r\nSubject: Act 3 - Scene 1\r\nTo: Test @ Michelon \u003ctest@michelon.ch\u003e\r\nFrom: Dev \u003cdev@michelon.ch\u003e\r\nDate: Fri, 14 Jun 2024 06:02:54 +0000\r\nMime-Version: 1.0\r\nContent-Type: text/html\r\nMessage-Id: \u003cRA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch\u003e\r\nX-Pm-Spamscore: 0\r\nReceived: from mail.protonmail.ch by mail.protonmail.ch; Fri, 14 Jun 2024 06:02:59 +0000\r\nX-Original-To: test@michelon.ch\r\nReturn-Path: \u003cdev@michelon.ch\u003e\r\nDelivered-To: test@michelon.ch\r\n",
-    "WriterType": 0
-  }
-})");
-
     writeFile(dir / "4HGNtgH-oj3CPMiABEMYt9se-38NAM8b4T7h2JfIq0D3WGsTa0tZxFhzNmnoFApweAbSUS1rbm9mxspaC6MOxQ==.eml",
               R"(Content-Transfer-Encoding: quoted-printable
 Content-Type: text/html; charset=utf-8
@@ -1555,6 +1483,105 @@ LwGyhBEZJIHmIaIgBINsQaGmWv48QodoNSVn9qgkjOIUFn//2Q==
     ],
     "MIMEType": "text/html",
     "Headers": "X-Pm-Content-Encryption: end-to-end\r\nX-Pm-Origin: internal\r\nSubject: Mona Lisa.\r\nTo: Test @ Michelon \u003ctest@michelon.ch\u003e\r\nFrom: Dev \u003cdev@michelon.ch\u003e\r\nDate: Fri, 14 Jun 2024 06:10:11 +0000\r\nMime-Version: 1.0\r\nContent-Type: text/html\r\nX-Attached: MonaLisa.jpg\r\nMessage-Id: \u003cjr8pUWLzhNpZuAus58i8INLgll5YaFgUZYPKRetqffb2nGLoYOV6ZLkchK9_86mzebhts8zBH6B-Jz1rIz0MhXFniy66igs49MFKgiiC_j8=@michelon.ch\u003e\r\nX-Pm-Spamscore: 0\r\nReceived: from mail.protonmail.ch by mail.protonmail.ch; Fri, 14 Jun 2024 06:10:14 +0000\r\nX-Original-To: test@michelon.ch\r\nReturn-Path: \u003cdev@michelon.ch\u003e\r\nDelivered-To: test@michelon.ch\r\n",
+    "WriterType": 0
+  }
+})");
+}
+
+//****************************************************************************************************************************************************
+/// \param[in] dir The folder path. The folder must exist and contain an existing backup.
+//****************************************************************************************************************************************************
+void addSkippedAndFailingMessages(std::filesystem::path const& dir) {
+    writeFile(dir / "jBnHMoZ9R1sK27iVRXkc-o81MUf3s4yamEcouHl5RiEmSx19bgcw7hm884h3LMsamTIuuBKn5dBHgjBGiaDVBw==.eml", R"()");
+    writeFile(dir / "jBnHMoZ9R1sK27iVRXkc-o81MUf3s4yamEcouHl5RiEmSx19bgcw7hm884h3LMsamTIuuBKn5dBHgjBGiaDVBw==.metadata.json", R"({
+  "Version": 1,
+  "Payload": {
+    "ID": "non-exiting ID",
+    "AddressID": "o1NktWYlte9s3miWOwimQSV1nVsJX36FlBRfX25E48SPeHTSO2YrWn3K5nd9cR-1jdmxkxExZ3DlaiNnk7XA2g==",
+    "LabelIDs": [
+      "0",
+      "5",
+      "15"
+    ],
+    "ExternalID": "jr8pUWLzhNpZuAus58i8INLgll5YaFgUZYPKRetqffb2nGLoYOV6ZLkchK9_86mzebhts8zBH6B-Jz1rIz0MhXFniy66igs49MFKgiiC_j8=@michelon.ch",
+    "Subject": "Mona Lisa.",
+    "Sender": {
+      "Name": "Dev",
+      "Address": "dev@michelon.ch"
+    },
+    "ToList": [
+      {
+        "Name": "Test @ Michelon",
+        "Address": "test@michelon.ch"
+      }
+    ],
+    "CCList": [],
+    "BCCList": [],
+    "ReplyTos": [
+      {
+        "Name": "Dev",
+        "Address": "dev@michelon.ch"
+      }
+    ],
+    "Flags": 9229,
+    "Time": 1718345411,
+    "Size": 9936,
+    "Unread": 0,
+    "IsReplied": 0,
+    "IsRepliedAll": 0,
+    "IsForwarded": 0,
+    "NumAttachments": 0,
+    "Attachments": [],
+    "MIMEType": "text/html",
+    "Headers": "X-Pm-Content-Encryption: end-to-end\r\nX-Pm-Origin: internal\r\nSubject: Mona Lisa.\r\nTo: Test @ Michelon \u003ctest@michelon.ch\u003e\r\nFrom: Dev \u003cdev@michelon.ch\u003e\r\nDate: Fri, 14 Jun 2024 06:10:11 +0000\r\nMime-Version: 1.0\r\nContent-Type: text/html\r\nX-Attached: MonaLisa.jpg\r\nMessage-Id: \u003cjr8pUWLzhNpZuAus58i8INLgll5YaFgUZYPKRetqffb2nGLoYOV6ZLkchK9_86mzebhts8zBH6B-Jz1rIz0MhXFniy66igs49MFKgiiC_j8=@michelon.ch\u003e\r\nX-Pm-Spamscore: 0\r\nReceived: from mail.protonmail.ch by mail.protonmail.ch; Fri, 14 Jun 2024 06:10:14 +0000\r\nX-Original-To: test@michelon.ch\r\nReturn-Path: \u003cdev@michelon.ch\u003e\r\nDelivered-To: test@michelon.ch\r\n",
+    "WriterType": 0
+  }
+})");
+    writeFile(dir / "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==.eml",
+              std::string(1 << 20, '0')); // this will trigger "header exceeds maximum size".
+
+    writeFile(dir / "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==.metadata.json",
+              R"({
+  "Version": 1,
+  "Payload": {
+    "ID": "2yVSh86fKc_VnjuFUZTxTFBAJBqoOhTnpusBR29e38a6sKJb4FYe1WDZZaY-qRxt9-NJoyK3FlDb41iKKSdPGg==",
+    "AddressID": "o1NktWYlte9s3miWOwimQSV1nVsJX36FlBRfX25E48SPeHTSO2YrWn3K5nd9cR-1jdmxkxExZ3DlaiNnk7XA2g==",
+    "LabelIDs": [
+      "5",
+      "15",
+      "UD2CCpFokJimuXRGM91VglWoj4eOLCevCs0JIfVDcmlLmlqUxVcqWW_6UMyz7D17XBbcqK4SDxUBO66KY8LlCw=="
+    ],
+    "ExternalID": "RA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch",
+    "Subject": "Act 3 - Scene 1",
+    "Sender": {
+      "Name": "Dev",
+      "Address": "dev@michelon.ch"
+    },
+    "ToList": [
+      {
+        "Name": "Test @ Michelon",
+        "Address": "test@michelon.ch"
+      }
+    ],
+    "CCList": [],
+    "BCCList": [],
+    "ReplyTos": [
+      {
+        "Name": "Dev",
+        "Address": "dev@michelon.ch"
+      }
+    ],
+    "Flags": 9229,
+    "Time": 1718344974,
+    "Size": 380,
+    "Unread": 0,
+    "IsReplied": 0,
+    "IsRepliedAll": 0,
+    "IsForwarded": 0,
+    "NumAttachments": 0,
+    "Attachments": [],
+    "MIMEType": "text/html",
+    "Headers": "X-Pm-Content-Encryption: end-to-end\r\nX-Pm-Origin: internal\r\nSubject: Act 3 - Scene 1\r\nTo: Test @ Michelon \u003ctest@michelon.ch\u003e\r\nFrom: Dev \u003cdev@michelon.ch\u003e\r\nDate: Fri, 14 Jun 2024 06:02:54 +0000\r\nMime-Version: 1.0\r\nContent-Type: text/html\r\nMessage-Id: \u003cRA_0QgwMkjDSg5TTCv93_uGZkmWBFwys-fY9Rn_fLCv_3GaRNq2czzyc4F8SqmSQqL_FxHk_8iku3Heb5h2g0l4L0xMk6I9hJNDYf6KkqIM=@michelon.ch\u003e\r\nX-Pm-Spamscore: 0\r\nReceived: from mail.protonmail.ch by mail.protonmail.ch; Fri, 14 Jun 2024 06:02:59 +0000\r\nX-Original-To: test@michelon.ch\r\nReturn-Path: \u003cdev@michelon.ch\u003e\r\nDelivered-To: test@michelon.ch\r\n",
     "WriterType": 0
   }
 })");

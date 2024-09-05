@@ -16,6 +16,8 @@
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
+
 #include <etsession.hpp>
 #include <filesystem>
 #include <fmt/format.h>
@@ -95,9 +97,13 @@ TEST_CASE("MailExport") {
 }
 
 
-class NullRestoreCallback final : public etcpp::RestoreCallback {
+class TestRestoreCallback final : public etcpp::RestoreCallback {
 public:
-    void onProgress(float) override {}
+    void onProgress(float progress) override { progress_ = progress; }
+    [[nodiscard]] float progress() const { return progress_; }
+
+private:
+    float progress_ = 0.0;
 };
 
 TEST_CASE("MailRestore") {
@@ -123,6 +129,39 @@ TEST_CASE("MailRestore") {
     createTestBackup(dir.getPath());
 
     etcpp::Restore restore = session.newRestore(dir.getPath().u8string().c_str());
-    NullRestoreCallback nullCallback = NullRestoreCallback();
-    REQUIRE_NOTHROW(restore.start(nullCallback));
+    auto callback = TestRestoreCallback();
+    REQUIRE_NOTHROW(restore.start(callback));
+    REQUIRE(13 == restore.getImportableCount());
+    REQUIRE(13 == restore.getImportedCount());
+    REQUIRE(0 == restore.getFailedCount());
+    REQUIRE(0 == restore.getSkippedCount());
+    REQUIRE_THAT(callback.progress(), Catch::Matchers::WithinAbs(100.0, 0.0001));
+}
+
+TEST_CASE("MailRestoreFailAndSkip") {
+    GPAServer server;
+
+    const char* userEmail = "hello";
+    const char* userPassword = "12345";
+
+    std::string addrID;
+    std::string const userID = server.createUser(userEmail, userPassword, addrID);
+
+    auto session = etcpp::Session(server.url().c_str());
+    REQUIRE(etcpp::Session::LoginState::LoggedIn == session.login(userEmail, userPassword));
+
+    ScopedTempFolder dir;
+    std::filesystem::path const dirPath = dir.getPath();
+    std::cout << dirPath;
+    createTestBackup(dirPath); // Create a working backup
+    addSkippedAndFailingMessages(dirPath); // Add one message that will be skipped, and one that will fail
+
+    etcpp::Restore restore = session.newRestore(dirPath.u8string().c_str());
+    auto callback = TestRestoreCallback();
+    REQUIRE_NOTHROW(restore.start(callback));
+    REQUIRE(15 == restore.getImportableCount());
+    REQUIRE(13 == restore.getImportedCount());
+    REQUIRE(1 == restore.getFailedCount());
+    REQUIRE(1 == restore.getSkippedCount());
+    REQUIRE_THAT(callback.progress(), Catch::Matchers::WithinAbs(100.0, 0.0001));
 }

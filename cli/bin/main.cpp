@@ -285,7 +285,8 @@ std::string getExampleDir() {
 #endif
 }
 
-std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, std::string_view const email, bool& outPathCameFromArg) {
+std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, std::string_view const email, bool& outPathCameFromArg,
+                                    bool& usingDefaultBackupPath) {
     std::filesystem::path backupPath;
     outPathCameFromArg = false;
     bool promptEntry = false;
@@ -311,6 +312,7 @@ std::filesystem::path getBackupPath(cxxopts::ParseResult const& argParseResult, 
         if (promptEntry) {
             std::cout << "Please input desired export path. E.g.: " << getExampleDir() << std::endl;
             backupPath = readPath("Export Path");
+            usingDefaultBackupPath = false;
         } else if (backupPath.empty()) {
             backupPath = outputPath;
         }
@@ -511,10 +513,14 @@ std::optional<int> performLogin(etcpp::Session& session, cxxopts::ParseResult& a
 
 int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseResult, CLIAppState const& appState) {
     bool pathCameFromArgs = false;
-    std::filesystem::path const backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs);
+    bool usingDefaultBackupPath = true;
+    std::filesystem::path const backupPath = getBackupPath(argParseResult, session.getEmail(), pathCameFromArgs, usingDefaultBackupPath);
     if (backupPath.empty()) {
         return EXIT_FAILURE;
     }
+
+    // Telemetry - we'd like to know whether the user overwrote the default export path
+    session.setUsingDefaultExportPath(!pathCameFromArgs && usingDefaultBackupPath);
 
     std::filesystem::space_info spaceInfo{};
     try {
@@ -655,7 +661,9 @@ int main(int argc, const char** argv) {
             "m,mbox-password", "User's mailbox password when using 2 Password Mode (can also be set with env var ET_USER_MAILBOX_PASSWORD)",
             cxxopts::value<std::string>())("t,totp", "User's TOTP 2FA code (can also be set with env var ET_TOTP_CODE)",
                                            cxxopts::value<std::string>())(
-            "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL", cxxopts::value<std::string>())("h,help", "Show help");
+            "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL", cxxopts::value<std::string>())(
+            "k, telemetry", "Disable anonymous telemetry statistics (can also be set with env var ET_TELEMETRY_OFF)", cxxopts::value<bool>())(
+            "h,help", "Show help");
 
         auto argParseResult = options.parse(argc, argv);
 
@@ -679,7 +687,19 @@ int main(int argc, const char** argv) {
             std::cout << "\nSession Log: " << *logPath << '\n' << std::endl;
         }
 
-        etcpp::Session session = etcpp::Session(et::DEFAULT_API_URL, std::make_shared<SessionCallback>());
+        bool telemetryDisabled = argParseResult["telemetry"].as<bool>() || (std::getenv("ET_TELEMETRY_OFF") != nullptr);
+
+        etcpp::Session session = etcpp::Session(et::DEFAULT_API_URL, telemetryDisabled, std::make_shared<SessionCallback>());
+
+        // Unauth telemetry
+        session.sendProcessStartTelemetry(argParseResult.count("operation") || (std::getenv("ET_OPERATION") != nullptr),
+                                          argParseResult.count("dir") || (std::getenv("ET_DIR") != nullptr),
+                                          argParseResult.count("password") || (std::getenv("ET_USER_PASSWORD") != nullptr),
+                                          argParseResult.count("mbox-password") || (std::getenv("ET_USER_MAILBOX_PASSWORD") != nullptr),
+                                          argParseResult.count("totp") || (std::getenv("ET_TOTP_CODE") != nullptr),
+                                          argParseResult.count("user") || (std::getenv("ET_USER_EMAIL") != nullptr));
+
+
         std::optional<int> exitCode = performLogin(session, argParseResult, appState);
         if (exitCode.has_value()) {
             return *exitCode;

@@ -23,6 +23,7 @@ import (
 type MockBuilder struct {
 	ctrl     *gomock.Controller
 	recorder *MockBuilderMockRecorder
+	isgomock struct{}
 }
 
 // MockBuilderMockRecorder is the mock recorder for MockBuilder.
@@ -55,9 +56,9 @@ func (mr *MockBuilderMockRecorder) Close() *gomock.Call {
 }
 
 // NewClient mocks base method.
-func (m *MockBuilder) NewClient(arg0 context.Context, arg1 string, arg2 []byte, arg3 *proton.APIHVDetails) (Client, proton.Auth, error) {
+func (m *MockBuilder) NewClient(ctx context.Context, username string, password []byte, hvToken *proton.APIHVDetails) (Client, proton.Auth, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewClient", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "NewClient", ctx, username, password, hvToken)
 	ret0, _ := ret[0].(Client)
 	ret1, _ := ret[1].(proton.Auth)
 	ret2, _ := ret[2].(error)
@@ -65,15 +66,30 @@ func (m *MockBuilder) NewClient(arg0 context.Context, arg1 string, arg2 []byte, 
 }
 
 // NewClient indicates an expected call of NewClient.
-func (mr *MockBuilderMockRecorder) NewClient(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockBuilderMockRecorder) NewClient(ctx, username, password, hvToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockBuilder)(nil).NewClient), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockBuilder)(nil).NewClient), ctx, username, password, hvToken)
+}
+
+// SendUnauthTelemetry mocks base method.
+func (m *MockBuilder) SendUnauthTelemetry(ctx context.Context, telemetryData proton.SendStatsReq) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendUnauthTelemetry", ctx, telemetryData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendUnauthTelemetry indicates an expected call of SendUnauthTelemetry.
+func (mr *MockBuilderMockRecorder) SendUnauthTelemetry(ctx, telemetryData any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUnauthTelemetry", reflect.TypeOf((*MockBuilder)(nil).SendUnauthTelemetry), ctx, telemetryData)
 }
 
 // MockClient is a mock of Client interface.
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
+	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -94,31 +110,31 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // Auth2FA mocks base method.
-func (m *MockClient) Auth2FA(arg0 context.Context, arg1 proton.Auth2FAReq) error {
+func (m *MockClient) Auth2FA(ctx context.Context, req proton.Auth2FAReq) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Auth2FA", arg0, arg1)
+	ret := m.ctrl.Call(m, "Auth2FA", ctx, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Auth2FA indicates an expected call of Auth2FA.
-func (mr *MockClientMockRecorder) Auth2FA(arg0, arg1 any) *gomock.Call {
+func (mr *MockClientMockRecorder) Auth2FA(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Auth2FA", reflect.TypeOf((*MockClient)(nil).Auth2FA), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Auth2FA", reflect.TypeOf((*MockClient)(nil).Auth2FA), ctx, req)
 }
 
 // AuthDelete mocks base method.
-func (m *MockClient) AuthDelete(arg0 context.Context) error {
+func (m *MockClient) AuthDelete(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AuthDelete", arg0)
+	ret := m.ctrl.Call(m, "AuthDelete", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AuthDelete indicates an expected call of AuthDelete.
-func (mr *MockClientMockRecorder) AuthDelete(arg0 any) *gomock.Call {
+func (mr *MockClientMockRecorder) AuthDelete(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthDelete", reflect.TypeOf((*MockClient)(nil).AuthDelete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthDelete", reflect.TypeOf((*MockClient)(nil).AuthDelete), ctx)
 }
 
 // Close mocks base method.
@@ -134,69 +150,69 @@ func (mr *MockClientMockRecorder) Close() *gomock.Call {
 }
 
 // CreateLabel mocks base method.
-func (m *MockClient) CreateLabel(arg0 context.Context, arg1 proton.CreateLabelReq) (proton.Label, error) {
+func (m *MockClient) CreateLabel(ctx context.Context, req proton.CreateLabelReq) (proton.Label, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateLabel", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateLabel", ctx, req)
 	ret0, _ := ret[0].(proton.Label)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateLabel indicates an expected call of CreateLabel.
-func (mr *MockClientMockRecorder) CreateLabel(arg0, arg1 any) *gomock.Call {
+func (mr *MockClientMockRecorder) CreateLabel(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLabel", reflect.TypeOf((*MockClient)(nil).CreateLabel), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLabel", reflect.TypeOf((*MockClient)(nil).CreateLabel), ctx, req)
 }
 
 // GetAddresses mocks base method.
-func (m *MockClient) GetAddresses(arg0 context.Context) ([]proton.Address, error) {
+func (m *MockClient) GetAddresses(ctx context.Context) ([]proton.Address, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAddresses", arg0)
+	ret := m.ctrl.Call(m, "GetAddresses", ctx)
 	ret0, _ := ret[0].([]proton.Address)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAddresses indicates an expected call of GetAddresses.
-func (mr *MockClientMockRecorder) GetAddresses(arg0 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetAddresses(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddresses", reflect.TypeOf((*MockClient)(nil).GetAddresses), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddresses", reflect.TypeOf((*MockClient)(nil).GetAddresses), ctx)
 }
 
 // GetAttachmentInto mocks base method.
-func (m *MockClient) GetAttachmentInto(arg0 context.Context, arg1 string, arg2 io.ReaderFrom) error {
+func (m *MockClient) GetAttachmentInto(ctx context.Context, attachmentID string, reader io.ReaderFrom) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAttachmentInto", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetAttachmentInto", ctx, attachmentID, reader)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GetAttachmentInto indicates an expected call of GetAttachmentInto.
-func (mr *MockClientMockRecorder) GetAttachmentInto(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetAttachmentInto(ctx, attachmentID, reader any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAttachmentInto", reflect.TypeOf((*MockClient)(nil).GetAttachmentInto), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAttachmentInto", reflect.TypeOf((*MockClient)(nil).GetAttachmentInto), ctx, attachmentID, reader)
 }
 
 // GetGroupedMessageCount mocks base method.
-func (m *MockClient) GetGroupedMessageCount(arg0 context.Context) ([]proton.MessageGroupCount, error) {
+func (m *MockClient) GetGroupedMessageCount(ctx context.Context) ([]proton.MessageGroupCount, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGroupedMessageCount", arg0)
+	ret := m.ctrl.Call(m, "GetGroupedMessageCount", ctx)
 	ret0, _ := ret[0].([]proton.MessageGroupCount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetGroupedMessageCount indicates an expected call of GetGroupedMessageCount.
-func (mr *MockClientMockRecorder) GetGroupedMessageCount(arg0 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetGroupedMessageCount(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupedMessageCount", reflect.TypeOf((*MockClient)(nil).GetGroupedMessageCount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupedMessageCount", reflect.TypeOf((*MockClient)(nil).GetGroupedMessageCount), ctx)
 }
 
 // GetLabels mocks base method.
-func (m *MockClient) GetLabels(arg0 context.Context, arg1 ...proton.LabelType) ([]proton.Label, error) {
+func (m *MockClient) GetLabels(ctx context.Context, labelTypes ...proton.LabelType) ([]proton.Label, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{arg0}
-	for _, a := range arg1 {
+	varargs := []any{ctx}
+	for _, a := range labelTypes {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetLabels", varargs...)
@@ -206,77 +222,107 @@ func (m *MockClient) GetLabels(arg0 context.Context, arg1 ...proton.LabelType) (
 }
 
 // GetLabels indicates an expected call of GetLabels.
-func (mr *MockClientMockRecorder) GetLabels(arg0 any, arg1 ...any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetLabels(ctx any, labelTypes ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0}, arg1...)
+	varargs := append([]any{ctx}, labelTypes...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabels", reflect.TypeOf((*MockClient)(nil).GetLabels), varargs...)
 }
 
 // GetMessage mocks base method.
-func (m *MockClient) GetMessage(arg0 context.Context, arg1 string) (proton.Message, error) {
+func (m *MockClient) GetMessage(ctx context.Context, messageID string) (proton.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMessage", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetMessage", ctx, messageID)
 	ret0, _ := ret[0].(proton.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMessage indicates an expected call of GetMessage.
-func (mr *MockClientMockRecorder) GetMessage(arg0, arg1 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetMessage(ctx, messageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessage", reflect.TypeOf((*MockClient)(nil).GetMessage), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessage", reflect.TypeOf((*MockClient)(nil).GetMessage), ctx, messageID)
 }
 
 // GetMessageMetadataPage mocks base method.
-func (m *MockClient) GetMessageMetadataPage(arg0 context.Context, arg1, arg2 int, arg3 proton.MessageFilter) ([]proton.MessageMetadata, error) {
+func (m *MockClient) GetMessageMetadataPage(ctx context.Context, page, pageSize int, filter proton.MessageFilter) ([]proton.MessageMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMessageMetadataPage", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetMessageMetadataPage", ctx, page, pageSize, filter)
 	ret0, _ := ret[0].([]proton.MessageMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMessageMetadataPage indicates an expected call of GetMessageMetadataPage.
-func (mr *MockClientMockRecorder) GetMessageMetadataPage(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetMessageMetadataPage(ctx, page, pageSize, filter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessageMetadataPage", reflect.TypeOf((*MockClient)(nil).GetMessageMetadataPage), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessageMetadataPage", reflect.TypeOf((*MockClient)(nil).GetMessageMetadataPage), ctx, page, pageSize, filter)
+}
+
+// GetOrganizationData mocks base method.
+func (m *MockClient) GetOrganizationData(ctx context.Context) (proton.OrganizationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrganizationData", ctx)
+	ret0, _ := ret[0].(proton.OrganizationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrganizationData indicates an expected call of GetOrganizationData.
+func (mr *MockClientMockRecorder) GetOrganizationData(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrganizationData", reflect.TypeOf((*MockClient)(nil).GetOrganizationData), ctx)
 }
 
 // GetSalts mocks base method.
-func (m *MockClient) GetSalts(arg0 context.Context) (proton.Salts, error) {
+func (m *MockClient) GetSalts(ctx context.Context) (proton.Salts, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSalts", arg0)
+	ret := m.ctrl.Call(m, "GetSalts", ctx)
 	ret0, _ := ret[0].(proton.Salts)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSalts indicates an expected call of GetSalts.
-func (mr *MockClientMockRecorder) GetSalts(arg0 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetSalts(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSalts", reflect.TypeOf((*MockClient)(nil).GetSalts), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSalts", reflect.TypeOf((*MockClient)(nil).GetSalts), ctx)
+}
+
+// GetUserSettings mocks base method.
+func (m *MockClient) GetUserSettings(ctx context.Context) (proton.UserSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserSettings", ctx)
+	ret0, _ := ret[0].(proton.UserSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserSettings indicates an expected call of GetUserSettings.
+func (mr *MockClientMockRecorder) GetUserSettings(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSettings", reflect.TypeOf((*MockClient)(nil).GetUserSettings), ctx)
 }
 
 // GetUserWithHV mocks base method.
-func (m *MockClient) GetUserWithHV(arg0 context.Context, arg1 *proton.APIHVDetails) (proton.User, error) {
+func (m *MockClient) GetUserWithHV(ctx context.Context, hv *proton.APIHVDetails) (proton.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserWithHV", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetUserWithHV", ctx, hv)
 	ret0, _ := ret[0].(proton.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserWithHV indicates an expected call of GetUserWithHV.
-func (mr *MockClientMockRecorder) GetUserWithHV(arg0, arg1 any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetUserWithHV(ctx, hv any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserWithHV", reflect.TypeOf((*MockClient)(nil).GetUserWithHV), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserWithHV", reflect.TypeOf((*MockClient)(nil).GetUserWithHV), ctx, hv)
 }
 
 // ImportMessages mocks base method.
-func (m *MockClient) ImportMessages(arg0 context.Context, arg1 *crypto.KeyRing, arg2, arg3 int, arg4 ...proton.ImportReq) (proton.ImportResStream, error) {
+func (m *MockClient) ImportMessages(ctx context.Context, addrKR *crypto.KeyRing, workers, buffer int, req ...proton.ImportReq) (proton.ImportResStream, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{arg0, arg1, arg2, arg3}
-	for _, a := range arg4 {
+	varargs := []any{ctx, addrKR, workers, buffer}
+	for _, a := range req {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ImportMessages", varargs...)
@@ -286,16 +332,31 @@ func (m *MockClient) ImportMessages(arg0 context.Context, arg1 *crypto.KeyRing, 
 }
 
 // ImportMessages indicates an expected call of ImportMessages.
-func (mr *MockClientMockRecorder) ImportMessages(arg0, arg1, arg2, arg3 any, arg4 ...any) *gomock.Call {
+func (mr *MockClientMockRecorder) ImportMessages(ctx, addrKR, workers, buffer any, req ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0, arg1, arg2, arg3}, arg4...)
+	varargs := append([]any{ctx, addrKR, workers, buffer}, req...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportMessages", reflect.TypeOf((*MockClient)(nil).ImportMessages), varargs...)
+}
+
+// SendDataEvent mocks base method.
+func (m *MockClient) SendDataEvent(ctx context.Context, req proton.SendStatsReq) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendDataEvent", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendDataEvent indicates an expected call of SendDataEvent.
+func (mr *MockClientMockRecorder) SendDataEvent(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDataEvent", reflect.TypeOf((*MockClient)(nil).SendDataEvent), ctx, req)
 }
 
 // MockRetryStrategy is a mock of RetryStrategy interface.
 type MockRetryStrategy struct {
 	ctrl     *gomock.Controller
 	recorder *MockRetryStrategyMockRecorder
+	isgomock struct{}
 }
 
 // MockRetryStrategyMockRecorder is the mock recorder for MockRetryStrategy.
@@ -316,13 +377,13 @@ func (m *MockRetryStrategy) EXPECT() *MockRetryStrategyMockRecorder {
 }
 
 // HandleRetry mocks base method.
-func (m *MockRetryStrategy) HandleRetry(arg0 context.Context) {
+func (m *MockRetryStrategy) HandleRetry(ctx context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "HandleRetry", arg0)
+	m.ctrl.Call(m, "HandleRetry", ctx)
 }
 
 // HandleRetry indicates an expected call of HandleRetry.
-func (mr *MockRetryStrategyMockRecorder) HandleRetry(arg0 any) *gomock.Call {
+func (mr *MockRetryStrategyMockRecorder) HandleRetry(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRetry", reflect.TypeOf((*MockRetryStrategy)(nil).HandleRetry), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleRetry", reflect.TypeOf((*MockRetryStrategy)(nil).HandleRetry), ctx)
 }

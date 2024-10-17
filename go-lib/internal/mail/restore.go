@@ -45,6 +45,7 @@ type RestoreTask struct {
 	importableCount int64
 	importedCount   int64
 	failedCount     int64
+	cancelledByUser bool
 }
 
 func NewRestoreTask(ctx context.Context, backupDir string, session *session.Session) (*RestoreTask, error) {
@@ -99,6 +100,7 @@ func (r *RestoreTask) Run(reporter Reporter) error {
 }
 
 func (r *RestoreTask) Cancel() {
+	r.cancelledByUser = true
 	r.ctxCancel()
 }
 
@@ -124,6 +126,10 @@ func (r *RestoreTask) GetFailedCount() int64 {
 
 func (r *RestoreTask) GetSkippedCount() int64 {
 	return r.importableCount - r.importedCount - r.failedCount
+}
+
+func (r *RestoreTask) GetOperationCancelledByUser() bool {
+	return r.cancelledByUser
 }
 
 func (r *RestoreTask) withAddrKR(fn func(addrID string, addrKR *crypto.KeyRing) error) error {

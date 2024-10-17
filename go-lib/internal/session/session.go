@@ -25,6 +25,7 @@ import (
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/reporter"
+	"github.com/ProtonMail/export-tool/internal/telemetry"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/sirupsen/logrus"
@@ -43,18 +44,19 @@ const (
 )
 
 type Session struct {
-	panicHandler    async.PanicHandler
-	clientBuilder   apiclient.Builder
-	client          apiclient.Client
-	loginState      LoginState
-	prevLoginState  LoginState
-	passwordMode    proton.PasswordMode
-	mailboxPassword []byte
-	callbacks       Callbacks
-	reporter        reporter.Reporter
-	hvDetails       *proton.APIHVDetails
-	user            proton.User
-	userSalts       proton.Salts
+	panicHandler     async.PanicHandler
+	clientBuilder    apiclient.Builder
+	client           apiclient.Client
+	loginState       LoginState
+	prevLoginState   LoginState
+	passwordMode     proton.PasswordMode
+	mailboxPassword  []byte
+	callbacks        Callbacks
+	reporter         reporter.Reporter
+	hvDetails        *proton.APIHVDetails
+	user             proton.User
+	userSalts        proton.Salts
+	telemetryService *telemetry.Service
 }
 
 func NewSession(
@@ -62,15 +64,17 @@ func NewSession(
 	callbacks Callbacks,
 	panicHandler async.PanicHandler,
 	reporter reporter.Reporter,
+	telemetryDisabled bool,
 ) *Session {
 	return &Session{
-		panicHandler:   panicHandler,
-		client:         nil,
-		clientBuilder:  builder,
-		callbacks:      callbacks,
-		reporter:       reporter,
-		loginState:     LoginStateLoggedOut,
-		prevLoginState: LoginStateLoggedOut,
+		panicHandler:     panicHandler,
+		client:           nil,
+		clientBuilder:    builder,
+		callbacks:        callbacks,
+		reporter:         reporter,
+		loginState:       LoginStateLoggedOut,
+		prevLoginState:   LoginStateLoggedOut,
+		telemetryService: telemetry.NewService(telemetryDisabled),
 	}
 }
 
@@ -257,6 +261,14 @@ func (s *Session) GetUserSalts() *proton.Salts {
 	return &s.userSalts
 }
 
+func (s *Session) GetTelemetryService() *telemetry.Service {
+	return s.telemetryService
+}
+
+func (s *Session) SendUnauthTelemetry(ctx context.Context, telemetryData proton.SendStatsReq) error {
+	return s.clientBuilder.SendUnauthTelemetry(ctx, telemetryData)
+}
+
 func (s *Session) checkHVRequest(err error) bool {
 	if details := apiclient.GetHVData(err); details != nil {
 		s.prevLoginState = s.loginState
@@ -294,6 +306,10 @@ func (s *Session) loadUser(ctx context.Context) error {
 
 	s.user = u
 	s.userSalts = salts
+
+	// Initialize telemetry service
+	s.telemetryService.Initialize(ctx, s.client)
+
 	return nil
 }
 

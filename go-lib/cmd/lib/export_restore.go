@@ -28,6 +28,7 @@ import (
 	"errors"
 	"runtime/cgo"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
@@ -103,7 +104,21 @@ func etRestoreStart(ptr *C.etRestore, callbacks *C.etRestoreCallbacks) C.etResto
 		callbacks: callbacks,
 	}
 
-	if err := ce.restorer.Run(reporter); err != nil {
+	ce.csession.s.GetTelemetryService().SendRestoreStart()
+	startTime := time.Now()
+
+	err := ce.restorer.Run(reporter)
+
+	ce.csession.s.GetTelemetryService().SendRestoreFinished(
+		ce.restorer.GetOperationCancelledByUser(),
+		err != nil,
+		int(time.Since(startTime).Seconds()),
+		int(ce.restorer.GetImportableCount()),
+		int(ce.restorer.GetFailedCount()),
+		int(ce.restorer.GetImportedCount()),
+	)
+
+	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return C.ET_RESTORE_STATUS_CANCELLED
 		}

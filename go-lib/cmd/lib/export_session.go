@@ -34,8 +34,10 @@ import (
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/sentry"
 	"github.com/ProtonMail/export-tool/internal/session"
+	"github.com/ProtonMail/export-tool/internal/telemetry"
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
+	"github.com/sirupsen/logrus"
 )
 
 type SessionHandle struct {
@@ -47,10 +49,10 @@ func (h SessionHandle) resolve() (*csession, bool) {
 }
 
 //export etSessionNew
-func etSessionNew(apiURL *C.cchar_t, cb C.etSessionCallbacks, cErr **C.char) *C.etSession {
+func etSessionNew(apiURL *C.cchar_t, telemetryDisabled C.int, cb C.etSessionCallbacks, cErr **C.char) *C.etSession {
 	goAPIURL := C.GoString(apiURL)
 
-	cSession, err := newCSession(goAPIURL, cb)
+	cSession, err := newCSession(goAPIURL, telemetryDisabled == 1, cb)
 	if err != nil {
 		*cErr = C.CString(err.Error())
 		return nil
@@ -190,6 +192,42 @@ func etSessionGetEmail(ptr *C.etSession, outEmail **C.char) C.etSessionStatus {
 	})
 }
 
+//export etSessionSetUsingDefaultExportPath
+func etSessionSetUsingDefaultExportPath(ptr *C.etSession, usingDefaultExportPath C.int) C.etSessionStatus {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
+		session.GetTelemetryService().SetUsingDefaultExportPath(usingDefaultExportPath == 1)
+		return nil
+	})
+}
+
+//export etSessionSendProcessStartTelemetry
+func etSessionSendProcessStartTelemetry(
+	ptr *C.etSession,
+	etOperation C.int,
+	etDir C.int,
+	etUserPassword C.int,
+	etUserMailboxPassword C.int,
+	etTotpCode C.int,
+	etUserEmail C.int,
+) C.etSessionStatus {
+	return withSession(ptr, func(ctx context.Context, session *session.Session) error {
+		metric := telemetry.GenerateProcessStartMetric(
+			etOperation == 1,
+			etDir == 1,
+			etUserPassword == 1,
+			etUserMailboxPassword == 1,
+			etTotpCode == 1,
+			etUserEmail == 1,
+		)
+
+		if err := session.SendUnauthTelemetry(ctx, metric); err != nil {
+			logrus.Info("Failed to send session start telemetry")
+		}
+
+		return nil
+	})
+}
+
 //export etFree
 func etFree(ptr *C.void) {
 	C.free(unsafe.Pointer(ptr))
@@ -241,7 +279,7 @@ type csession struct {
 	lastError  utils.CLastError
 }
 
-func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
+func newCSession(apiURL string, telemetryDisabled bool, cb C.etSessionCallbacks) (*csession, error) {
 	panicHandler := sentry.NewPanicHandler(GetGlobalOnRecoverCB())
 	reporter := GetGlobalReporter()
 
@@ -261,7 +299,7 @@ func newCSession(apiURL string, cb C.etSessionCallbacks) (*csession, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &csession{
-		s:         session.NewSession(clientBuilder, sessionCb, panicHandler, reporter),
+		s:         session.NewSession(clientBuilder, sessionCb, panicHandler, reporter, telemetryDisabled),
 		ctx:       ctx,
 		ctxCancel: cancel,
 	}, nil

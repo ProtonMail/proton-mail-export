@@ -55,9 +55,9 @@ etSessionCallbacks makeCCallback(SessionCallback* ptr) {
     return cb;
 }
 
-Session::Session(const char* serverURL, const std::shared_ptr<SessionCallback>& callbacks) : mCallbacks(callbacks) {
+Session::Session(const char* serverURL, const bool telemetryDisabled, const std::shared_ptr<SessionCallback>& callbacks) : mCallbacks(callbacks) {
     char* outErr = nullptr;
-    mPtr = etSessionNew(serverURL, makeCCallback(mCallbacks.get()), &outErr);
+    mPtr = etSessionNew(serverURL, telemetryDisabled, makeCCallback(mCallbacks.get()), &outErr);
     if (mPtr == nullptr) {
         auto ex = SessionException(outErr);
         etFree(outErr);
@@ -158,9 +158,21 @@ Restore Session::newRestore(const char* backupPath) const {
     return Restore(*this, restorePtr);
 }
 
+void Session::setUsingDefaultExportPath(const bool usingDefaultExportPath) {
+    wrapCCall([&usingDefaultExportPath](etSession* ptr) { return etSessionSetUsingDefaultExportPath(ptr, usingDefaultExportPath); });
+}
+
+void Session::sendProcessStartTelemetry(bool etOperation, bool etDir, bool etUserPassword, bool etUserMailboxPassword, bool etTotpCode,
+                                        bool etUserEmail) {
+    wrapCCall([&etOperation, &etDir, &etUserPassword, &etUserMailboxPassword, &etTotpCode, &etUserEmail](etSession* ptr) {
+        return etSessionSendProcessStartTelemetry(ptr, etOperation, etDir, etUserPassword, etUserMailboxPassword, etTotpCode, etUserEmail);
+    });
+}
+
 void Session::cancel() {
     wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }
+
 std::string Session::getEmail() const {
     char* outEmail = nullptr;
     wrapCCall([&](etSession* ptr) -> etSessionStatus { return etSessionGetEmail(ptr, &outEmail); });

@@ -165,7 +165,7 @@ func newSession(panicHandler async.PanicHandler) (*session.Session, error) {
 		&apiclient.SleepRetryStrategyBuilder{},
 	)
 
-	return session.NewSession(clientBuilder, sessionCb, panicHandler, reporter.NullReporter{}), nil
+	return session.NewSession(clientBuilder, sessionCb, panicHandler, reporter.NullReporter{}, false), nil
 }
 
 type CliCallback struct{}

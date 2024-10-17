@@ -65,6 +65,10 @@ func (a *AutoRetryClientBuilder) NewClient(
 	}
 }
 
+func (a *AutoRetryClientBuilder) SendUnauthTelemetry(ctx context.Context, telemetryData proton.SendStatsReq) error {
+	return a.builder.SendUnauthTelemetry(ctx, telemetryData)
+}
+
 func (a *AutoRetryClientBuilder) Close() {
 	a.builder.Close()
 }
@@ -133,6 +137,24 @@ func (arc *AutoRetryClient) GetGroupedMessageCount(ctx context.Context) ([]proto
 func (arc *AutoRetryClient) GetMessage(ctx context.Context, messageID string) (proton.Message, error) {
 	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (proton.Message, error) {
 		return client.GetMessage(ctx, messageID)
+	})
+}
+
+func (arc *AutoRetryClient) GetUserSettings(ctx context.Context) (proton.UserSettings, error) {
+	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (proton.UserSettings, error) {
+		return client.GetUserSettings(ctx)
+	})
+}
+
+func (arc *AutoRetryClient) SendDataEvent(ctx context.Context, req proton.SendStatsReq) error {
+	return arc.repeatRequest(ctx, func(ctx context.Context, client Client) error {
+		return client.SendDataEvent(ctx, req)
+	})
+}
+
+func (arc *AutoRetryClient) GetOrganizationData(ctx context.Context) (proton.OrganizationResponse, error) {
+	return repeatRequestTyped(ctx, arc, func(ctx context.Context, client Client) (proton.OrganizationResponse, error) {
+		return client.GetOrganizationData(ctx)
 	})
 }
 

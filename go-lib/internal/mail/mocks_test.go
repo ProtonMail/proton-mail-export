@@ -19,6 +19,7 @@ import (
 type MockStageErrorReporter struct {
 	ctrl     *gomock.Controller
 	recorder *MockStageErrorReporterMockRecorder
+	isgomock struct{}
 }
 
 // MockStageErrorReporterMockRecorder is the mock recorder for MockStageErrorReporter.
@@ -39,21 +40,22 @@ func (m *MockStageErrorReporter) EXPECT() *MockStageErrorReporterMockRecorder {
 }
 
 // ReportStageError mocks base method.
-func (m *MockStageErrorReporter) ReportStageError(arg0 error) {
+func (m *MockStageErrorReporter) ReportStageError(err error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReportStageError", arg0)
+	m.ctrl.Call(m, "ReportStageError", err)
 }
 
 // ReportStageError indicates an expected call of ReportStageError.
-func (mr *MockStageErrorReporterMockRecorder) ReportStageError(arg0 any) *gomock.Call {
+func (mr *MockStageErrorReporterMockRecorder) ReportStageError(err any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportStageError", reflect.TypeOf((*MockStageErrorReporter)(nil).ReportStageError), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportStageError", reflect.TypeOf((*MockStageErrorReporter)(nil).ReportStageError), err)
 }
 
 // MockMetadataFileChecker is a mock of MetadataFileChecker interface.
 type MockMetadataFileChecker struct {
 	ctrl     *gomock.Controller
 	recorder *MockMetadataFileCheckerMockRecorder
+	isgomock struct{}
 }
 
 // MockMetadataFileCheckerMockRecorder is the mock recorder for MockMetadataFileChecker.
@@ -74,24 +76,25 @@ func (m *MockMetadataFileChecker) EXPECT() *MockMetadataFileCheckerMockRecorder 
 }
 
 // HasMessage mocks base method.
-func (m *MockMetadataFileChecker) HasMessage(arg0 string) (bool, error) {
+func (m *MockMetadataFileChecker) HasMessage(msgID string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasMessage", arg0)
+	ret := m.ctrl.Call(m, "HasMessage", msgID)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HasMessage indicates an expected call of HasMessage.
-func (mr *MockMetadataFileCheckerMockRecorder) HasMessage(arg0 any) *gomock.Call {
+func (mr *MockMetadataFileCheckerMockRecorder) HasMessage(msgID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMessage", reflect.TypeOf((*MockMetadataFileChecker)(nil).HasMessage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMessage", reflect.TypeOf((*MockMetadataFileChecker)(nil).HasMessage), msgID)
 }
 
 // MockReporter is a mock of Reporter interface.
 type MockReporter struct {
 	ctrl     *gomock.Controller
 	recorder *MockReporterMockRecorder
+	isgomock struct{}
 }
 
 // MockReporterMockRecorder is the mock recorder for MockReporter.
@@ -112,37 +115,37 @@ func (m *MockReporter) EXPECT() *MockReporterMockRecorder {
 }
 
 // OnProgress mocks base method.
-func (m *MockReporter) OnProgress(arg0 int) {
+func (m *MockReporter) OnProgress(delta int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnProgress", arg0)
+	m.ctrl.Call(m, "OnProgress", delta)
 }
 
 // OnProgress indicates an expected call of OnProgress.
-func (mr *MockReporterMockRecorder) OnProgress(arg0 any) *gomock.Call {
+func (mr *MockReporterMockRecorder) OnProgress(delta any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProgress", reflect.TypeOf((*MockReporter)(nil).OnProgress), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnProgress", reflect.TypeOf((*MockReporter)(nil).OnProgress), delta)
 }
 
 // SetMessageProcessed mocks base method.
-func (m *MockReporter) SetMessageProcessed(arg0 uint64) {
+func (m *MockReporter) SetMessageProcessed(total uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetMessageProcessed", arg0)
+	m.ctrl.Call(m, "SetMessageProcessed", total)
 }
 
 // SetMessageProcessed indicates an expected call of SetMessageProcessed.
-func (mr *MockReporterMockRecorder) SetMessageProcessed(arg0 any) *gomock.Call {
+func (mr *MockReporterMockRecorder) SetMessageProcessed(total any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageProcessed", reflect.TypeOf((*MockReporter)(nil).SetMessageProcessed), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageProcessed", reflect.TypeOf((*MockReporter)(nil).SetMessageProcessed), total)
 }
 
 // SetMessageTotal mocks base method.
-func (m *MockReporter) SetMessageTotal(arg0 uint64) {
+func (m *MockReporter) SetMessageTotal(total uint64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetMessageTotal", arg0)
+	m.ctrl.Call(m, "SetMessageTotal", total)
 }
 
 // SetMessageTotal indicates an expected call of SetMessageTotal.
-func (mr *MockReporterMockRecorder) SetMessageTotal(arg0 any) *gomock.Call {
+func (mr *MockReporterMockRecorder) SetMessageTotal(total any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageTotal", reflect.TypeOf((*MockReporter)(nil).SetMessageTotal), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMessageTotal", reflect.TypeOf((*MockReporter)(nil).SetMessageTotal), total)
 }

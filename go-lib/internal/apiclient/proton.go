@@ -123,6 +123,10 @@ func (p *ProtonAPIClientBuilder) checkKillSwitch(ctx context.Context) error {
 	return nil
 }
 
+func (p *ProtonAPIClientBuilder) SendUnauthTelemetry(ctx context.Context, telemetryData proton.SendStatsReq) error {
+	return p.manager.SendUnauthDataEvent(ctx, telemetryData)
+}
+
 func GetHVData(err error) *proton.APIHVDetails {
 	if err == nil {
 		return nil

@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"runtime/cgo"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/ProtonMail/export-tool/internal"
@@ -102,7 +103,25 @@ func etBackupStart(ptr *C.etBackup, callbacks *C.etBackupCallbacks) C.etBackupSt
 		callbacks: callbacks,
 	}
 
-	if err := ce.exporter.Run(ce.csession.ctx, reporter); err != nil {
+	ce.csession.s.GetTelemetryService().SendExportStart()
+	startTime := time.Now()
+
+	err := ce.exporter.Run(ce.csession.ctx, reporter)
+
+	totalMessageCount := reporter.GetTotalMessageCount()
+	processedMessageCount := reporter.GetCurrentMessageCount()
+	failedImportCount := totalMessageCount - processedMessageCount
+
+	ce.csession.s.GetTelemetryService().SendExportFinished(
+		ce.exporter.GetOperationCancelledByUser(),
+		err != nil,
+		int(time.Since(startTime).Seconds()),
+		int(totalMessageCount),
+		int(failedImportCount),
+		int(processedMessageCount),
+	)
+
+	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return C.ET_BACKUP_STATUS_CANCELLED
 		}
@@ -223,4 +242,12 @@ func (m *backupReporter) OnProgress(delta int) {
 	}
 
 	C.etBackupCallbackOnProgress(m.callbacks, C.float(progress))
+}
+
+func (m *backupReporter) GetTotalMessageCount() uint64 {
+	return m.totalMessageCount.Load()
+}
+
+func (m *backupReporter) GetCurrentMessageCount() uint64 {
+	return m.currentMessageCount.Load()
 }

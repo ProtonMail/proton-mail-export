@@ -55,13 +55,14 @@ const MaxBuildMemMB = 512 * MB
 //      |- msg-id.meta.json
 
 type ExportTask struct {
-	ctx       context.Context
-	ctxCancel func()
-	group     *async.Group
-	tmpDir    string
-	exportDir string
-	session   *session.Session
-	log       *logrus.Entry
+	ctx             context.Context
+	ctxCancel       func()
+	group           *async.Group
+	tmpDir          string
+	exportDir       string
+	session         *session.Session
+	log             *logrus.Entry
+	cancelledByUser bool
 }
 
 func NewExportTask(
@@ -102,6 +103,7 @@ func (e *ExportTask) Close() {
 }
 
 func (e *ExportTask) Cancel() {
+	e.cancelledByUser = true
 	e.ctxCancel()
 }
 
@@ -278,6 +280,10 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 
 func (e *ExportTask) GetExportPath() string {
 	return e.exportDir
+}
+
+func (e *ExportTask) GetOperationCancelledByUser() bool {
+	return e.cancelledByUser
 }
 
 func getLabelFileName() string {

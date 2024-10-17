@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/ProtonMail/gluon v0.17.1-0.20240227105633-3734c7694bcd
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20240918100656-b4860af56d47
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20241025082810-0e2d512cf08d
 	github.com/ProtonMail/gopenpgp/v2 v2.7.5-proton
 	github.com/ProtonMail/proton-bridge/v3 v3.10.0
 	github.com/bradenaw/juniper v0.12.0

@@ -50,8 +50,8 @@ private:
 public:
     enum class LoginState { LoggedOut, AwaitingTOTP, AwaitingHV, AwaitingMailboxPassword, LoggedIn };
 
-    inline explicit Session(const char* serverURL) : Session(serverURL, {}) {}
-    explicit Session(const char* serverURL, const std::shared_ptr<SessionCallback>& mCallbacks);
+    inline explicit Session(const char* serverURL) : Session(serverURL, false, {}) {}
+    explicit Session(const char* serverURL, const bool telemetryDisabled, const std::shared_ptr<SessionCallback>& mCallbacks);
     ~Session();
     Session(const Session&) = delete;
     Session(Session&&) noexcept;
@@ -70,6 +70,8 @@ public:
     [[nodiscard]] Backup newBackup(const char* exportPath) const;
     [[nodiscard]] Restore newRestore(const char* backupPath) const;
 
+    void setUsingDefaultExportPath(const bool usingDefaultExportPath);
+    void sendProcessStartTelemetry(bool etOperation, bool etDir, bool etUserPassword, bool etUserMailboxPassword, bool etTotpCode, bool etUserEmail);
     void cancel();
 
 private:

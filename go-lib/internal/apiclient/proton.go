@@ -32,6 +32,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const etKillSwitchName = "InboxImexClientOperationDisabled"
+
+var caseFeatureFlagKillSwitchEnabled = errors.New("The export tool has been temporarily disabled")
+
 type ProtonCallbacks interface {
 	OnNetworkRestored()
 	OnNetworkLost()
@@ -57,6 +61,11 @@ func NewProtonAPIClientBuilder(apiURL string, panicHandler async.PanicHandler, c
 			proton.WithCookieJar(cookieJar),
 		),
 		callback: callbacks,
+	}
+
+	err = b.checkKillSwitch(context.Background())
+	if err != nil {
+		return b, err
 	}
 
 	b.manager.AddStatusObserver(func(status proton.Status) {
@@ -92,6 +101,26 @@ func (p *ProtonAPIClientBuilder) NewClient(ctx context.Context, username string,
 
 func (p *ProtonAPIClientBuilder) Close() {
 	p.manager.Close()
+}
+
+// checkKillSwitch returns a pre-defined error if the export tool global kill switch is enabled;
+// if the API call fails we assume the kill switch is disabled;
+// no errors are returned if the kill switch is disabled;
+func (p *ProtonAPIClientBuilder) checkKillSwitch(ctx context.Context) error {
+	featureFlagData, err := p.manager.GetFeatures(ctx)
+
+	if err != nil {
+		logrus.Info("Unable to retrieve feature flag values")
+		return nil
+	}
+
+	for _, feature := range featureFlagData.Toggles {
+		if feature.Name == etKillSwitchName && feature.Enabled {
+			return caseFeatureFlagKillSwitchEnabled
+		}
+	}
+
+	return nil
 }
 
 func GetHVData(err error) *proton.APIHVDetails {

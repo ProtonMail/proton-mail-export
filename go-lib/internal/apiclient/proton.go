@@ -34,7 +34,7 @@ import (
 
 const etKillSwitchName = "InboxImexClientOperationDisabled"
 
-var caseFeatureFlagKillSwitchEnabled = errors.New("The export tool has been temporarily disabled")
+var caseFeatureFlagKillSwitchEnabled = errors.New("The export tool has been temporarily disabled") //nolint:revive,gochecknoglobals,stylecheck
 
 type ProtonCallbacks interface {
 	OnNetworkRestored()
@@ -105,13 +105,13 @@ func (p *ProtonAPIClientBuilder) Close() {
 
 // checkKillSwitch returns a pre-defined error if the export tool global kill switch is enabled;
 // if the API call fails we assume the kill switch is disabled;
-// no errors are returned if the kill switch is disabled;
+// no errors are returned if the kill switch is disabled.
 func (p *ProtonAPIClientBuilder) checkKillSwitch(ctx context.Context) error {
 	featureFlagData, err := p.manager.GetFeatures(ctx)
 
 	if err != nil {
 		logrus.Info("Unable to retrieve feature flag values")
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	for _, feature := range featureFlagData.Toggles {

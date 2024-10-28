@@ -4,6 +4,11 @@ lint:
   stage: lint
   tags:
     - shared-medium
+  rules: 
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: always 
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: always
   script:
     - !reference [.script-config-git, script]
     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.57.2

@@ -34,7 +34,7 @@ import (
 
 const etKillSwitchName = "InboxImexClientOperationDisabled"
 
-var caseFeatureFlagKillSwitchEnabled = errors.New("The export tool has been temporarily disabled") //nolint:revive,gochecknoglobals,stylecheck
+var caseFeatureFlagKillSwitchEnabled = errors.New("Due to a technical problem, we temporarily disabled the Export Tool. Check https://status.proton.me/ for updates.") //nolint:revive,gochecknoglobals,stylecheck
 
 type ProtonCallbacks interface {
 	OnNetworkRestored()

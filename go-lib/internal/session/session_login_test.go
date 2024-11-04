@@ -49,6 +49,8 @@ func TestSessionLogin_SinglePasswordMode(t *testing.T) {
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -76,6 +78,8 @@ func TestSessionLogin_LoginAfterLoginIsError(t *testing.T) {
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -107,6 +111,8 @@ func TestSessionLogin_TwoPasswordMode(t *testing.T) {
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()
@@ -147,6 +153,9 @@ func TestSessionLogin_SinglePasswordModeWithTOTP(t *testing.T) {
 	const totpCode = "01245"
 
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
+
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 	client.EXPECT().Auth2FA(gomock.Any(), gomock.Eq(proton.Auth2FAReq{
 		TwoFactorCode: totpCode,
@@ -186,6 +195,8 @@ func TestSessionLogin_TwoPasswordModeWithTOTP(t *testing.T) {
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 	client.EXPECT().Auth2FA(gomock.Any(), gomock.Eq(proton.Auth2FAReq{
 		TwoFactorCode: totpCode,
@@ -225,6 +236,8 @@ func TestSessionLogin_Logout(t *testing.T) {
 	client.EXPECT().AuthDelete(gomock.Any()).Return(nil).Times(1)
 	client.EXPECT().GetUserWithHV(gomock.Any(), gomock.Any()).Return(proton.User{}, nil)
 	client.EXPECT().GetSalts(gomock.Any()).Return(proton.Salts{}, nil)
+	client.EXPECT().GetUserSettings(gomock.Any()).Return(proton.UserSettings{}, nil)
+	client.EXPECT().GetOrganizationData(gomock.Any()).Return(proton.OrganizationResponse{}, nil)
 	client.EXPECT().Close()
 
 	ctx := context.Background()

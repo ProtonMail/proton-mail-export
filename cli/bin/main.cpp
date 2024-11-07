@@ -364,7 +364,7 @@ std::filesystem::path getRestorePath(cxxopts::ParseResult const& argParseResult,
         }
 
         if (!std::filesystem::exists(backupPath)) {
-            std::cerr << "The specified path does not exists" << std::endl;
+            std::cerr << "The specified path does not exist" << std::endl;
             continue;
         }
 

@@ -679,6 +679,8 @@ int main(int argc, const char** argv) {
                 std::cout << "A new version is available at: "
                              "https://proton.me/support/proton-mail-export-tool"
                           << std::endl;
+            } else {
+                std::cout << "The export tool is up to date" << std::endl;
             }
         } catch (const std::exception&) {
         }

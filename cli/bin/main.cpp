@@ -733,6 +733,10 @@ int main(int argc, const char** argv) {
     } catch (const ReadInputException& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
+    } catch (const etcpp::KillSwitchException& e) {
+        etcpp::logInfo("Kill switch enabled.");
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
     } catch (const std::exception& e) {
         const auto str = fmt::format("Encountered unexpected error: {}", e.what());
         etcpp::logError("Encountered unexpected error: {}", e.what());

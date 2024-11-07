@@ -35,6 +35,11 @@ public:
     explicit SessionException(std::string_view what) : Exception(what) {}
 };
 
+class KillSwitchException final : public Exception {
+public:
+    explicit KillSwitchException(std::string_view what) : Exception(what) {}
+};
+
 class SessionCallback {
 public:
     virtual ~SessionCallback() = default;

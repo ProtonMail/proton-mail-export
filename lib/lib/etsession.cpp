@@ -20,6 +20,10 @@
 
 namespace etcpp {
 
+const std::string killSwitchEnabledErrMsg = "killSwitchEnabled";
+const std::string killSwitchEnabledMessage =
+    "Due to a technical problem, we temporarily disabled the Export Tool. Check https://status.proton.me/ for updates.";
+
 Session::LoginState mapLoginState(etSessionLoginState s);
 
 inline void mapETStatusToException(etSession* ptr, etSessionStatus status) {
@@ -59,9 +63,12 @@ Session::Session(const char* serverURL, const bool telemetryDisabled, const std:
     char* outErr = nullptr;
     mPtr = etSessionNew(serverURL, telemetryDisabled, makeCCallback(mCallbacks.get()), &outErr);
     if (mPtr == nullptr) {
-        auto ex = SessionException(outErr);
+        std::string errorMessage(outErr);
         etFree(outErr);
-        throw std::move(ex);
+        if (errorMessage == killSwitchEnabledErrMsg)
+            throw KillSwitchException(killSwitchEnabledMessage);
+        else
+            throw SessionException(errorMessage);
     }
 }
 

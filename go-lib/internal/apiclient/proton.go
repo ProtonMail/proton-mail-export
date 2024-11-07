@@ -34,7 +34,7 @@ import (
 
 const etKillSwitchName = "InboxImexClientOperationDisabled"
 
-var caseFeatureFlagKillSwitchEnabled = errors.New("Due to a technical problem, we temporarily disabled the Export Tool. Check https://status.proton.me/ for updates.") //nolint:revive,gochecknoglobals,stylecheck
+var errKillSwitchEnabled = errors.New("killSwitchEnabled")
 
 type ProtonCallbacks interface {
 	OnNetworkRestored()
@@ -116,7 +116,7 @@ func (p *ProtonAPIClientBuilder) checkKillSwitch(ctx context.Context) error {
 
 	for _, feature := range featureFlagData.Toggles {
 		if feature.Name == etKillSwitchName && feature.Enabled {
-			return caseFeatureFlagKillSwitchEnabled
+			return errKillSwitchEnabled
 		}
 	}
 

@@ -3,10 +3,10 @@
 .component:
     rel_cand: &include_release_candidate "gitlab.protontech.ch/proton/devops/\
                         cicd-components/tools/artifactlift/\
-                        release-candidate@0.1.18"
+                        release-candidate@~latest"
     rel: &include_release "gitlab.protontech.ch/proton/devops/\
               cicd-components/tools/artifactlift/\
-              release@0.1.18"
+              release@~latest"
 
 .check_deployer:
     script:

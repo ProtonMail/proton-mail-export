@@ -25,16 +25,16 @@ func newCliReporter() *cliReporter {
 
 func (m *cliReporter) SetMessageTotal(total uint64) {
 	m.progressbar.Reset()
-	m.progressbar.ChangeMax64(int64(total))
+	m.progressbar.ChangeMax64(int64(total)) //nolint:gosec // no potential to overflow.
 	m.totalMessageCount.Store(total)
 }
 
 func (m *cliReporter) SetMessageProcessed(total uint64) {
-	_ = m.progressbar.Set64(int64(total))
+	_ = m.progressbar.Set64(int64(total)) //nolint:gosec // no potential to overflow.
 	m.currentMessageCount.Store(total)
 }
 
 func (m *cliReporter) OnProgress(delta int) {
-	_ = m.currentMessageCount.Add(uint64(delta))
+	_ = m.currentMessageCount.Add(uint64(delta)) //nolint:gosec // yet again, we shouldn't overflow.
 	_ = m.progressbar.Add(delta)
 }

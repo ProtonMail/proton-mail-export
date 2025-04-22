@@ -19,7 +19,6 @@ package internal
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ProtonMail/go-proton-api"
 )
@@ -31,7 +30,7 @@ func MapError(err error) error {
 
 	var protonErr *proton.APIError
 	if errors.As(err, &protonErr) {
-		return fmt.Errorf(protonErr.Message)
+		return errors.New(protonErr.Message)
 	}
 
 	return err

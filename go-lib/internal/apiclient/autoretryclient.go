@@ -295,8 +295,8 @@ var expWaitTimes = []time.Duration{
 	600 * time.Second,
 }
 
-func jitter(max int) time.Duration {
-	return time.Duration(rand.Intn(max)) * time.Second //nolint:gosec
+func jitter(maxJitter int) time.Duration {
+	return time.Duration(rand.Intn(maxJitter)) * time.Second //nolint:gosec
 }
 
 func sleepCtx(ctx context.Context, duration time.Duration) {

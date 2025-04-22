@@ -1,6 +1,8 @@
 module github.com/ProtonMail/export-tool
 
-go 1.21
+go 1.24
+
+toolchain go1.24.2
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1

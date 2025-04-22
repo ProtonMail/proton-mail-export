@@ -152,7 +152,7 @@ func chunkMemLimitFullMessage(batch []proton.FullMessage, maxMemory uint64) [][]
 	return chunkMemLimit(batch, maxMemory, stageMultiplier, func(message proton.FullMessage) uint64 {
 		var dataSize uint64
 		for _, a := range message.Attachments {
-			dataSize += uint64(a.Size)
+			dataSize += uint64(a.Size) //nolint:gosec // we won't overflow.
 		}
 		dataSize += uint64(len(message.Body))
 

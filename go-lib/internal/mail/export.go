@@ -180,7 +180,7 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 
 	for _, c := range msgCountPerLabel {
 		if c.LabelID == proton.AllMailLabel {
-			totalMessageCount = uint64(c.Total)
+			totalMessageCount = uint64(c.Total) //nolint:gosec // we won't overflow.
 			foundAllMailLabel = true
 			break
 		}

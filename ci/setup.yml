@@ -1,6 +1,5 @@
 ---
-
-image: gitlab.protontech.ch:4567/go/bridge-internal:test-go1.21-bullseye
+image: gitlab.protontech.ch:4567/go/bridge-internal:export-go1.24.0
 
 default:
   tags:
@@ -24,7 +23,6 @@ variables:
   DEPLOY_DIR: $CI_PROJECT_DIR/deploy
   # GIT_SUBMODULE_STRATEGY: recursive
 
-
 # ENV
 .env-windows:
   variables:
@@ -41,8 +39,8 @@ variables:
     key: win-vcpkg
     paths:
       - .cache
-    when: 'always'
-  image: windows-2022-export-tool
+    when: "always"
+  image: windows-2022-export-tool-go-1-24-0
   tags:
     - bridge-vbox-windows
 
@@ -62,10 +60,10 @@ variables:
     key: darwin-vcpkg
     paths:
       - .cache
-    when: 'always'
+    when: "always"
   tags:
     - bridge-tart
-  image: export-tool
+  image: export-tool-mac-go-1-24-0
 
 .env-linux-build:
   variables:
@@ -74,7 +72,7 @@ variables:
     key: linux-vcpkg-2
     paths:
       - .cache
-    when: 'always'
+    when: "always"
   before_script:
     - mkdir -p .cache/bin
     - export BRIDGE_SYNC_FORCE_MINIMUM_SPEC=1
@@ -88,21 +86,21 @@ variables:
 # NEXUS
 .nexus-stage:
   after_script:
-    - './scripts/nexus_push.sh cp --recursive $DEPLOY_DIR :bridge:/export-tool/${CI_COMMIT_TAG}/'
+    - "./scripts/nexus_push.sh cp --recursive $DEPLOY_DIR :bridge:/export-tool/${CI_COMMIT_TAG}/"
 
 .nexus-cache-darwin:
   cache:
     key: nexus-darwin
     paths:
       - nexus-client
-    when: 'always'
+    when: "always"
 
 .nexus-cache-linux:
   cache:
     key: nexus-linux
     paths:
       - nexus-client
-    when: 'always'
+    when: "always"
 
 # SCRIPTS
 .script-config-git:
@@ -113,38 +111,38 @@ variables:
 .script-config-cmake-win:
   script:
     - cmake
-       -S . -B "$CMAKE_BUILD_DIR"
-       -G "Visual Studio 17 2022"
-       -DCMAKE_GENERATOR_PLATFORM=x64
-       -DCMAKE_CL_64=1
-       -A "x64"
-       -DMINGW_CACHE_PATH="$VCPKG_DEFAULT_BINARY_CACHE"
-       -DVCPKG_HOST_TRIPLET=x64-windows-static
-       -DVCPKG_TARGET_TRIPLET=x64-windows-static
-       -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
-       $CMAKE_SENTRY_OPTION
+      -S . -B "$CMAKE_BUILD_DIR"
+      -G "Visual Studio 17 2022"
+      -DCMAKE_GENERATOR_PLATFORM=x64
+      -DCMAKE_CL_64=1
+      -A "x64"
+      -DMINGW_CACHE_PATH="$VCPKG_DEFAULT_BINARY_CACHE"
+      -DVCPKG_HOST_TRIPLET=x64-windows-static
+      -DVCPKG_TARGET_TRIPLET=x64-windows-static
+      -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+      $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-unix:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" $CMAKE_SENTRY_OPTION
+    - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR" $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-macos-arm64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
-        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
-        -DCMAKE_OSX_ARCHITECTURES=arm64
-        $CMAKE_SENTRY_OPTION
+    - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+      -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+      -DCMAKE_OSX_ARCHITECTURES=arm64
+      $CMAKE_SENTRY_OPTION
 
 .script-config-cmake-macos-x86_64:
   script:
-     - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
-        -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
-        -DCMAKE_OSX_ARCHITECTURES=x86_64
-        $CMAKE_SENTRY_OPTION
+    - cmake -S . -B $CMAKE_BUILD_DIR -G "Ninja Multi-Config"
+      -DCMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_DIR"
+      -DCMAKE_OSX_ARCHITECTURES=x86_64
+      $CMAKE_SENTRY_OPTION
 
 .script-install:
   script:
-     - cmake --install $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
+    - cmake --install $CMAKE_BUILD_DIR --config $CMAKE_BUILD_CONFIG
 
 .script-build:
   script:

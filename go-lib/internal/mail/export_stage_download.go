@@ -154,6 +154,6 @@ func chunkMemLimitMetadata(batch []proton.MessageMetadata, maxMemory uint64) [][
 	const stageMultiplier = 4
 
 	return chunkMemLimit(batch, maxMemory, stageMultiplier, func(message proton.MessageMetadata) uint64 {
-		return uint64(message.Size)
+		return uint64(message.Size) //nolint:gosec // no potential of overflowing.
 	})
 }

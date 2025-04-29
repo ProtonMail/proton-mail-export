@@ -63,12 +63,14 @@ type ExportTask struct {
 	session         *session.Session
 	log             *logrus.Entry
 	cancelledByUser bool
+	addressFilter   string
 }
 
 func NewExportTask(
 	ctx context.Context,
 	exportPath string,
 	session *session.Session,
+	addressFilter string,
 ) *ExportTask {
 	exportPath = filepath.Join(exportPath, generateUniqueExportDir())
 
@@ -78,13 +80,14 @@ func NewExportTask(
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &ExportTask{
-		ctx:       ctx,
-		ctxCancel: cancel,
-		group:     async.NewGroup(ctx, session.GetPanicHandler()),
-		tmpDir:    tmpDir,
-		exportDir: exportPath,
-		session:   session,
-		log:       logrus.WithField("export", "mail").WithField("userID", session.GetUser().ID),
+		ctx:           ctx,
+		ctxCancel:     cancel,
+		group:         async.NewGroup(ctx, session.GetPanicHandler()),
+		tmpDir:        tmpDir,
+		exportDir:     exportPath,
+		session:       session,
+		log:           logrus.WithField("export", "mail").WithField("userID", session.GetUser().ID),
+		addressFilter: addressFilter,
 	}
 }
 
@@ -209,8 +212,30 @@ func (e *ExportTask) Run(ctx context.Context, reporter Reporter) error {
 		downloadMemMb = MinDownloadMemMB
 	}
 
+	// Get the address ID if a filter is specified
+	var addressID string
+	if e.addressFilter != "" {
+		addresses, err := client.GetAddresses(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get addresses: %w", err)
+		}
+
+		for _, addr := range addresses {
+			if addr.Email == e.addressFilter {
+				addressID = addr.ID
+				break
+			}
+		}
+
+		if addressID == "" {
+			return fmt.Errorf("specified email address %s not found in account", e.addressFilter)
+		}
+
+		e.log.WithField("address", e.addressFilter).Info("Filtering backup to single address")
+	}
+
 	// Build stages
-	metaStage := NewMetadataStage(client, e.log, MetadataPageSize, NumParallelDownloads)
+	metaStage := NewMetadataStage(client, e.log, MetadataPageSize, NumParallelDownloads, addressID)
 	downloadStage := NewDownloadStage(client, NumParallelDownloads, e.log, downloadMemMb, e.session.GetPanicHandler())
 	buildStage := NewBuildStage(NumParallelBuilders, e.log, buildMemMB, e.session.GetPanicHandler(), e.session.GetReporter(), user.ID)
 	writeStage := NewWriteStage(e.tmpDir, e.exportDir, NumParallelWriters, e.log, reporter, e.session.GetPanicHandler())

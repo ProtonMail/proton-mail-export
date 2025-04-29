@@ -519,6 +519,11 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
         return EXIT_FAILURE;
     }
 
+    std::string addressFilter;
+    if (argParseResult.count("address")) {
+        addressFilter = argParseResult["address"].as<std::string>();
+    }
+
     // Telemetry - we'd like to know whether the user overwrote the default export path
     session.setUsingDefaultExportPath(!pathCameFromArgs && usingDefaultBackupPath);
 
@@ -533,7 +538,7 @@ int performBackup(etcpp::Session& session, cxxopts::ParseResult const& argParseR
 
     std::unique_ptr<BackupTask> backupTask;
     try {
-        backupTask = std::make_unique<BackupTask>(session, backupPath);
+        backupTask = std::make_unique<BackupTask>(session, backupPath, addressFilter);
     } catch (const etcpp::SessionException& e) {
         etLogError("Failed to create export task: {}", e.what());
         std::cerr << "Failed to create export task: " << e.what() << std::endl;
@@ -662,6 +667,7 @@ int main(int argc, const char** argv) {
             cxxopts::value<std::string>())("t,totp", "User's TOTP 2FA code (can also be set with env var ET_TOTP_CODE)",
                                            cxxopts::value<std::string>())(
             "u,user", "User's account/email (can also be set with env var ET_USER_EMAIL", cxxopts::value<std::string>())(
+            "a,address", "Email address to backup (defaults to all addresses)", cxxopts::value<std::string>())(
             "k, telemetry", "Disable anonymous telemetry statistics (can also be set with env var ET_TELEMETRY_OFF)", cxxopts::value<bool>())(
             "h,help", "Show help");
 

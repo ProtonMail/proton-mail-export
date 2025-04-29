@@ -36,6 +36,7 @@ type MetadataStage struct {
 	outputCh  chan []proton.MessageMetadata
 	pageSize  int
 	splitSize int
+	addressID string
 }
 
 func NewMetadataStage(
@@ -43,6 +44,7 @@ func NewMetadataStage(
 	entry *logrus.Entry,
 	pageSize int,
 	splitSize int,
+	addressID string,
 ) *MetadataStage {
 	return &MetadataStage{
 		client:    client,
@@ -50,6 +52,7 @@ func NewMetadataStage(
 		outputCh:  make(chan []proton.MessageMetadata),
 		pageSize:  pageSize,
 		splitSize: splitSize,
+		addressID: addressID,
 	}
 }
 
@@ -76,8 +79,9 @@ func (m *MetadataStage) Run(
 
 		if lastMessageID != "" {
 			meta, err := client.GetMessageMetadataPage(ctx, 0, m.pageSize, proton.MessageFilter{
-				EndID: lastMessageID,
-				Desc:  true,
+				EndID:     lastMessageID,
+				AddressID: m.addressID,
+				Desc:      true,
 			})
 
 			if err != nil {
@@ -93,7 +97,8 @@ func (m *MetadataStage) Run(
 			metadata = meta
 		} else {
 			meta, err := client.GetMessageMetadataPage(ctx, 0, m.pageSize, proton.MessageFilter{
-				Desc: true,
+				AddressID: m.addressID,
+				Desc:      true,
 			})
 			if err != nil {
 				errReporter.ReportStageError(err)

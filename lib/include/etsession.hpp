@@ -72,7 +72,7 @@ public:
     [[nodiscard]] std::string getHVSolveURL() const;
     [[nodiscard]] LoginState markHVSolved();
 
-    [[nodiscard]] Backup newBackup(const char* exportPath) const;
+    [[nodiscard]] Backup newBackup(const char* exportPath, const char* addressFilter = nullptr) const;
     [[nodiscard]] Restore newRestore(const char* backupPath) const;
 
     void setUsingDefaultExportPath(const bool usingDefaultExportPath);

@@ -1,5 +1,4 @@
 ---
-
 sign-and-pack-darwin:
   stage: installer
   needs: ["build-darwin-universal"]
@@ -43,7 +42,7 @@ sign-and-pack-windows:
     when: always
     expire_in: 4 hrs
   tags:
-    - windows-bridge-signing
+    - windows-bridge-signing-osl1
 
 # Need to sing split the job because windows signing machine is protected to
 # upload files only via artifacts. This (linux docker) job is created just to

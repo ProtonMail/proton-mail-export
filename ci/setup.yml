@@ -42,7 +42,7 @@ variables:
     when: "always"
   image: windows-2022-export-tool-go-1-24-0
   tags:
-    - bridge-vbox-windows
+    - inbox-virt-windows-v1
 
 .env-darwin:
   variables:

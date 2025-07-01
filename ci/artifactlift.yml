@@ -70,6 +70,10 @@ include:
   image: gitlab.protontech.ch:4567/go/bridge-internal:release
   stage: generate
   script:
+    - |
+      if [ -z "$ET_TAG" ]; then
+        export ET_TAG="$DEFAULT_ET_TAG"
+      fi
     - !reference [.linux-keys, before_script]
     - !reference [.check_deployer, script]
     - ./scripts/deploy.sh "${ET_TAG}" "${CI_JOB_NAME}"

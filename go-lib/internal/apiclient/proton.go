@@ -29,6 +29,7 @@ import (
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -107,7 +108,8 @@ func (p *ProtonAPIClientBuilder) Close() {
 // if the API call fails we assume the kill switch is disabled;
 // no errors are returned if the kill switch is disabled.
 func (p *ProtonAPIClientBuilder) checkKillSwitch(ctx context.Context) error {
-	featureFlagData, err := p.manager.GetFeatures(ctx)
+	// The uuid value denotes the Bridge 'sticky' key. As we won't be using release feature flags we can default to nil in this case.
+	featureFlagData, err := p.manager.GetFeatures(ctx, uuid.Nil)
 
 	if err != nil {
 		logrus.Info("Unable to retrieve feature flag values")

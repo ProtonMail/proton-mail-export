@@ -1,5 +1,5 @@
 ---
-image: gitlab.protontech.ch:4567/go/bridge-internal:export-go1.24.0
+image: harbor.protontech.ch/inbox-desktop/bridge-internal:export-go1.24.0
 
 default:
   tags:

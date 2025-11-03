@@ -7,13 +7,14 @@ toolchain go1.24.2
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/ProtonMail/gluon v0.17.1-0.20240227105633-3734c7694bcd
-	github.com/ProtonMail/go-proton-api v0.4.1-0.20250718133628-3404fdbca5ad
+	github.com/ProtonMail/go-proton-api v0.4.1-0.20250930094753-9c2b53694f72
 	github.com/ProtonMail/gopenpgp/v2 v2.9.0-proton
 	github.com/ProtonMail/proton-bridge/v3 v3.10.0
 	github.com/bradenaw/juniper v0.12.0
 	github.com/elastic/go-sysinfo v1.14.0
 	github.com/getsentry/sentry-go v0.24.1
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/google/uuid v1.3.0
 	github.com/jeandeaual/go-locale v0.0.0-20220711133428-7de61946b173
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/schollz/progressbar/v3 v3.14.3
@@ -50,7 +51,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20211105163654-bc68cce691ba // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
@@ -83,7 +83,7 @@ require (
 )
 
 replace (
-	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.13.1-0.20230526094639-b62c999c85b7
-	github.com/go-resty/resty/v2 => github.com/LBeernaertProton/resty/v2 v2.0.0-20231129100320-dddf8030d93a
-	github.com/keybase/go-keychain => github.com/cuthix/go-keychain v0.0.0-20230517073537-fc1740a83768
+	github.com/emersion/go-message => github.com/ProtonMail/go-message v0.13.1-0.20240919135104-3bc88e6a9423
+	github.com/go-resty/resty/v2 => github.com/ProtonMail/resty/v2 v2.0.0-20250929142426-e3dc6308c80b
+	github.com/keybase/go-keychain => github.com/ProtonMail/go-keychain v0.0.0-20250929142014-ea8548dff768
 )

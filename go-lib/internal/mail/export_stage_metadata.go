@@ -88,7 +88,7 @@ func (m *MetadataStage) Run(
 			})
 
 			if err != nil {
-				errorCount += 1
+				errorCount++
 				errReporter.ReportStageError(err)
 				return
 			}
@@ -104,7 +104,7 @@ func (m *MetadataStage) Run(
 				Desc: true,
 			})
 			if err != nil {
-				errorCount += 1
+				errorCount++
 				errReporter.ReportStageError(err)
 				return
 			}
@@ -122,13 +122,13 @@ func (m *MetadataStage) Run(
 		metadata = xslices.Filter(metadata, func(t proton.MessageMetadata) bool {
 			isPresent, err := mfc.HasMessage(t.ID)
 			if err != nil {
-				errorCount += 1
+				errorCount++
 				errReporter.ReportStageError(err)
 				return false
 			}
 
 			if isPresent {
-				filteredOutCount += 1
+				filteredOutCount++
 			}
 
 			return !isPresent

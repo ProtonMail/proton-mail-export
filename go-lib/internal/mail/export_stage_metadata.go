@@ -60,13 +60,20 @@ func (m *MetadataStage) Run(
 	reporter Reporter,
 ) {
 	m.log.Debug("Starting")
-	defer m.log.Debug("Exiting")
+	var downloadedMessageCount, errorCount, filteredOutCount int
+	defer func() {
+		m.log.
+			WithField("downloadedMessageCount", downloadedMessageCount).
+			WithField("filteredOutCount", filteredOutCount).
+			WithField("errorCount", errorCount).
+			Debug("Exiting")
+	}()
+
 	defer close(m.outputCh)
 
 	client := m.client
 
 	var lastMessageID string
-
 	for {
 		if ctx.Err() != nil {
 			return
@@ -81,6 +88,7 @@ func (m *MetadataStage) Run(
 			})
 
 			if err != nil {
+				errorCount += 1
 				errReporter.ReportStageError(err)
 				return
 			}
@@ -96,6 +104,7 @@ func (m *MetadataStage) Run(
 				Desc: true,
 			})
 			if err != nil {
+				errorCount += 1
 				errReporter.ReportStageError(err)
 				return
 			}
@@ -113,8 +122,13 @@ func (m *MetadataStage) Run(
 		metadata = xslices.Filter(metadata, func(t proton.MessageMetadata) bool {
 			isPresent, err := mfc.HasMessage(t.ID)
 			if err != nil {
+				errorCount += 1
 				errReporter.ReportStageError(err)
 				return false
+			}
+
+			if isPresent {
+				filteredOutCount += 1
 			}
 
 			return !isPresent
@@ -128,6 +142,7 @@ func (m *MetadataStage) Run(
 			continue
 		}
 
+		downloadedMessageCount += len(metadata)
 		for _, chunk := range xslices.Chunk(metadata, m.splitSize) {
 			select {
 			case <-ctx.Done():

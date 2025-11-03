@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
@@ -63,7 +64,14 @@ func NewWriteStage(
 
 func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, errReporter StageErrorReporter) {
 	w.log.Debug("Starting")
-	defer w.log.Debug("Exiting")
+	var successCount, metadataErrorCount, messageErrorCount atomic.Uint64
+	defer func() {
+		w.log.
+			WithField("successCount", successCount.Load()).
+			WithField("metadataErrorCount", metadataErrorCount.Load()).
+			WithField("messageErrorCount", messageErrorCount.Load()).
+			Debug("Exiting")
+	}()
 
 	for input := range inputs {
 		if ctx.Err() != nil {
@@ -79,15 +87,22 @@ func (w *WriteStage) Run(ctx context.Context, inputs <-chan BuildStageOutput, er
 			metadataBytes, err := metadata.toBytes()
 			if err != nil {
 				w.log.WithField("msg-id", metadata.ID).WithError(err).Error("Failed to generate metadata")
+				metadataErrorCount.Add(1)
 				return fmt.Errorf("failed to generate message metadata: %w", err)
 			}
 
 			if err := utils.WriteFileSafe(w.tempPath, metadataPath, metadataBytes, integrityChecker); err != nil {
 				w.log.WithField("msg-id", metadata.ID).WithError(err).Errorf("Failed to write %v", metadataPath)
+				metadataErrorCount.Add(1)
 				return fmt.Errorf("failed to write '%v': %w", metadata, err)
 			}
+			if err := input.messages[i].WriteMessage(w.dirPath, w.tempPath, w.log, integrityChecker); err != nil {
+				messageErrorCount.Add(1)
+				return err
+			}
 
-			return input.messages[i].WriteMessage(w.dirPath, w.tempPath, w.log, integrityChecker)
+			successCount.Add(1)
+			return nil
 		}); err != nil {
 			errReporter.ReportStageError(err)
 			return

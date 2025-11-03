@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"sync/atomic"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/gluon/async"
@@ -62,7 +63,14 @@ func NewDownloadStage(
 
 func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMetadata, errReporter StageErrorReporter) {
 	d.log.Debug("Starting")
-	defer d.log.Debug("Exiting")
+	var error422Count, otherErrorCount, successCount atomic.Uint64
+	defer func() {
+		d.log.
+			WithField("error422Count", error422Count.Load()).
+			WithField("otherErrorCount", otherErrorCount.Load()).
+			WithField("successCount", successCount.Load()).
+			Debug("Exiting")
+	}()
 
 	const Failed422ID = "MsgFailed422"
 
@@ -87,14 +95,17 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 					if errors.As(err, &apiErr) && apiErr.Status == 422 {
 						d.log.WithField("msgID", chunk[i].ID).Warn("Failed to download message due to 422")
 						result.messages[i].ID = Failed422ID
+						error422Count.Add(1)
 						return nil
 					}
 
 					d.log.WithError(err).WithField("msgID", chunk[i].ID).Error("Failed to download message or attachment")
+					otherErrorCount.Add(1)
 					return err
 				}
 
 				result.messages[i] = msg
+				successCount.Add(1)
 
 				return nil
 			}); err != nil {

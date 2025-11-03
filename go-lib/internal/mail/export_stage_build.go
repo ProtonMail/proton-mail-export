@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
 	"github.com/ProtonMail/export-tool/internal/reporter"
@@ -75,7 +76,14 @@ func (b *BuildStage) Run(
 	errReporter StageErrorReporter,
 ) {
 	b.log.Debug("Starting")
-	defer b.log.Debug("Exiting")
+	var successCount, decryptionErrorCount, addressKeyFailureCount atomic.Uint64
+	defer func() {
+		b.log.
+			WithField("successCount", successCount.Load()).
+			WithField("decryptionErrorCount", decryptionErrorCount.Load()).
+			WithField("addressKeyFailureCount", addressKeyFailureCount.Load()).
+			Debug("Exiting")
+	}()
 	defer close(b.outputCh)
 
 	for input := range inputs {
@@ -93,6 +101,7 @@ func (b *BuildStage) Run(
 				if !ok {
 					b.log.WithField("addrID", addrID).Warn("Address has no key ring")
 					results[i] = &AddrKeyRingMissingMessageWriter{msg: chunk[i]}
+					addressKeyFailureCount.Add(1)
 					return nil
 				}
 
@@ -108,6 +117,7 @@ func (b *BuildStage) Run(
 						"userID": b.userID,
 					})
 					results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}
+					decryptionErrorCount.Add(1)
 					return nil
 				}
 
@@ -115,7 +125,7 @@ func (b *BuildStage) Run(
 					msg: chunk[i],
 					eml: buffer,
 				}
-
+				successCount.Add(1)
 				return nil
 			}); err != nil {
 				errReporter.ReportStageError(err)

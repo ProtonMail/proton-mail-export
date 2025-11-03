@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/elastic/go-sysinfo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -48,4 +49,22 @@ func LogPrelude() {
 		WithField("build", ETBuildTime).
 		WithField("runtime", runtime.GOOS).
 		Info("Starting App")
+
+	now := time.Now()
+	logrus.
+		WithField("timeZone", now.Format("MST")).
+		WithField("offset", now.Format("-07:00:00")).
+		Info("Time zone info")
+
+	host, err := sysinfo.Host()
+	if err != nil {
+		logrus.WithError(err).Error("Could not retrieve operating system info")
+	} else {
+		osInfo := host.Info().OS
+		logrus.
+			WithField("name", osInfo.Name).
+			WithField("version", osInfo.Version).
+			WithField("build", osInfo.Build).
+			Info("Operating system info")
+	}
 }

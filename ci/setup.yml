@@ -26,11 +26,12 @@ variables:
 # ENV
 .env-windows:
   variables:
-    VCPKG_DEFAULT_BINARY_CACHE: C:/${CI_PROJECT_DIR}/.cache
+    VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
     https_proxy: proxy.plabs.ch:3128
     http_proxy: proxy.plabs.ch:3128
-    no_proxy: localhost,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,127.0.0.0/8,172.16.0.0/12,10.0.0.0/8
+    no_proxy: localhost,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,192.168.0.1,127.0.0.0/8,172.16.0.0/12,10.0.0.0/8
   before_script:
+    - echo $VCPKG_DEFAULT_BINARY_CACHE
     - New-Item -ItemType Directory -Path $VCPKG_DEFAULT_BINARY_CACHE -Force ;
     - $Env:Path = "C:\\\\Program Files\\CMake\\bin;" + $Env:Path
     - $(Get-Command cmake).Source
@@ -42,7 +43,7 @@ variables:
     when: "always"
   image: windows-2022-export-tool-go-1-24-0
   tags:
-    - inbox-virt-windows-v1
+    - inbox-hyperv-windows-v1
 
 .env-darwin:
   variables:

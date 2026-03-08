@@ -40,7 +40,7 @@ import (
 )
 
 //export etSessionNewBackup
-func etSessionNewBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, outBackup **C.etBackup) C.etSessionStatus {
+func etSessionNewBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, cAddressFilter *C.cchar_t, outBackup **C.etBackup) C.etSessionStatus {
 	cSession, ok := resolveSession(sessionPtr)
 	if !ok {
 		return C.ET_SESSION_STATUS_INVALID
@@ -56,7 +56,12 @@ func etSessionNewBackup(sessionPtr *C.etSession, cExportPath *C.cchar_t, outBack
 	exportPath := C.GoString(cExportPath)
 	exportPath = filepath.Join(exportPath, cSession.s.GetUser().Email)
 
-	mailExport := mail.NewExportTask(cSession.ctx, exportPath, cSession.s)
+	addressFilter := ""
+	if cAddressFilter != nil {
+		addressFilter = C.GoString(cAddressFilter)
+	}
+
+	mailExport := mail.NewExportTask(cSession.ctx, exportPath, cSession.s, addressFilter)
 
 	h := internal.NewHandle(&cBackup{
 		csession: cSession,

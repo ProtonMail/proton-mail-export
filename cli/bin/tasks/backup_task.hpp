@@ -29,7 +29,7 @@ private:
     CLIProgressBar mProgressBar;
 
 public:
-    BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath);
+    BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath, const std::string& addressFilter = "");
     ~BackupTask() override = default;
     BackupTask(const BackupTask&) = delete;
     BackupTask(BackupTask&&) = delete;

@@ -19,8 +19,9 @@
 #include <etsession.hpp>
 #include <iostream>
 
-BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath) :
-    mBackup(session.newBackup(backupPath.u8string().c_str())) {}
+BackupTask::BackupTask(etcpp::Session& session, const std::filesystem::path& backupPath, const std::string& addressFilter) :
+    mBackup(session.newBackup(backupPath.u8string().c_str(),
+    addressFilter.empty() ? nullptr : addressFilter.c_str())) {}
 
 void BackupTask::onProgress(float progress) {
     updateProgress(progress);

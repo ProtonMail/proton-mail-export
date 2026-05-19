@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fmt/format.h>
+#include <iterator>
 
 #if !defined(_WIN32)
 #include <csignal>

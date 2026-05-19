@@ -1,5 +1,5 @@
 ---
-image: harbor.protontech.ch/inbox-desktop/bridge-internal:export-go1.24.0
+image: harbor.protontech.ch/inbox-desktop/bridge-internal:export-go1.26.1-debian-bullseye
 
 default:
   tags:
@@ -27,9 +27,15 @@ variables:
 .env-windows:
   variables:
     VCPKG_DEFAULT_BINARY_CACHE: ${CI_PROJECT_DIR}/.cache
-    https_proxy: proxy.plabs.ch:3128
-    http_proxy: proxy.plabs.ch:3128
-    no_proxy: localhost,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,192.168.0.1,127.0.0.0/8,172.16.0.0/12,10.0.0.0/8
+    https_proxy: http://proxy.plabs.ch:3128
+    http_proxy: http://proxy.plabs.ch:3128
+    HTTPS_PROXY: http://proxy.plabs.ch:3128
+    HTTP_PROXY: http://proxy.plabs.ch:3128
+
+    VCPKG_DISABLE_METRICS: "1"
+    no_proxy: localhost,<local>,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,192.168.0.1
+    NO_PROXY: localhost,<local>,.plabs.ch,gitlab.protontech.ch,harbor.protontech.ch,127.0.0.1,192.168.0.1
+
   before_script:
     - echo $VCPKG_DEFAULT_BINARY_CACHE
     - New-Item -ItemType Directory -Path $VCPKG_DEFAULT_BINARY_CACHE -Force ;
@@ -37,11 +43,11 @@ variables:
     - $(Get-Command cmake).Source
     - cmake --version
   cache:
-    key: win-vcpkg
+    key: win-vcpkg-1
     paths:
       - .cache
     when: "always"
-  image: windows-2022-export-tool-go-1-24-0
+  image: windows-bridge-export-tool-1.0.0
   tags:
     - inbox-hyperv-windows-v1
 
@@ -64,7 +70,7 @@ variables:
     when: "always"
   tags:
     - bridge-tart
-  image: export-tool-mac-go-1-24-0
+  image: export-tool-mac-go-1-26-1
 
 .env-linux-build:
   variables:

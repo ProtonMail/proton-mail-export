@@ -28,7 +28,7 @@ func readPassword(prompt string) ([]byte, error) {
 		fmt.Print(prompt)
 	}
 
-	result, err := term.ReadPassword(int(os.Stdin.Fd()))
+	result, err := term.ReadPassword(int(os.Stdin.Fd())) //nolint:gosec //disable G115
 	if err != nil {
 		return nil, err
 	}

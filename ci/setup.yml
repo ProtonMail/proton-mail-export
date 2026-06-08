@@ -47,7 +47,7 @@ variables:
     paths:
       - .cache
     when: "always"
-  image: windows-bridge-export-tool-1.0.0
+  image: windows-bridge-export-tool-1.0.0 #uses go1.26.1
   tags:
     - inbox-hyperv-windows-v1
 

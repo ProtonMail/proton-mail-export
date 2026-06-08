@@ -113,7 +113,7 @@ func (b *BuildStage) Run(
 				if err := message.BuildRFC822Into(kr, &decrypted, defaultMessageJobOpts(), &buffer); err != nil {
 					b.log.WithError(err).WithField("addrID", addrID).Warn("Failed to build message")
 					b.reporter.ReportError(fmt.Errorf("failed to build message: %w", err), reporter.Context{
-						"msgID":  chunk[i].Message.ID,
+						"msgID":  chunk[i].ID,
 						"userID": b.userID,
 					})
 					results[i] = &AssembleFailedMessageWriter{decrypted: decrypted}

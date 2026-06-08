@@ -60,7 +60,7 @@ func readTargetFolderFromCLI(operation Operation, username string) (string, erro
 }
 
 func validateTargetFolder(operation Operation, path string) (string, error) {
-	if (runtime.GOOS != "windows") && (strings.HasPrefix(path, "~")) {
+	if (runtime.GOOS != "windows") && strings.HasPrefix(path, "~") {
 		path = strings.Replace(path, "~", os.Getenv("HOME"), 1) // we do not support named home, such as `~john/test`
 	}
 
@@ -70,13 +70,14 @@ func validateTargetFolder(operation Operation, path string) (string, error) {
 	}
 
 	if operation == operationBackup {
+		//nolint:gosec //disable G703
 		if err = os.MkdirAll(fullPath, 0o700); err != nil {
 			return "", err
 		}
 	}
 
 	if operation == operationRestore {
-		stat, err := os.Stat(fullPath)
+		stat, err := os.Stat(fullPath) //nolint:gosec //disable G703
 		if err != nil {
 			return "", err
 		}

@@ -263,11 +263,11 @@ func (a *AddrKeyRingMissingMessageWriter) WriteMessage(dir string, tempDir strin
 }
 
 func attachmentFileName(id, name string) string {
-	return fmt.Sprintf("%v_%v", id, name)
+	return utils.SanitizeFilename(fmt.Sprintf("%v_%v", id, name))
 }
 
 func attachmentFileNameEncrypted(id, name string) string {
-	return fmt.Sprintf("%v_%v.pgp", id, name)
+	return utils.SanitizeFilename(fmt.Sprintf("%v_%v.pgp", id, name))
 }
 
 func bodyFileName() string {

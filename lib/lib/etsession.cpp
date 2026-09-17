@@ -176,6 +176,10 @@ void Session::sendProcessStartTelemetry(bool etOperation, bool etDir, bool etUse
     });
 }
 
+void Session::sendForegroundEvent() {
+    wrapCCall([](etSession* ptr) { return etSessionSendForegroundTelemetry(ptr); });
+}
+
 void Session::cancel() {
     wrapCCall([](etSession* ptr) { return etSessionCancel(ptr); });
 }

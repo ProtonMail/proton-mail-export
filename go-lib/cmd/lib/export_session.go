@@ -228,6 +228,14 @@ func etSessionSendProcessStartTelemetry(
 	})
 }
 
+//export etSessionSendForegroundTelemetry
+func etSessionSendForegroundTelemetry(ptr *C.etSession) C.etSessionStatus {
+	return withSession(ptr, func(_ context.Context, session *session.Session) error {
+		session.SendForegroundEvent()
+		return nil
+	})
+}
+
 //export etFree
 func etFree(ptr *C.void) {
 	C.free(unsafe.Pointer(ptr))

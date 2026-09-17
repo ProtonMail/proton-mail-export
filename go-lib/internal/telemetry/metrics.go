@@ -13,6 +13,9 @@ const (
 	sessionMeasurementGroup = "mail.any.export_tool_session"
 	sessionStartEvent       = "sessionStart"
 
+	foregroundMeasurementGroup = "mail.common.foreground_activity"
+	foregroundEvent            = "mail_foreground_event"
+
 	taskTypeExport  = "export"
 	taskTypeRestore = "restore"
 )
@@ -44,6 +47,15 @@ func (s *Service) SendRestoreStart() {
 		metric := generateTaskStartMetric(taskTypeRestore, s.data.useDefaultExportPath, s.data.userPlan)
 		if err := s.client.SendDataEvent(s.ctx, metric); err != nil {
 			logrus.WithError(err).Info("Failed to send Restore start telemetry metric")
+		}
+	})
+}
+
+func (s *Service) SendForegroundEvent() {
+	s.withTelemetry(func() {
+		metric := generateForegroundEventMetric()
+		if err := s.client.SendDataEvent(s.ctx, metric); err != nil {
+			logrus.WithError(err).Info("Failed to send Foreground start telemetry metric")
 		}
 	})
 }
@@ -137,6 +149,17 @@ func GenerateProcessStartMetric(
 			"et_user_mailbox_password": mapBoolStr(etUserMailboxPassword),
 			"et_totp_code":             mapBoolStr(etTotpCode),
 			"et_user_email":            mapBoolStr(etUserEmail),
+		},
+	}
+}
+
+func generateForegroundEventMetric() proton.SendStatsReq {
+	return proton.SendStatsReq{
+		MeasurementGroup: foregroundMeasurementGroup,
+		Event:            foregroundEvent,
+		Values:           map[string]any{},
+		Dimensions: map[string]any{
+			"app_client": string(getAppClient()),
 		},
 	}
 }

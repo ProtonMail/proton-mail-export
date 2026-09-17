@@ -77,6 +77,7 @@ public:
 
     void setUsingDefaultExportPath(const bool usingDefaultExportPath);
     void sendProcessStartTelemetry(bool etOperation, bool etDir, bool etUserPassword, bool etUserMailboxPassword, bool etTotpCode, bool etUserEmail);
+    void sendForegroundEvent();
     void cancel();
 
 private:

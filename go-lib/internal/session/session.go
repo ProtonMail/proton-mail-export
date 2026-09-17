@@ -269,6 +269,10 @@ func (s *Session) SendUnauthTelemetry(ctx context.Context, telemetryData proton.
 	return s.clientBuilder.SendUnauthTelemetry(ctx, telemetryData)
 }
 
+func (s *Session) SendForegroundEvent() {
+	s.telemetryService.SendForegroundEvent()
+}
+
 func (s *Session) checkHVRequest(err error) bool {
 	if details := apiclient.GetHVData(err); details != nil {
 		s.prevLoginState = s.loginState

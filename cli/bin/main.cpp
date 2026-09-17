@@ -706,6 +706,8 @@ int main(int argc, const char** argv) {
         if (exitCode.has_value()) {
             return *exitCode;
         }
+        // Auth telemetry
+        session.sendForegroundEvent();
 
         std::string operationStr =
             getCLIValue(argParseResult, "operation", "ET_OPERATION", [] { return readOperation("Operation ((B)ackup/(R)estore))"); });

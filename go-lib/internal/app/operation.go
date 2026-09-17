@@ -35,7 +35,7 @@ func getOperation(ctx *cli.Context) (Operation, error) {
 
 func readOperationFromCLI() (Operation, error) {
 	reader := bufio.NewReader(os.Stdin)
-	for i := 0; i < retryCount; i++ {
+	for range retryCount {
 		fmt.Printf("Enter the operation ((B)ackup / (R)restore): ")
 		input, err := reader.ReadString('\n')
 		if err != nil {

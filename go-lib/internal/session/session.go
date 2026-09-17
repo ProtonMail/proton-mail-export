@@ -318,7 +318,7 @@ func (s *Session) loadUser(ctx context.Context) error {
 }
 
 func zeroSlice(s []byte) {
-	for i := 0; i < len(s); i++ {
+	for i := range s {
 		s[i] = 0
 	}
 }

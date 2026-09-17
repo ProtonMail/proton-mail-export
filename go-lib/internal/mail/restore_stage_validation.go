@@ -18,6 +18,7 @@
 package mail
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"os"
@@ -61,7 +62,7 @@ func (r *RestoreTask) validateBackupDir(reporter Reporter) ([]messageInfo, error
 		r.importableCount = int64(messageCount)
 		r.log.WithField("messageCount", messageCount).Info("Found importable messages")
 
-		slices.SortFunc(messageList, func(lhs, rhs messageInfo) bool { return lhs.timestamp < rhs.timestamp })
+		slices.SortFunc(messageList, func(lhs, rhs messageInfo) int { return cmp.Compare(lhs.timestamp, rhs.timestamp) })
 
 		return messageList, nil
 	}

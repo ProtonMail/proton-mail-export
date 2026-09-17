@@ -21,6 +21,7 @@ import (
 	"context"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/xslices"
 	"github.com/sirupsen/logrus"
@@ -119,7 +120,7 @@ func (m *MetadataStage) Run(
 		lastMessageID = metadata[len(metadata)-1].ID
 
 		initialLen := len(metadata)
-		metadata = xslices.Filter(metadata, func(t proton.MessageMetadata) bool {
+		metadata = utils.Filter(metadata, func(t proton.MessageMetadata) bool {
 			isPresent, err := mfc.HasMessage(t.ID)
 			if err != nil {
 				errorCount++

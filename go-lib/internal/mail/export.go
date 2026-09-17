@@ -32,7 +32,6 @@ import (
 	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/pbnjay/memory"
 	"github.com/sirupsen/logrus"
 )
@@ -266,7 +265,7 @@ func (e *ExportTask) WriteLabelMetadata(ctx context.Context, tmpDir, exportPath 
 		return fmt.Errorf("failed to retrieve labels: %w", err)
 	}
 
-	apiLabels = xslices.Filter(apiLabels, nonSystemLabel)
+	apiLabels = utils.Filter(apiLabels, nonSystemLabel)
 
 	labelData, err := utils.GenerateVersionedJSON(LabelMetadataVersion, apiLabels)
 	if err != nil {

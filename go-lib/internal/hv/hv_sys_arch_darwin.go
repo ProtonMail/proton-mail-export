@@ -16,7 +16,6 @@
 // along with Proton Export Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 //go:build darwin
-// +build darwin
 
 package hv
 

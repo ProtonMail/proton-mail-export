@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/xmaps"
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -77,7 +77,7 @@ func TestMetadataStage_RunWithCached(t *testing.T) {
 		result = append(result, out...)
 	}
 
-	expectedFiltered := xslices.Filter(expected, func(t proton.MessageMetadata) bool {
+	expectedFiltered := utils.Filter(expected, func(t proton.MessageMetadata) bool {
 		return !filteredIDs.Contains(t.ID)
 	})
 
@@ -88,7 +88,7 @@ func TestMetadataStage_RunWithCached(t *testing.T) {
 func testMetadata(count int) []proton.MessageMetadata {
 	result := make([]proton.MessageMetadata, count)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		result[i].ID = fmt.Sprintf("msg-%v", i)
 	}
 

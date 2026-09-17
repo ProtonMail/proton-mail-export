@@ -24,10 +24,10 @@ import (
 	"sync/atomic"
 
 	"github.com/ProtonMail/export-tool/internal/apiclient"
+	"github.com/ProtonMail/export-tool/internal/utils"
 	"github.com/ProtonMail/gluon/async"
 	"github.com/ProtonMail/go-proton-api"
 	"github.com/bradenaw/juniper/parallel"
-	"github.com/bradenaw/juniper/xslices"
 	"github.com/sirupsen/logrus"
 )
 
@@ -114,7 +114,7 @@ func (d *DownloadStage) Run(ctx context.Context, input <-chan []proton.MessageMe
 			}
 
 			// Remove any failed 422 downloads.
-			result.messages = xslices.Filter(result.messages, func(t proton.FullMessage) bool {
+			result.messages = utils.Filter(result.messages, func(t proton.FullMessage) bool {
 				return t.ID != Failed422ID
 			})
 

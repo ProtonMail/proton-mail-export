@@ -41,7 +41,7 @@ type sentryPanicHandler struct {
 	reporter  *sentryReporter
 }
 
-func (s *sentryPanicHandler) HandlePanic(r interface{}) {
+func (s *sentryPanicHandler) HandlePanic(r any) {
 	if r == nil {
 		return
 	}

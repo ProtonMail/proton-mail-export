@@ -12,13 +12,16 @@ variables:
 
 stages:
   - lint
+  - test
   - build
   - installer
   - deploy
 
 include:
+  - local: /ci/rules.yml
   - local: /ci/setup.yml
   - local: /ci/lint.yml
+  - local: /ci/test.yml
   - local: /ci/build.yml
     rules:
       - if: $WORKFLOW == "build"

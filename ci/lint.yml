@@ -1,6 +1,8 @@
 ---
 lint:
   stage: lint
+  extends:
+    - .rules-branch-manual-MR-and-master-always
   tags:
     - shared-medium
   rules:
@@ -17,3 +19,18 @@ lint:
       --build $CMAKE_BUILD_DIR
       --config $CMAKE_BUILD_CONFIG
       -t clang-format-check
+
+go-vuln-check:
+  stage: lint
+  extends:
+    - .rules-branch-manual-MR-and-master-always
+  tags:
+    - shared-medium
+  script:
+    - !reference [.script-config-git, script]
+    - !reference [.script-config-cmake-unix, script]
+    - bash ci/govulncheck.sh
+  artifacts:
+    when: always
+    paths:
+      - go-lib/vulns*

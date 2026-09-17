@@ -35,6 +35,9 @@ scanners:
       - "GO-2026-5026" # IMEX-132 — x/net IDN Punycode invalid label parsing (indirect, no practical impact)
       - "GO-2026-5942" # IMEX-132 — x/net DNS SVCB/HTTPS RR panic (indirect, no DNS parsing)
       - "GO-2026-5970" # IMEX-132 — x/text norm.Iter infinite loop on invalid UTF-8 (indirect, low risk)
-      - "GHSA-4f99-4q7p-p3gh" # IMEX-132 — logrus Entry.Writer() DoS (only used in crash handler)
+      - "GHSA-4f99-4q7p-p3gh" # IMEX-132 — logrus Entry.writerScanner DoS (own log output only, not attacker-controlled)
+      - "GO-2025-4188" # IMEX-132 — same as GHSA-4f99-4q7p-p3gh, govulncheck.sh only matches GO- ids
+      - "GO-2025-3754" # IMEX-132 — CIRCL FourQ input validation (indirect, ecc/fourq not in reachable graph)
+      - "GO-2026-4550" # IMEX-132 — CIRCL secp384r1 CombinedMult (indirect, ecc/p384 not in reachable graph)
     # Convention: each ignored rule gets a JIRA ticket and reason
     #   - "GHSA-xxxx-yyyy"  # IMEX-NNNN — brief reason

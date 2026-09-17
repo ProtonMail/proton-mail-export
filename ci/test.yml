@@ -1,0 +1,62 @@
+---
+test-go-lib:
+  stage: test
+  needs: [lint, go-vuln-check]
+  extends:
+    - .rules-branch-manual-MR-and-master-always
+  tags:
+    - shared-medium
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: always
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: always
+  script:
+   - !reference [ .script-config-git, script ]
+   - !reference [ .script-config-cmake-unix, script]
+   - export LANG=en_US.UTF-8 #ci doesn't have locale set by default
+   - bash ci/install_gotestsum.sh
+   - bash ci/test.sh linux
+   - bash ci/test_race.sh linux
+   - bash ci/test_cpp.sh linux
+  artifacts:
+    when: always
+    paths:
+      - go-lib/test-*.xml
+      - lib/test-*.xml
+    reports:
+      junit: go-lib/test-*.xml
+  cache:
+    key: export-go-modules
+    paths:
+      - .cache
+    when: always
+
+test-cpp-lib:
+  stage: test
+  needs: [lint, go-vuln-check]
+  extends:
+    - .rules-branch-manual-MR-and-master-always
+  tags:
+    - shared-medium
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: always
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: always
+  script:
+    - !reference [ .script-config-git, script ]
+    - !reference [ .script-config-cmake-unix, script]
+    - export LANG=en_US.UTF-8 #ci doesn't have locale set by default
+    - bash ci/test_cpp.sh linux
+  artifacts:
+    when: always
+    paths:
+      - lib/test-*.xml
+    reports:
+      junit: lib/test-*.xml
+  cache:
+    key: export-go-modules
+    paths:
+      - .cache
+    when: always

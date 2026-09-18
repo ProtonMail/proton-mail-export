@@ -18,26 +18,6 @@ scanners:
     ignorePaths:
       - "^vcpkg/"
     ignoreRules:
-      - "GHSA-5cgq-3rg8-m6cv" # IMEX-132 — x/crypto SSH @revoked bypass (indirect, no SSH usage)
-      - "GHSA-vgwf-h737-ff37" # IMEX-132 — x/crypto SSH client deadlock (indirect, no SSH usage)
-      - "GHSA-f5wc-c3c7-36mc" # IMEX-132 — x/crypto SSH agent constraint forwarding (indirect, no SSH usage)
-      - "GHSA-x527-x647-q7gg" # IMEX-132 — x/crypto SSH VerifiedPublicKeyCallback skip (indirect, no SSH usage)
-      - "GHSA-rm3j-f69w-wqmq" # IMEX-132 — x/crypto SSH channel write infinite loop (indirect, no SSH usage)
-      - "GHSA-89gr-r52h-f8rx" # IMEX-132 — x/crypto FIDO/U2F presence check bypass (indirect, no SSH usage)
-      - "GHSA-jppx-rxg9-jmrx" # IMEX-132 — x/crypto SSH agent key constraint bypass (indirect, no SSH usage)
-      - "GHSA-q4h4-gmj2-qvw2" # IMEX-132 — x/crypto SSH byte arithmetic underflow (indirect, no SSH usage)
-      - "GHSA-w879-237q-wc7r" # IMEX-132 — x/crypto SSH RSA/DSA param DoS (indirect, no SSH usage)
-      - "GO-2025-4116" # IMEX-132 — x/crypto SSH client panic (indirect, no SSH usage)
-      - "GO-2026-6355" # IMEX-132 — x/crypto SSH channel deadlock (indirect, no SSH usage)
-      - "GO-2026-6303" # IMEX-132 — x/crypto SSH source-address bypass (indirect, no SSH usage)
-      - "GO-2026-6354" # IMEX-132 — x/crypto SSH channel flooding (indirect, no SSH usage)
-      - "GO-2026-4918" # IMEX-132 — x/net HTTP/2 SETTINGS infinite loop (indirect, client-side only)
-      - "GO-2026-5026" # IMEX-132 — x/net IDN Punycode invalid label parsing (indirect, no practical impact)
-      - "GO-2026-5942" # IMEX-132 — x/net DNS SVCB/HTTPS RR panic (indirect, no DNS parsing)
-      - "GO-2026-5970" # IMEX-132 — x/text norm.Iter infinite loop on invalid UTF-8 (indirect, low risk)
-      - "GHSA-4f99-4q7p-p3gh" # IMEX-132 — logrus Entry.writerScanner DoS (own log output only, not attacker-controlled)
-      - "GO-2025-4188" # IMEX-132 — same as GHSA-4f99-4q7p-p3gh, govulncheck.sh only matches GO- ids
-      - "GO-2025-3754" # IMEX-132 — CIRCL FourQ input validation (indirect, ecc/fourq not in reachable graph)
-      - "GO-2026-4550" # IMEX-132 — CIRCL secp384r1 CombinedMult (indirect, ecc/p384 not in reachable graph)
+      - "GO-2026-5932" # IMEX-132 — x/crypto/openpgp unmaintained-package advisory; no-fix sadly.
     # Convention: each ignored rule gets a JIRA ticket and reason
     #   - "GHSA-xxxx-yyyy"  # IMEX-NNNN — brief reason
